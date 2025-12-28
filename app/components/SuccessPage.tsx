@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 interface SuccessPageProps {
   data: {
@@ -90,14 +91,12 @@ const observa = init({
         </div>
 
         <div style={styles.actions}>
-          <a
-            href="https://github.com/your-org/observa-sdk"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/docs"
             style={styles.linkButton}
           >
             View Documentation
-          </a>
+          </Link>
           <button onClick={onBack} style={styles.backButton}>
             Sign Up Another Account
           </button>
@@ -196,11 +195,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '14px',
     color: '#2d3748',
   },
-  infoItem: {
-    marginBottom: '12px',
-    fontSize: '14px',
-    color: '#2d3748',
-  },
   quickStart: {
     marginBottom: '32px',
   },
@@ -209,123 +203,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 'bold',
     marginBottom: '16px',
     color: '#1a202c',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
-  },
-  steps: {
-    paddingLeft: '20px',
   },
   steps: {
     paddingLeft: '20px',
