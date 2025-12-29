@@ -172,11 +172,9 @@ export default function TraceDetailPage() {
             }}
           >
             {typeof score === "number"
-              ? showPercentage
-                ? `${(score * 100).toFixed(1)}%`
-                : `${(score * 100).toFixed(1)}%`
+              ? `${(score * 100).toFixed(1)}%`
               : typeof score === "string"
-              ? parseFloat(score) !== NaN
+              ? !isNaN(parseFloat(score))
                 ? `${(parseFloat(score) * 100).toFixed(1)}%`
                 : score
               : score}
