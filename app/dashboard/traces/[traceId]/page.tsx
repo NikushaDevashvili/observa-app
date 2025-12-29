@@ -360,7 +360,7 @@ export default function TraceDetailPage() {
                   marginBottom: "0.25rem",
                 }}
               >
-                Latency
+                Total Latency
               </div>
               <div
                 style={{
@@ -381,6 +381,148 @@ export default function TraceDetailPage() {
                     ⚠️ Anomaly
                   </span>
                 )}
+              </div>
+              {trace.timeToFirstTokenMs && (
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "#9ca3af",
+                    marginTop: "0.25rem",
+                  }}
+                >
+                  TTFB: {trace.timeToFirstTokenMs}ms
+                </div>
+              )}
+              {trace.streamingDurationMs && (
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "#9ca3af",
+                  }}
+                >
+                  Streaming: {trace.streamingDurationMs}ms
+                </div>
+              )}
+            </div>
+          )}
+          {trace.status !== null && trace.status !== undefined && (
+            <div
+              style={{
+                backgroundColor: "#fff",
+                padding: "1rem",
+                borderRadius: "0.5rem",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  color: "#6b7280",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                HTTP Status
+              </div>
+              <div
+                style={{
+                  fontSize: "1.125rem",
+                  fontWeight: 600,
+                  color:
+                    trace.status >= 200 && trace.status < 300
+                      ? "#10b981"
+                      : "#ef4444",
+                }}
+              >
+                {trace.status} {trace.statusText || ""}
+              </div>
+            </div>
+          )}
+          {trace.finishReason && (
+            <div
+              style={{
+                backgroundColor: "#fff",
+                padding: "1rem",
+                borderRadius: "0.5rem",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  color: "#6b7280",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                Finish Reason
+              </div>
+              <div
+                style={{
+                  fontSize: "1.125rem",
+                  fontWeight: 600,
+                  color: "#111827",
+                }}
+              >
+                {trace.finishReason}
+              </div>
+            </div>
+          )}
+          {trace.responseId && (
+            <div
+              style={{
+                backgroundColor: "#fff",
+                padding: "1rem",
+                borderRadius: "0.5rem",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  color: "#6b7280",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                Response ID
+              </div>
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  fontFamily: "monospace",
+                  color: "#111827",
+                  wordBreak: "break-all",
+                }}
+              >
+                {trace.responseId}
+              </div>
+            </div>
+          )}
+          {trace.systemFingerprint && (
+            <div
+              style={{
+                backgroundColor: "#fff",
+                padding: "1rem",
+                borderRadius: "0.5rem",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  color: "#6b7280",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                System Fingerprint
+              </div>
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  fontFamily: "monospace",
+                  color: "#111827",
+                  wordBreak: "break-all",
+                }}
+              >
+                {trace.systemFingerprint}
               </div>
             </div>
           )}
@@ -784,6 +926,90 @@ export default function TraceDetailPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Additional Trace Metadata */}
+      {(trace.metadata || trace.headers) && (
+        <div
+          style={{
+            backgroundColor: "#fff",
+            padding: "1.5rem",
+            borderRadius: "0.5rem",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            marginBottom: "2rem",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "bold",
+              color: "#111827",
+              marginBottom: "1rem",
+            }}
+          >
+            Additional Metadata
+          </h2>
+          {trace.metadata && (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <h3
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "#111827",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                Metadata
+              </h3>
+              <div
+                style={{
+                  backgroundColor: "#f9fafb",
+                  padding: "1rem",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                  fontFamily: "monospace",
+                  color: "#111827",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  maxHeight: "300px",
+                  overflowY: "auto",
+                }}
+              >
+                {JSON.stringify(trace.metadata, null, 2)}
+              </div>
+            </div>
+          )}
+          {trace.headers && (
+            <div>
+              <h3
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "#111827",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                Headers
+              </h3>
+              <div
+                style={{
+                  backgroundColor: "#f9fafb",
+                  padding: "1rem",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                  fontFamily: "monospace",
+                  color: "#111827",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  maxHeight: "300px",
+                  overflowY: "auto",
+                }}
+              >
+                {JSON.stringify(trace.headers, null, 2)}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
