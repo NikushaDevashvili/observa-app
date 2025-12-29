@@ -22,9 +22,10 @@ cp .env.example .env
 
 3. Configure your `.env` file:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3000
+# Server-side only (not exposed to browser)
+API_URL=http://localhost:3000
 # Or your production API URL:
-# NEXT_PUBLIC_API_URL=https://api.observa.ai
+# API_URL=https://observa-api.vercel.app
 ```
 
 4. Run development server:

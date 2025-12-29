@@ -19,15 +19,14 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/onboarding/signup`, {
+      // Use Next.js API route proxy (hides API URL from client)
+      const response = await fetch('/api/onboarding/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
