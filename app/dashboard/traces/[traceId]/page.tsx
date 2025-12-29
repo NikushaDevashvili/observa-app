@@ -9,6 +9,19 @@ interface TraceDetail {
   tenantId: string
   projectId: string
   analyzedAt: string
+  // Original trace data
+  query?: string | null
+  context?: string | null
+  response?: string | null
+  model?: string | null
+  tokensPrompt?: number | null
+  tokensCompletion?: number | null
+  tokensTotal?: number | null
+  latencyMs?: number | null
+  responseLength?: number | null
+  timestamp?: string | null
+  environment?: string | null
+  // Analysis results
   analysis: {
     isHallucination: boolean | null
     hallucinationConfidence: number | null
@@ -175,15 +188,183 @@ export default function TraceDetailPage() {
           <div>
             <strong>Trace ID:</strong> <code style={{ backgroundColor: '#f3f4f6', padding: '0.25rem 0.5rem', borderRadius: '0.25rem' }}>{trace.traceId}</code>
           </div>
+          {trace.timestamp && (
+            <div>
+              <strong>Timestamp:</strong> {new Date(trace.timestamp).toLocaleString()}
+            </div>
+          )}
           <div>
             <strong>Analyzed:</strong> {new Date(trace.analyzedAt).toLocaleString()}
           </div>
-          {trace.analysis.processingTimeMs && (
+          {trace.environment && (
             <div>
-              <strong>Processing Time:</strong> {trace.analysis.processingTimeMs}ms
+              <strong>Environment:</strong> <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{trace.environment}</span>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Original Trace Data */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>
+          Trace Data
+        </h2>
+        
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '1rem',
+          marginBottom: '1.5rem',
+        }}>
+          {trace.model && (
+            <div style={{
+              backgroundColor: '#fff',
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}>
+              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>Model</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827' }}>{trace.model}</div>
+            </div>
+          )}
+          {trace.latencyMs !== null && trace.latencyMs !== undefined && (
+            <div style={{
+              backgroundColor: '#fff',
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}>
+              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>Latency</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827' }}>
+                {trace.latencyMs}ms
+                {trace.analysis.hasLatencyAnomaly && (
+                  <span style={{ marginLeft: '0.5rem', color: '#ef4444', fontSize: '0.875rem' }}>⚠️ Anomaly</span>
+                )}
+              </div>
+            </div>
+          )}
+          {trace.tokensTotal !== null && trace.tokensTotal !== undefined && (
+            <div style={{
+              backgroundColor: '#fff',
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}>
+              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>Total Tokens</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827' }}>
+                {trace.tokensTotal.toLocaleString()}
+                {trace.analysis.hasCostAnomaly && (
+                  <span style={{ marginLeft: '0.5rem', color: '#ef4444', fontSize: '0.875rem' }}>⚠️ Anomaly</span>
+                )}
+              </div>
+              {(trace.tokensPrompt || trace.tokensCompletion) && (
+                <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                  {trace.tokensPrompt && `Prompt: ${trace.tokensPrompt.toLocaleString()}`}
+                  {trace.tokensPrompt && trace.tokensCompletion && ' • '}
+                  {trace.tokensCompletion && `Completion: ${trace.tokensCompletion.toLocaleString()}`}
+                </div>
+              )}
+            </div>
+          )}
+          {trace.responseLength !== null && trace.responseLength !== undefined && (
+            <div style={{
+              backgroundColor: '#fff',
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}>
+              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>Response Length</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827' }}>{trace.responseLength.toLocaleString()} chars</div>
+            </div>
+          )}
+        </div>
+
+        {/* Query, Context, Response */}
+        {trace.query && (
+          <div style={{
+            backgroundColor: '#fff',
+            padding: '1.5rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            marginBottom: '1rem',
+          }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '0.75rem' }}>Query</h3>
+            <div style={{
+              backgroundColor: '#f9fafb',
+              padding: '1rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.875rem',
+              color: '#111827',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}>
+              {trace.query}
+            </div>
+          </div>
+        )}
+
+        {trace.context && (
+          <div style={{
+            backgroundColor: '#fff',
+            padding: '1.5rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            marginBottom: '1rem',
+          }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '0.75rem' }}>
+              Context
+              {trace.analysis.hasContextDrop && (
+                <span style={{ marginLeft: '0.5rem', color: '#ef4444', fontSize: '0.875rem' }}>⚠️ Context Drop Detected</span>
+              )}
+            </h3>
+            <div style={{
+              backgroundColor: '#f9fafb',
+              padding: '1rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.875rem',
+              color: '#111827',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              maxHeight: '300px',
+              overflowY: 'auto',
+            }}>
+              {trace.context}
+            </div>
+          </div>
+        )}
+
+        {trace.response && (
+          <div style={{
+            backgroundColor: '#fff',
+            padding: '1.5rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            marginBottom: '1rem',
+          }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '0.75rem' }}>
+              Response
+              {trace.analysis.isHallucination && (
+                <span style={{ marginLeft: '0.5rem', color: '#ef4444', fontSize: '0.875rem' }}>⚠️ Hallucination Detected</span>
+              )}
+              {trace.analysis.hasFaithfulnessIssue && (
+                <span style={{ marginLeft: '0.5rem', color: '#8b5cf6', fontSize: '0.875rem' }}>⚠️ Faithfulness Issue</span>
+              )}
+            </h3>
+            <div style={{
+              backgroundColor: '#f9fafb',
+              padding: '1rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.875rem',
+              color: '#111827',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              maxHeight: '400px',
+              overflowY: 'auto',
+            }}>
+              {trace.response}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Analysis Results */}
