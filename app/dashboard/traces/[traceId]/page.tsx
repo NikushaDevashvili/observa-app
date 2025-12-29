@@ -1152,7 +1152,27 @@ export default function TraceDetailPage() {
               Analysis Model
             </div>
             <div style={{ color: "#111827", fontWeight: 500 }}>
-              {trace.analysis.analysisModel || "N/A"}
+              {trace.analysis.analysisModel ? (
+                <span
+                  style={{
+                    display: "inline-block",
+                    padding: "0.25rem 0.5rem",
+                    backgroundColor: trace.analysis.analysisModel.includes("deberta") 
+                      ? "#dbeafe" 
+                      : "#e0e7ff",
+                    color: trace.analysis.analysisModel.includes("deberta")
+                      ? "#1e40af"
+                      : "#4338ca",
+                    borderRadius: "0.375rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {trace.analysis.analysisModel}
+                </span>
+              ) : (
+                <span style={{ color: "#9ca3af" }}>N/A</span>
+              )}
             </div>
           </div>
           <div>
