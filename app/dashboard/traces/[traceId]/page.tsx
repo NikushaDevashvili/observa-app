@@ -109,6 +109,7 @@ export default function TraceDetailPage() {
     reasoning,
     color,
     showPercentage = true,
+    modelName,
   }: {
     title: string;
     hasIssue: boolean;
@@ -117,6 +118,7 @@ export default function TraceDetailPage() {
     reasoning?: string | null;
     color: string;
     showPercentage?: boolean;
+    modelName?: string | null;
   }) => (
     <div
       style={{
@@ -201,6 +203,29 @@ export default function TraceDetailPage() {
               />
             </div>
           )}
+        </div>
+      )}
+
+      {/* Model Name Badge */}
+      {modelName && (
+        <div
+          style={{
+            marginTop: "0.75rem",
+            display: "inline-block",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "0.75rem",
+              padding: "0.25rem 0.5rem",
+              backgroundColor: "#e0e7ff",
+              color: "#4338ca",
+              borderRadius: "0.375rem",
+              fontWeight: 500,
+            }}
+          >
+            Model: {modelName}
+          </span>
         </div>
       )}
 
@@ -839,6 +864,7 @@ export default function TraceDetailPage() {
           reasoning={trace.analysis.hallucinationReasoning || undefined}
           color="#ef4444"
           showPercentage={true}
+          modelName={trace.analysis.analysisModel || undefined}
         />
         <IssueCard
           title="Context Drop Detection"
