@@ -838,59 +838,77 @@ export default function TraceDetailPage() {
           title="Hallucination Detection"
           hasIssue={trace.analysis.isHallucination === true}
           score={trace.analysis.hallucinationConfidence}
-          description={trace.analysis.hallucinationReasoning || undefined}
+          reasoning={trace.analysis.hallucinationReasoning || undefined}
           color="#ef4444"
+          showPercentage={true}
         />
         <IssueCard
-          title="Context Drop"
+          title="Context Drop Detection"
           hasIssue={trace.analysis.hasContextDrop}
-          score={trace.analysis.contextRelevanceScore}
+          score={
+            trace.analysis.contextRelevanceScore
+              ? parseFloat(trace.analysis.contextRelevanceScore)
+              : null
+          }
           description={
             trace.analysis.contextRelevanceScore
-              ? `Context relevance: ${(
-                  parseFloat(trace.analysis.contextRelevanceScore) * 100
-                ).toFixed(1)}%`
+              ? `Context relevance score indicates how well the query matches the provided context. Lower scores suggest potential context drops.`
               : undefined
           }
           color="#f59e0b"
+          showPercentage={true}
         />
         <IssueCard
           title="Answer Faithfulness"
           hasIssue={trace.analysis.hasFaithfulnessIssue}
           score={trace.analysis.answerFaithfulnessScore}
           description={
-            trace.analysis.answerFaithfulnessScore
-              ? `Faithfulness score: ${(
-                  trace.analysis.answerFaithfulnessScore * 100
-                ).toFixed(1)}%`
+            trace.analysis.answerFaithfulnessScore !== null
+              ? `Measures how faithful the answer is to the provided context. Higher scores indicate better adherence to context.`
               : undefined
           }
           color="#8b5cf6"
+          showPercentage={true}
         />
         <IssueCard
-          title="Model Drift"
+          title="Model Drift Detection"
           hasIssue={trace.analysis.hasModelDrift}
           score={trace.analysis.driftScore}
+          description={
+            trace.analysis.driftScore !== null
+              ? `Detects changes in model behavior over time. Higher scores indicate potential model drift.`
+              : undefined
+          }
           color="#ec4899"
+          showPercentage={true}
         />
         <IssueCard
-          title="Cost Anomaly"
+          title="Cost Anomaly Detection"
           hasIssue={trace.analysis.hasCostAnomaly}
           score={trace.analysis.anomalyScore}
+          description={
+            trace.analysis.anomalyScore !== null
+              ? `Identifies unusual token usage patterns that may indicate cost anomalies.`
+              : undefined
+          }
           color="#14b8a6"
+          showPercentage={true}
         />
         <IssueCard
-          title="Quality Score"
+          title="Overall Quality Score"
           hasIssue={false}
-          score={trace.analysis.qualityScore}
+          score={
+            trace.analysis.qualityScore !== null
+              ? trace.analysis.qualityScore / 100
+              : null
+          }
           description={
-            trace.analysis.qualityScore
-              ? `Overall quality: ${(trace.analysis.qualityScore * 100).toFixed(
-                  1
-                )}%`
+            trace.analysis.qualityScore !== null
+              ? `Composite quality score based on coherence, relevance, and helpfulness metrics.`
               : undefined
           }
           color="#10b981"
+          showPercentage={true}
         />
       </div>
 
