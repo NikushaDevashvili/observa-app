@@ -106,13 +106,17 @@ export default function TraceDetailPage() {
     hasIssue,
     score,
     description,
+    reasoning,
     color,
+    showPercentage = true,
   }: {
     title: string;
     hasIssue: boolean;
     score?: number | string | null;
     description?: string | null;
+    reasoning?: string | null;
     color: string;
+    showPercentage?: boolean;
   }) => (
     <div
       style={{
@@ -128,7 +132,7 @@ export default function TraceDetailPage() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "0.5rem",
+          marginBottom: "0.75rem",
         }}
       >
         <h3 style={{ fontSize: "1rem", fontWeight: 600, color: "#111827" }}>
@@ -144,29 +148,90 @@ export default function TraceDetailPage() {
             color: hasIssue ? color : "#6b7280",
           }}
         >
-          {hasIssue ? "Issue Detected" : "No Issue"}
+          {hasIssue ? "⚠️ Issue Detected" : "✓ No Issue"}
         </span>
       </div>
+      
+      {/* Score/Confidence with percentage */}
       {score !== null && score !== undefined && (
-        <div
-          style={{
-            fontSize: "0.875rem",
-            color: "#6b7280",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Score:{" "}
-          <strong style={{ color: "#111827" }}>
-            {typeof score === "number" ? (score * 100).toFixed(1) : score}%
-          </strong>
+        <div style={{ marginBottom: "0.75rem" }}>
+          <div
+            style={{
+              fontSize: "0.875rem",
+              color: "#6b7280",
+              marginBottom: "0.25rem",
+            }}
+          >
+            {showPercentage ? "Confidence" : "Score"}
+          </div>
+          <div
+            style={{
+              fontSize: "1.5rem",
+              fontWeight: "bold",
+              color: hasIssue ? color : "#111827",
+            }}
+          >
+            {typeof score === "number"
+              ? showPercentage
+                ? `${(score * 100).toFixed(1)}%`
+                : `${(score * 100).toFixed(1)}%`
+              : typeof score === "string"
+              ? parseFloat(score) !== NaN
+                ? `${(parseFloat(score) * 100).toFixed(1)}%`
+                : score
+              : score}
+          </div>
+          {/* Visual progress bar */}
+          {typeof score === "number" && (
+            <div
+              style={{
+                width: "100%",
+                height: "6px",
+                backgroundColor: "#e5e5e5",
+                borderRadius: "3px",
+                marginTop: "0.5rem",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${Math.min(100, score * 100)}%`,
+                  height: "100%",
+                  backgroundColor: hasIssue ? color : "#10b981",
+                  transition: "width 0.3s ease",
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
-      {description && (
+
+      {/* Reasoning/Description */}
+      {reasoning && (
         <div
           style={{
             fontSize: "0.875rem",
             color: "#6b7280",
-            marginTop: "0.5rem",
+            marginTop: "0.75rem",
+            padding: "0.75rem",
+            backgroundColor: "#f9fafb",
+            borderRadius: "0.375rem",
+            lineHeight: "1.5",
+          }}
+        >
+          <strong style={{ color: "#111827" }}>Reasoning:</strong> {reasoning}
+        </div>
+      )}
+      {description && !reasoning && (
+        <div
+          style={{
+            fontSize: "0.875rem",
+            color: "#6b7280",
+            marginTop: "0.75rem",
+            padding: "0.75rem",
+            backgroundColor: "#f9fafb",
+            borderRadius: "0.375rem",
+            lineHeight: "1.5",
           }}
         >
           {description}
