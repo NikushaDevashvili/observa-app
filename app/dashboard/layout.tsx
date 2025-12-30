@@ -81,6 +81,9 @@ export default function DashboardLayout({
             <Link href="/dashboard/traces" style={{ color: '#4b5563', textDecoration: 'none', fontWeight: 500 }}>
               Traces
             </Link>
+            <Link href="/dashboard/settings" style={{ color: '#4b5563', textDecoration: 'none', fontWeight: 500 }}>
+              Settings
+            </Link>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
