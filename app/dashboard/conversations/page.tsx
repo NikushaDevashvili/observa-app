@@ -59,6 +59,13 @@ export default function ConversationsPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log("[Conversations Page] Response data:", {
+          success: data.success,
+          conversationsCount: data.conversations?.length || 0,
+          pagination: data.pagination,
+          fullData: data
+        });
+        
         if (data.success && data.conversations) {
           setConversations(data.conversations);
           setPagination((prev) => ({
@@ -66,8 +73,17 @@ export default function ConversationsPage() {
             total: data.pagination?.total || 0,
             hasMore: data.pagination?.hasMore || false,
           }));
+        } else if (data.success && Array.isArray(data.conversations) && data.conversations.length === 0) {
+          // Empty list is valid - no conversations yet
+          setConversations([]);
+          setPagination((prev) => ({
+            ...prev,
+            total: data.pagination?.total || 0,
+            hasMore: false,
+          }));
         } else {
-          setError(data.error || "Failed to load conversations");
+          console.error("[Conversations Page] Invalid response format:", data);
+          setError(data.error || "Invalid response format from server");
         }
       } else {
         const errorData = await response.json().catch(() => ({ 
@@ -187,7 +203,7 @@ export default function ConversationsPage() {
         </div>
       </div>
 
-      {conversations.length === 0 ? (
+      {conversations.length === 0 && !loading ? (
         <div
           style={{
             backgroundColor: "#fff",
@@ -195,11 +211,15 @@ export default function ConversationsPage() {
             borderRadius: "0.5rem",
             textAlign: "center",
             color: "#6b7280",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          <p>No conversations found</p>
+          <p style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>No conversations found</p>
+          <p style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+            Start a conversation in your application to see it here.
+          </p>
         </div>
-      ) : (
+      ) : conversations.length > 0 ? (
         <>
           <div
             style={{
@@ -374,7 +394,7 @@ export default function ConversationsPage() {
             </div>
           )}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

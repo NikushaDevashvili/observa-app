@@ -53,6 +53,18 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
+    console.log(`[Conversations API] Response received:`, {
+      success: data.success,
+      conversationsCount: data.conversations?.length || 0,
+      pagination: data.pagination,
+      hasData: !!data.conversations
+    });
+    
+    // Ensure we always return the expected format
+    if (!data.success) {
+      console.warn(`[Conversations API] Response missing success flag:`, data);
+    }
+    
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error("[Conversations API] Error proxying request:", error);
