@@ -281,7 +281,7 @@ export default function ConversationDetailPage() {
                 color: "#111827",
               }}
             >
-              {analytics.totalTokens.toLocaleString()}
+              {Number(analytics.totalTokens || 0).toLocaleString()}
             </div>
           </div>
           <div
@@ -308,7 +308,7 @@ export default function ConversationDetailPage() {
                 color: "#111827",
               }}
             >
-              ${analytics.totalCost.toFixed(4)}
+              ${Number(analytics.totalCost || 0).toFixed(4)}
             </div>
           </div>
           <div
@@ -332,10 +332,10 @@ export default function ConversationDetailPage() {
               style={{
                 fontSize: "2rem",
                 fontWeight: "bold",
-                color: analytics.issueCount > 0 ? "#ef4444" : "#10b981",
+                color: (analytics.issueCount || 0) > 0 ? "#ef4444" : "#10b981",
               }}
             >
-              {analytics.issueCount}
+              {analytics.issueCount || 0}
             </div>
           </div>
           <div
@@ -362,7 +362,7 @@ export default function ConversationDetailPage() {
                 color: "#111827",
               }}
             >
-              {analytics.hallucinationRate.toFixed(1)}%
+              {Number(analytics.hallucinationRate || 0).toFixed(1)}%
             </div>
           </div>
         </div>

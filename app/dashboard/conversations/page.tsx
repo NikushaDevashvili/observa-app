@@ -276,10 +276,10 @@ export default function ConversationsPage() {
                       {conv.message_count}
                     </td>
                     <td style={{ padding: "1rem", fontSize: "0.875rem", color: "#111827" }}>
-                      {conv.total_tokens.toLocaleString()}
+                      {Number(conv.total_tokens || 0).toLocaleString()}
                     </td>
                     <td style={{ padding: "1rem", fontSize: "0.875rem", color: "#111827" }}>
-                      ${conv.total_cost.toFixed(4)}
+                      ${Number(conv.total_cost || 0).toFixed(4)}
                     </td>
                     <td style={{ padding: "1rem", fontSize: "0.875rem", color: "#6b7280" }}>
                       {new Date(conv.last_message_at).toLocaleString()}
