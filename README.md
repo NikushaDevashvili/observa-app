@@ -11,16 +11,19 @@ Customer-facing web application for Observa - signup, dashboard, and management 
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Copy environment variables:
+
 ```bash
 cp .env.example .env
 ```
 
 3. Configure your `.env` file:
+
 ```env
 # Server-side only (not exposed to browser)
 API_URL=http://localhost:3000
@@ -29,6 +32,7 @@ API_URL=http://localhost:3000
 ```
 
 4. Run development server:
+
 ```bash
 npm run dev
 ```

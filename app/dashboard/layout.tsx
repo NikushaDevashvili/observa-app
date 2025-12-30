@@ -75,6 +75,9 @@ export default function DashboardLayout({
             <Link href="/dashboard" style={{ color: '#4b5563', textDecoration: 'none', fontWeight: 500 }}>
               Dashboard
             </Link>
+            <Link href="/dashboard/conversations" style={{ color: '#4b5563', textDecoration: 'none', fontWeight: 500 }}>
+              Conversations
+            </Link>
             <Link href="/dashboard/traces" style={{ color: '#4b5563', textDecoration: 'none', fontWeight: 500 }}>
               Traces
             </Link>
