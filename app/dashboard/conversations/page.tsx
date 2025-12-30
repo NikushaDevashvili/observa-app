@@ -27,6 +27,7 @@ export default function ConversationsPage() {
     hasMore: false,
   });
   const [filter, setFilter] = useState<"all" | "issues">("all");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchConversations();
@@ -34,6 +35,7 @@ export default function ConversationsPage() {
 
   const fetchConversations = async () => {
     try {
+      setError(null);
       const token = localStorage.getItem("sessionToken");
       if (!token) {
         router.push("/auth/login");
@@ -64,10 +66,16 @@ export default function ConversationsPage() {
             total: data.pagination?.total || 0,
             hasMore: data.pagination?.hasMore || false,
           }));
+        } else {
+          setError(data.error || "Failed to load conversations");
         }
+      } else {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        setError(errorData.error || `Failed to load conversations (${response.status})`);
       }
     } catch (error) {
       console.error("Failed to fetch conversations:", error);
+      setError(error instanceof Error ? error.message : "Failed to load conversations");
     } finally {
       setLoading(false);
     }
@@ -84,6 +92,38 @@ export default function ConversationsPage() {
         }}
       >
         <div>Loading conversations...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          padding: "2rem",
+          backgroundColor: "#fff",
+          borderRadius: "0.5rem",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h2 style={{ color: "#ef4444", marginBottom: "1rem" }}>Error</h2>
+        <p style={{ color: "#6b7280", marginBottom: "1rem" }}>{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            fetchConversations();
+          }}
+          style={{
+            padding: "0.5rem 1rem",
+            backgroundColor: "#2563eb",
+            color: "#fff",
+            border: "none",
+            borderRadius: "0.375rem",
+            cursor: "pointer",
+          }}
+        >
+          Try Again
+        </button>
       </div>
     );
   }

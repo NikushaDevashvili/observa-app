@@ -50,6 +50,7 @@ export default function ConversationDetailPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (conversationId) {
@@ -77,10 +78,16 @@ export default function ConversationDetailPage() {
         const data = await response.json();
         if (data.success && data.conversation) {
           setConversation(data.conversation);
+        } else {
+          setError(data.error || "Failed to load conversation");
         }
+      } else {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        setError(errorData.error || `Failed to load conversation (${response.status})`);
       }
     } catch (error) {
       console.error("Failed to fetch conversation:", error);
+      setError(error instanceof Error ? error.message : "Failed to load conversation");
     }
   };
 
@@ -151,11 +158,32 @@ export default function ConversationDetailPage() {
     );
   }
 
-  if (!conversation) {
+  if (error || !conversation) {
     return (
-      <div>
-        <p>Conversation not found</p>
-        <Link href="/dashboard/conversations">← Back to Conversations</Link>
+      <div
+        style={{
+          padding: "2rem",
+          backgroundColor: "#fff",
+          borderRadius: "0.5rem",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h2 style={{ color: "#ef4444", marginBottom: "1rem" }}>
+          {error ? "Error" : "Conversation not found"}
+        </h2>
+        <p style={{ color: "#6b7280", marginBottom: "1rem" }}>
+          {error || "The conversation you're looking for doesn't exist."}
+        </p>
+        <Link
+          href="/dashboard/conversations"
+          style={{
+            color: "#2563eb",
+            textDecoration: "none",
+            fontSize: "0.875rem",
+          }}
+        >
+          ← Back to Conversations
+        </Link>
       </div>
     );
   }
