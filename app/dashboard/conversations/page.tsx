@@ -70,8 +70,14 @@ export default function ConversationsPage() {
           setError(data.error || "Failed to load conversations");
         }
       } else {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-        setError(errorData.error || `Failed to load conversations (${response.status})`);
+        const errorData = await response.json().catch(() => ({ 
+          error: `HTTP ${response.status} Error`,
+          details: "Could not parse error response"
+        }));
+        const errorMessage = errorData.error || `Failed to load conversations (${response.status})`;
+        const errorDetails = errorData.details ? ` - ${errorData.details}` : "";
+        setError(`${errorMessage}${errorDetails}`);
+        console.error("Conversations fetch error:", errorData);
       }
     } catch (error) {
       console.error("Failed to fetch conversations:", error);
