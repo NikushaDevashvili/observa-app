@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { TraceViewer } from "@/components/agent-prism/TraceViewer/TraceViewer";
 import type { TraceViewerData } from "@/components/agent-prism/TraceViewer/TraceViewer";
+import { TraceViewerErrorBoundary } from "@/components/TraceViewerErrorBoundary";
 
 export default function TraceDetailPage() {
   const params = useParams();
@@ -48,12 +49,47 @@ export default function TraceDetailPage() {
         const data = await response.json();
         
         if (!data.success || !data.trace) {
+          console.error("Invalid trace data:", data);
           setError("Invalid trace data");
           return;
         }
 
+        // Validate the trace data structure
+        const trace = data.trace;
+        if (!trace.traceRecord || !trace.spans) {
+          console.error("Missing required fields in trace data:", trace);
+          setError("Invalid trace data structure");
+          return;
+        }
+
+        // Validate traceRecord has required fields
+        if (!trace.traceRecord.id || typeof trace.traceRecord.spansCount !== 'number') {
+          console.error("Invalid traceRecord:", trace.traceRecord);
+          setError("Invalid trace record structure");
+          return;
+        }
+
+        // Ensure agentDescription is a string (required by TraceRecord)
+        if (typeof trace.traceRecord.agentDescription !== 'string') {
+          trace.traceRecord.agentDescription = trace.traceRecord.agentDescription || "";
+        }
+
+        // Ensure spans is an array
+        if (!Array.isArray(trace.spans)) {
+          console.error("Spans is not an array:", trace.spans);
+          setError("Invalid spans data");
+          return;
+        }
+
+        // Log the data structure for debugging
+        console.log("Trace data loaded:", {
+          traceRecord: trace.traceRecord,
+          spansCount: trace.spans?.length || 0,
+          badgesCount: trace.badges?.length || 0,
+        });
+
         // The trace data is already in agent-prism format from the backend
-        setTraceData(data.trace);
+        setTraceData(trace);
       } catch (err) {
         console.error("Failed to fetch trace:", err);
         setError(err instanceof Error ? err.message : "Failed to load trace");
@@ -131,7 +167,15 @@ export default function TraceDetailPage() {
 
       {/* TraceViewer */}
       <div className="flex-1 overflow-hidden">
-        <TraceViewer data={[traceData]} />
+        <TraceViewerErrorBoundary>
+          {traceData && traceData.traceRecord && traceData.spans ? (
+            <TraceViewer data={[traceData]} />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-red-500">Invalid trace data format</div>
+            </div>
+          )}
+        </TraceViewerErrorBoundary>
       </div>
     </div>
   );
