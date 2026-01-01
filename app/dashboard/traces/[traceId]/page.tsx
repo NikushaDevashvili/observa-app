@@ -10,6 +10,34 @@ import TraceWaterfall from "@/components/traces/TraceWaterfall";
 import NodeInspector from "@/components/traces/NodeInspector";
 import StatisticsCard from "@/components/StatisticsCard";
 
+interface Span {
+  id?: string;
+  span_id: string;
+  parent_span_id: string | null;
+  name: string;
+  start_time: string;
+  end_time: string;
+  duration_ms: number;
+  events: any[];
+  children?: Span[];
+  metadata?: {
+    model?: string | null;
+    environment?: string | null;
+    conversation_id?: string | null;
+    session_id?: string | null;
+    user_id?: string | null;
+  };
+  // Additional fields from backend
+  details?: any;
+  llm_call?: any;
+  tool_call?: any;
+  retrieval?: any;
+  output?: any;
+  type?: string;
+  hasDetails?: boolean;
+  selectable?: boolean;
+}
+
 interface TraceTreeData {
   summary: {
     trace_id: string;
@@ -26,22 +54,10 @@ interface TraceTreeData {
     total_cost: number | null;
     model?: string | null;
   };
-  spans: Array<{
-    span_id: string;
-    parent_span_id: string | null;
-    name: string;
-    start_time: string;
-    end_time: string;
-    duration_ms: number;
-    events: any[];
-    metadata?: {
-      model?: string | null;
-      environment?: string | null;
-      conversation_id?: string | null;
-      session_id?: string | null;
-      user_id?: string | null;
-    };
-  }>;
+  spans: Span[];
+  // CRITICAL: Include allSpans and spansById for child span lookup
+  allSpans?: Span[];
+  spansById?: Record<string, Span>;
   signals: Array<{
     signal_type: string;
     severity: string;
@@ -125,7 +141,42 @@ export default function TraceDetailPage() {
     );
   }
 
-  const selectedSpan = traceData.spans.find((s) => s.span_id === selectedSpanId) || null;
+  // CRITICAL FIX: Use allSpans or spansById to find child spans
+  // The main spans array only contains root spans, not children
+  const findSpan = (spanId: string | null): Span | null => {
+    if (!spanId) return null;
+    
+    // First try spansById lookup (fastest - O(1))
+    if (traceData.spansById && traceData.spansById[spanId]) {
+      return traceData.spansById[spanId];
+    }
+    
+    // Fallback to allSpans array
+    if (traceData.allSpans) {
+      const found = traceData.allSpans.find(
+        (s) => s.span_id === spanId || s.id === spanId
+      );
+      if (found) return found;
+    }
+    
+    // Last resort: search in root spans (includes children via recursion)
+    const searchInSpans = (spans: Span[]): Span | null => {
+      for (const span of spans) {
+        if (span.span_id === spanId || span.id === spanId) {
+          return span;
+        }
+        if (span.children) {
+          const found = searchInSpans(span.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    return searchInSpans(traceData.spans);
+  };
+  
+  const selectedSpan = findSpan(selectedSpanId);
 
   return (
     <>

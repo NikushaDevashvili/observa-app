@@ -19,6 +19,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface Span {
+  id?: string;
   span_id: string;
   parent_span_id: string | null;
   name: string;
@@ -26,6 +27,7 @@ interface Span {
   end_time: string;
   duration_ms: number;
   events: Event[];
+  children?: Span[];
   metadata?: {
     model?: string | null;
     environment?: string | null;
@@ -33,6 +35,15 @@ interface Span {
     session_id?: string | null;
     user_id?: string | null;
   };
+  // Additional fields from backend
+  details?: any;
+  llm_call?: any;
+  tool_call?: any;
+  retrieval?: any;
+  output?: any;
+  type?: string;
+  hasDetails?: boolean;
+  selectable?: boolean;
 }
 
 interface Event {
@@ -56,9 +67,22 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
     );
   }
 
-  const llmEvent = span.events.find((e) => e.event_type === "llm_call");
-  const toolEvents = span.events.filter((e) => e.event_type === "tool_call");
-  const retrievalEvent = span.events.find((e) => e.event_type === "retrieval");
+  // CRITICAL FIX: Use span data directly if available (from backend flattening)
+  // Fallback to events if span data not available
+  const llmData = span.llm_call || span.details?.llm_call;
+  const toolData = span.tool_call || span.details?.tool_call;
+  const retrievalData = span.retrieval || span.details?.retrieval;
+  const outputData = span.output || span.details?.output;
+  
+  // Also check events for backward compatibility
+  const llmEvent = span.events?.find((e) => e.event_type === "llm_call");
+  const toolEvents = span.events?.filter((e) => e.event_type === "tool_call") || [];
+  const retrievalEvent = span.events?.find((e) => e.event_type === "retrieval");
+  
+  // Use span data if available, otherwise use event data
+  const llmCall = llmData || llmEvent?.attributes?.llm_call;
+  const toolCalls = toolData ? [toolData] : toolEvents.map((e) => e.attributes?.tool_call).filter(Boolean);
+  const retrieval = retrievalData || retrievalEvent?.attributes?.retrieval;
 
   return (
     <div className="border-1 p-4 h-full flex flex-col">
@@ -131,7 +155,7 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
             </Card>
 
             {/* LLM Call */}
-            {llmEvent && (
+            {llmCall && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-2">
@@ -140,23 +164,23 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {llmEvent.attributes?.llm_call?.input && (
+                  {llmCall?.input && (
                     <div>
                       <div className="text-sm font-medium mb-2">Input</div>
                       <div className="bg-muted p-3 rounded-md">
                         <SafeText
-                          content={llmEvent.attributes.llm_call.input}
+                          content={llmCall.input}
                           preserveWhitespace
                         />
                       </div>
                     </div>
                   )}
-                  {llmEvent.attributes?.llm_call?.output && (
+                  {llmCall?.output && (
                     <div>
                       <div className="text-sm font-medium mb-2">Output</div>
                       <div className="bg-muted p-3 rounded-md max-h-96 overflow-auto">
                         <SafeText
-                          content={llmEvent.attributes.llm_call.output}
+                          content={llmCall.output}
                           preserveWhitespace
                         />
                       </div>
@@ -164,40 +188,46 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
                   )}
                   <Separator />
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    {llmEvent.attributes?.llm_call?.input_tokens !== null &&
-                      llmEvent.attributes?.llm_call?.input_tokens !==
-                        undefined && (
+                    {llmCall?.input_tokens !== null &&
+                      llmCall?.input_tokens !== undefined && (
                         <div>
                           <div className="text-muted-foreground">Input Tokens</div>
                           <div className="font-medium">
-                            {llmEvent.attributes.llm_call.input_tokens.toLocaleString()}
+                            {llmCall.input_tokens.toLocaleString()}
                           </div>
                         </div>
                       )}
-                    {llmEvent.attributes?.llm_call?.output_tokens !== null &&
-                      llmEvent.attributes?.llm_call?.output_tokens !==
-                        undefined && (
+                    {llmCall?.output_tokens !== null &&
+                      llmCall?.output_tokens !== undefined && (
                         <div>
                           <div className="text-muted-foreground">Output Tokens</div>
                           <div className="font-medium">
-                            {llmEvent.attributes.llm_call.output_tokens.toLocaleString()}
+                            {llmCall.output_tokens.toLocaleString()}
                           </div>
                         </div>
                       )}
-                    {llmEvent.attributes?.llm_call?.latency_ms !== null &&
-                      llmEvent.attributes?.llm_call?.latency_ms !== undefined && (
+                    {llmCall?.latency_ms !== null &&
+                      llmCall?.latency_ms !== undefined && (
                         <div>
                           <div className="text-muted-foreground">Latency</div>
                           <div className="font-medium">
-                            {llmEvent.attributes.llm_call.latency_ms}ms
+                            {llmCall.latency_ms}ms
                           </div>
                         </div>
                       )}
-                    {llmEvent.attributes?.llm_call?.finish_reason && (
+                    {llmCall?.finish_reason && (
                       <div>
                         <div className="text-muted-foreground">Finish Reason</div>
                         <div className="font-medium">
-                          {llmEvent.attributes.llm_call.finish_reason}
+                          {llmCall.finish_reason}
+                        </div>
+                      </div>
+                    )}
+                    {llmCall?.model && (
+                      <div>
+                        <div className="text-muted-foreground">Model</div>
+                        <div className="font-medium">
+                          {llmCall.model}
                         </div>
                       </div>
                     )}
@@ -207,53 +237,58 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
             )}
 
             {/* Tool Calls */}
-            {toolEvents.length > 0 && (
+            {toolCalls.length > 0 && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Wrench className="h-4 w-4" />
                     <CardTitle className="text-base">
-                      Tool Calls ({toolEvents.length})
+                      Tool Calls ({toolCalls.length})
                     </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {toolEvents.map((event, idx) => (
+                  {toolCalls.map((toolCall, idx) => (
                     <div key={idx}>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="font-medium">
-                          {event.attributes?.tool_call?.tool_name || "Unknown Tool"}
+                          {toolCall?.tool_name || "Unknown Tool"}
                         </span>
                         <Badge
                           variant={
-                            event.attributes?.tool_call?.result_status === "success"
+                            toolCall?.result_status === "success"
                               ? "default"
                               : "destructive"
                           }
                           className="text-xs"
                         >
-                          {event.attributes?.tool_call?.result_status}
+                          {toolCall?.result_status || "unknown"}
                         </Badge>
                       </div>
-                      {event.attributes?.tool_call?.args && (
+                      {toolCall?.args && (
                         <div className="bg-muted p-2 rounded text-xs mb-2">
-                          <pre>{JSON.stringify(event.attributes.tool_call.args, null, 2)}</pre>
+                          <pre>{JSON.stringify(toolCall.args, null, 2)}</pre>
                         </div>
                       )}
-                      {event.attributes?.tool_call?.result && (
+                      {toolCall?.result && (
                         <div className="bg-muted p-2 rounded text-xs">
                           <div className="text-muted-foreground mb-1">Result:</div>
                           <pre>
-                            {JSON.stringify(event.attributes.tool_call.result, null, 2)}
+                            {JSON.stringify(toolCall.result, null, 2)}
                           </pre>
                         </div>
                       )}
-                      {event.attributes?.tool_call?.error_message && (
+                      {toolCall?.error_message && (
                         <div className="text-destructive text-sm">
-                          {event.attributes.tool_call.error_message}
+                          {toolCall.error_message}
                         </div>
                       )}
-                      {idx < toolEvents.length - 1 && <Separator className="my-4" />}
+                      {toolCall?.latency_ms !== null && toolCall?.latency_ms !== undefined && (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          Latency: {toolCall.latency_ms}ms
+                        </div>
+                      )}
+                      {idx < toolCalls.length - 1 && <Separator className="my-4" />}
                     </div>
                   ))}
                 </CardContent>
@@ -261,7 +296,7 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
             )}
 
             {/* Retrieval */}
-            {retrievalEvent && (
+            {retrieval && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-2">
@@ -269,24 +304,78 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
                     <CardTitle className="text-base">Retrieval</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  {retrievalEvent.attributes?.retrieval?.k && (
+                <CardContent className="space-y-3">
+                  {retrieval.k && (
                     <div className="text-sm">
                       <span className="text-muted-foreground">Top K: </span>
+                      <span className="font-medium">{retrieval.k}</span>
+                    </div>
+                  )}
+                  {retrieval.latency_ms !== null &&
+                    retrieval.latency_ms !== undefined && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Latency: </span>
+                        <span className="font-medium">{retrieval.latency_ms}ms</span>
+                      </div>
+                    )}
+                  {retrieval.retrieval_context && (
+                    <div>
+                      <div className="text-sm font-medium mb-2">Retrieval Context</div>
+                      <div className="bg-muted p-3 rounded-md max-h-96 overflow-auto">
+                        <SafeText
+                          content={retrieval.retrieval_context}
+                          preserveWhitespace
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {retrieval.retrieval_context_ids && retrieval.retrieval_context_ids.length > 0 && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Context IDs: </span>
                       <span className="font-medium">
-                        {retrievalEvent.attributes.retrieval.k}
+                        {retrieval.retrieval_context_ids.join(", ")}
                       </span>
                     </div>
                   )}
-                  {retrievalEvent.attributes?.retrieval?.latency_ms !== null &&
-                    retrievalEvent.attributes?.retrieval?.latency_ms !== undefined && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Latency: </span>
-                        <span className="font-medium">
-                          {retrievalEvent.attributes.retrieval.latency_ms}ms
-                        </span>
+                  {retrieval.similarity_scores && retrieval.similarity_scores.length > 0 && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Similarity Scores: </span>
+                      <span className="font-medium">
+                        {retrieval.similarity_scores.map((s: number) => s.toFixed(3)).join(", ")}
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Output */}
+            {outputData && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    <CardTitle className="text-base">Output</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {outputData.final_output && (
+                    <div>
+                      <div className="text-sm font-medium mb-2">Final Output</div>
+                      <div className="bg-muted p-3 rounded-md max-h-96 overflow-auto">
+                        <SafeText
+                          content={outputData.final_output}
+                          preserveWhitespace
+                        />
                       </div>
-                    )}
+                    </div>
+                  )}
+                  {outputData.output_length !== null && outputData.output_length !== undefined && (
+                    <div className="text-sm mt-3">
+                      <span className="text-muted-foreground">Output Length: </span>
+                      <span className="font-medium">{outputData.output_length} characters</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

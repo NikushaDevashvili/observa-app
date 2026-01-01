@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 interface Span {
+  id?: string;
   span_id: string;
   parent_span_id: string | null;
   name: string;
@@ -25,6 +26,7 @@ interface Span {
   end_time: string;
   duration_ms: number;
   events: Event[];
+  children?: Span[];
   metadata?: {
     model?: string | null;
     environment?: string | null;
@@ -32,6 +34,15 @@ interface Span {
     session_id?: string | null;
     user_id?: string | null;
   };
+  // Additional fields from backend
+  details?: any;
+  llm_call?: any;
+  tool_call?: any;
+  retrieval?: any;
+  output?: any;
+  type?: string;
+  hasDetails?: boolean;
+  selectable?: boolean;
 }
 
 interface Event {
@@ -64,27 +75,43 @@ export default function TraceWaterfall({
   };
 
   // Build tree structure
+  // CRITICAL FIX: Use spans that already have children structure from backend
+  // The backend now returns spans with children already built
   const buildTree = (spans: Span[]): Span[] => {
+    // If spans already have children structure (from backend), use it
+    // Otherwise, build it manually
+    const hasChildrenStructure = spans.some((s) => s.children !== undefined);
+    
+    if (hasChildrenStructure) {
+      // Backend already built the tree, just return root spans
+      return spans.filter((s) => !s.parent_span_id);
+    }
+    
+    // Fallback: Build tree manually (for backward compatibility)
     const spanMap = new Map<string, Span>();
     const rootSpans: Span[] = [];
 
     // Create map of all spans
     spans.forEach((span) => {
-      spanMap.set(span.span_id, { ...span });
+      const spanId = span.id || span.span_id;
+      spanMap.set(spanId, { ...span });
+      spanMap.set(span.span_id, spanMap.get(spanId)!); // Also index by span_id
     });
 
     // Build tree
     spans.forEach((span) => {
-      const spanCopy = spanMap.get(span.span_id)!;
+      const spanId = span.id || span.span_id;
+      const spanCopy = spanMap.get(spanId)!;
       if (!span.parent_span_id) {
         rootSpans.push(spanCopy);
       } else {
-        const parent = spanMap.get(span.parent_span_id);
+        const parentId = span.parent_span_id;
+        const parent = spanMap.get(parentId);
         if (parent) {
-          if (!(parent as any).children) {
-            (parent as any).children = [];
+          if (!parent.children) {
+            parent.children = [];
           }
-          (parent as any).children.push(spanCopy);
+          parent.children.push(spanCopy);
         } else {
           // Parent not found, treat as root
           rootSpans.push(spanCopy);
@@ -126,17 +153,32 @@ export default function TraceWaterfall({
   };
 
   const renderSpan = (span: Span & { children?: Span[] }, depth: number = 0) => {
-    const isExpanded = expandedSpans.has(span.span_id);
-    const isSelected = selectedSpanId === span.span_id;
+    const spanId = span.id || span.span_id; // Use id if available, fallback to span_id
+    const isExpanded = expandedSpans.has(spanId) || expandedSpans.has(span.span_id);
+    const isSelected = selectedSpanId === spanId || selectedSpanId === span.span_id;
     const hasChildren = span.children && span.children.length > 0;
 
     return (
-      <div key={span.span_id} className="mb-2">
+      <div key={spanId} className="mb-2">
         <Card
           className={`cursor-pointer transition-colors ${
             isSelected ? "border-primary bg-primary/5" : "hover:bg-muted/50"
           }`}
-          onClick={() => onSelectSpan(span.span_id)}
+          onClick={(e) => {
+            // CRITICAL FIX: Don't collapse when clicking on span, just select it
+            // Only collapse/expand when clicking the chevron button
+            e.stopPropagation();
+            onSelectSpan(spanId);
+            // Auto-expand parent when selecting a child span
+            if (span.parent_span_id) {
+              const parentId = span.parent_span_id;
+              if (!expandedSpans.has(parentId)) {
+                const newExpanded = new Set(expandedSpans);
+                newExpanded.add(parentId);
+                setExpandedSpans(newExpanded);
+              }
+            }
+          }}
         >
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
@@ -146,7 +188,8 @@ export default function TraceWaterfall({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleExpand(span.span_id);
+                      const idToToggle = spanId;
+                      toggleExpand(idToToggle);
                     }}
                     className="p-1 hover:bg-muted rounded"
                   >
