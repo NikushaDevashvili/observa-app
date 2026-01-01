@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StatisticsCard from "@/components/StatisticsCard";
@@ -127,170 +126,152 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Monitor your AI application's performance and quality
-        </p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatisticsCard
-          title="Total Traces"
-          value={stats.total}
-          icon={<Activity className="h-5 w-5" />}
-        />
-        <StatisticsCard
-          title="Hallucinations"
-          value={stats.hallucinations}
-          tooltip={`${stats.total > 0 ? Math.round((stats.hallucinations / stats.total) * 100) : 0}% of all traces`}
-          icon={<AlertCircle className="h-5 w-5 text-destructive" />}
-        />
-        <StatisticsCard
-          title="Context Drops"
-          value={stats.contextDrops}
-          tooltip={`${stats.total > 0 ? Math.round((stats.contextDrops / stats.total) * 100) : 0}% of all traces`}
-          icon={<AlertCircle className="h-5 w-5 text-orange-500" />}
-        />
-        <StatisticsCard
-          title="Faithfulness Issues"
-          value={stats.faithfulnessIssues}
-          tooltip={`${stats.total > 0 ? Math.round((stats.faithfulnessIssues / stats.total) * 100) : 0}% of all traces`}
-          icon={<AlertCircle className="h-5 w-5 text-purple-500" />}
-        />
-        <StatisticsCard
-          title="Model Drift"
-          value={stats.modelDrift}
-          tooltip={`${stats.total > 0 ? Math.round((stats.modelDrift / stats.total) * 100) : 0}% of all traces`}
-          icon={<TrendingUp className="h-5 w-5 text-pink-500" />}
-        />
-        <StatisticsCard
-          title="Cost Anomalies"
-          value={stats.costAnomalies}
-          tooltip={`${stats.total > 0 ? Math.round((stats.costAnomalies / stats.total) * 100) : 0}% of all traces`}
-          icon={<DollarSign className="h-5 w-5 text-teal-500" />}
-        />
-      </div>
-
-      {/* Recent Traces */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recent Traces</CardTitle>
-              <CardDescription>
-                Latest traces from your AI application
-              </CardDescription>
-            </div>
-            <Link href="/dashboard/traces">
-              <Button variant="outline" size="sm">
-                View All
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+    <>
+      <div className="mx-4">
+        <div className="flex flex-row justify-between items-center">
+          <div className="py-4">
+            <h1 className="text-xl">Dashboard</h1>
+            <p className="text-gray-500 pt-">Monitor your AI application's performance and quality</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {traces.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">
-              <p>No traces yet. Start sending traces to see analysis results here.</p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Trace ID</TableHead>
-                    <TableHead>Issues</TableHead>
-                    <TableHead>Confidence</TableHead>
-                    <TableHead>Analyzed</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {traces.map((trace) => {
-                    const hasAnyIssue =
-                      trace.is_hallucination === true ||
-                      trace.has_context_drop ||
-                      trace.has_faithfulness_issue ||
-                      trace.has_model_drift ||
-                      trace.has_cost_anomaly;
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4">
+          <StatisticsCard
+            title="Total Traces"
+            value={stats.total}
+            icon={<Activity className="h-5 w-5" />}
+          />
+          <StatisticsCard
+            title="Hallucinations"
+            value={stats.hallucinations}
+            tooltip={`${stats.total > 0 ? Math.round((stats.hallucinations / stats.total) * 100) : 0}% of all traces`}
+            icon={<AlertCircle className="h-5 w-5 text-destructive" />}
+          />
+          <StatisticsCard
+            title="Context Drops"
+            value={stats.contextDrops}
+            tooltip={`${stats.total > 0 ? Math.round((stats.contextDrops / stats.total) * 100) : 0}% of all traces`}
+            icon={<AlertCircle className="h-5 w-5 text-orange-500" />}
+          />
+          <StatisticsCard
+            title="Faithfulness Issues"
+            value={stats.faithfulnessIssues}
+            tooltip={`${stats.total > 0 ? Math.round((stats.faithfulnessIssues / stats.total) * 100) : 0}% of all traces`}
+            icon={<AlertCircle className="h-5 w-5 text-purple-500" />}
+          />
+          <StatisticsCard
+            title="Model Drift"
+            value={stats.modelDrift}
+            tooltip={`${stats.total > 0 ? Math.round((stats.modelDrift / stats.total) * 100) : 0}% of all traces`}
+            icon={<TrendingUp className="h-5 w-5 text-pink-500" />}
+          />
+          <StatisticsCard
+            title="Cost Anomalies"
+            value={stats.costAnomalies}
+            tooltip={`${stats.total > 0 ? Math.round((stats.costAnomalies / stats.total) * 100) : 0}% of all traces`}
+            icon={<DollarSign className="h-5 w-5 text-teal-500" />}
+          />
+        </div>
+        <div className="py-6">
+          <h1 className="font-semibold text-lg pt-6">Recent Traces</h1>
+          <div className="rounded-none ">
+            {traces.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                <p>No traces yet. Start sending traces to see analysis results here.</p>
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Trace ID</TableHead>
+                      <TableHead>Issues</TableHead>
+                      <TableHead>Confidence</TableHead>
+                      <TableHead>Analyzed</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {traces.map((trace) => {
+                      const hasAnyIssue =
+                        trace.is_hallucination === true ||
+                        trace.has_context_drop ||
+                        trace.has_faithfulness_issue ||
+                        trace.has_model_drift ||
+                        trace.has_cost_anomaly;
 
-                    return (
-                      <TableRow key={trace.trace_id}>
-                        <TableCell>
-                          <code className="bg-muted px-2 py-1 rounded text-xs">
-                            {trace.trace_id.substring(0, 12)}...
-                          </code>
-                        </TableCell>
-                        <TableCell>
-                          {hasAnyIssue ? (
-                            <div className="flex flex-wrap gap-1">
-                              <IssueBadge
-                                hasIssue={trace.is_hallucination === true}
-                                label="Hallucination"
-                              />
-                              <IssueBadge
-                                hasIssue={trace.has_context_drop}
-                                label="Context Drop"
-                              />
-                              <IssueBadge
-                                hasIssue={trace.has_faithfulness_issue}
-                                label="Faithfulness"
-                              />
-                              <IssueBadge
-                                hasIssue={trace.has_model_drift}
-                                label="Drift"
-                              />
-                              <IssueBadge
-                                hasIssue={trace.has_cost_anomaly}
-                                label="Cost"
-                              />
-                            </div>
-                          ) : (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              ✓ No issues
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {trace.hallucination_confidence !== null ? (
-                            <span
-                              className={
-                                trace.hallucination_confidence > 0.7
-                                  ? "text-destructive font-medium"
-                                  : ""
-                              }
-                            >
-                              {(trace.hallucination_confidence * 100).toFixed(0)}%
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(trace.analyzed_at).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Link href={`/dashboard/traces/${trace.trace_id}`}>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="mr-2 h-4 w-4" />
-                              View
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                      return (
+                        <TableRow key={trace.trace_id}>
+                          <TableCell>
+                            <code className="bg-muted px-2 py-1 rounded text-xs">
+                              {trace.trace_id.substring(0, 12)}...
+                            </code>
+                          </TableCell>
+                          <TableCell>
+                            {hasAnyIssue ? (
+                              <div className="flex flex-wrap gap-1">
+                                <IssueBadge
+                                  hasIssue={trace.is_hallucination === true}
+                                  label="Hallucination"
+                                />
+                                <IssueBadge
+                                  hasIssue={trace.has_context_drop}
+                                  label="Context Drop"
+                                />
+                                <IssueBadge
+                                  hasIssue={trace.has_faithfulness_issue}
+                                  label="Faithfulness"
+                                />
+                                <IssueBadge
+                                  hasIssue={trace.has_model_drift}
+                                  label="Drift"
+                                />
+                                <IssueBadge
+                                  hasIssue={trace.has_cost_anomaly}
+                                  label="Cost"
+                                />
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                ✓ No issues
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {trace.hallucination_confidence !== null ? (
+                              <span
+                                className={
+                                  trace.hallucination_confidence > 0.7
+                                    ? "text-destructive font-medium"
+                                    : ""
+                                }
+                              >
+                                {(trace.hallucination_confidence * 100).toFixed(0)}%
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(trace.analyzed_at).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Link href={`/dashboard/traces/${trace.trace_id}`}>
+                              <Button variant="ghost" size="sm">
+                                <Eye className="mr-2 h-4 w-4" />
+                                View
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
