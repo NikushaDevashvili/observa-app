@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Agent-Prism theme */
+@import "../components/agent-prism/theme/theme.css";
+
 @layer base {
   :root {
     --radius: 0.625rem;
