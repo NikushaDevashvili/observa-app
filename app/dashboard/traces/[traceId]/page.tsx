@@ -96,9 +96,18 @@ export default function TraceDetailPage() {
           const data = await response.json();
           if (data.success && data.trace) {
             setTraceData(data.trace);
-            // Select first span by default
+            // Select root trace span by default (not a child span)
+            // This ensures users see trace-level info first
             if (data.trace.spans && data.trace.spans.length > 0) {
-              setSelectedSpanId(data.trace.spans[0].span_id);
+              const rootSpan = data.trace.spans[0];
+              // Use span_id as primary identifier
+              setSelectedSpanId(rootSpan.span_id || rootSpan.id || null);
+            } else if (data.trace.allSpans && data.trace.allSpans.length > 0) {
+              // Fallback: find root span from allSpans
+              const rootSpan = data.trace.allSpans.find((s: Span) => !s.parent_span_id);
+              if (rootSpan) {
+                setSelectedSpanId(rootSpan.span_id || rootSpan.id || null);
+              }
             }
           }
         } else if (response.status === 404) {
@@ -147,14 +156,39 @@ export default function TraceDetailPage() {
     if (!spanId) return null;
     
     // First try spansById lookup (fastest - O(1))
-    if (traceData.spansById && traceData.spansById[spanId]) {
-      return traceData.spansById[spanId];
+    // Try multiple ID formats to handle different cases
+    if (traceData.spansById) {
+      // Try exact match first
+      if (traceData.spansById[spanId]) {
+        return traceData.spansById[spanId];
+      }
+      
+      // Try with different ID formats (in case of mismatch)
+      // Some spans might use span_id, others use id
+      const possibleKeys = [
+        spanId,
+        spanId.replace(/-output$/, ''),
+        spanId.replace(/-retrieval$/, ''),
+        spanId.replace(/-tool_call$/, ''),
+        spanId.replace(/-llm_call$/, ''),
+      ];
+      
+      for (const key of possibleKeys) {
+        if (traceData.spansById[key]) {
+          return traceData.spansById[key];
+        }
+      }
     }
     
-    // Fallback to allSpans array
+    // Fallback to allSpans array - search by multiple ID fields
     if (traceData.allSpans) {
       const found = traceData.allSpans.find(
-        (s) => s.span_id === spanId || s.id === spanId
+        (s) => 
+          s.span_id === spanId || 
+          s.id === spanId ||
+          (s.id && s.id.toString() === spanId) ||
+          (s.span_id && s.span_id.toString() === spanId) ||
+          (s.original_span_id === spanId)
       );
       if (found) return found;
     }
@@ -162,7 +196,10 @@ export default function TraceDetailPage() {
     // Last resort: search in root spans (includes children via recursion)
     const searchInSpans = (spans: Span[]): Span | null => {
       for (const span of spans) {
-        if (span.span_id === spanId || span.id === spanId) {
+        const spanIdMatch = span.span_id === spanId || span.id === spanId;
+        const originalMatch = span.original_span_id === spanId;
+        
+        if (spanIdMatch || originalMatch) {
           return span;
         }
         if (span.children) {

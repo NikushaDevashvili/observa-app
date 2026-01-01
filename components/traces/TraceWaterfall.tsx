@@ -84,24 +84,60 @@ export default function TraceWaterfall({
     
     if (hasChildrenStructure) {
       // Backend already built the tree, just return root spans
-      return spans.filter((s) => !s.parent_span_id);
+      // CRITICAL: Ensure all spans (including children) have proper IDs
+      const ensureIds = (spanList: Span[]): void => {
+        spanList.forEach((span) => {
+          // Ensure span has both id and span_id set
+          if (!span.id && span.span_id) {
+            span.id = span.span_id;
+          }
+          if (!span.span_id && span.id) {
+            span.span_id = span.id;
+          }
+          // Recursively ensure children have IDs too
+          if (span.children) {
+            ensureIds(span.children);
+          }
+        });
+      };
+      
+      const rootSpans = spans.filter((s) => !s.parent_span_id);
+      ensureIds(rootSpans);
+      return rootSpans;
     }
     
     // Fallback: Build tree manually (for backward compatibility)
     const spanMap = new Map<string, Span>();
     const rootSpans: Span[] = [];
 
-    // Create map of all spans
+    // Create map of all spans - use both id and span_id as keys
     spans.forEach((span) => {
-      const spanId = span.id || span.span_id;
-      spanMap.set(spanId, { ...span });
-      spanMap.set(span.span_id, spanMap.get(spanId)!); // Also index by span_id
+      const spanId = span.span_id || span.id;
+      if (spanId) {
+        const spanCopy = { ...span };
+        // Ensure both id and span_id are set
+        if (!spanCopy.id) spanCopy.id = spanCopy.span_id;
+        if (!spanCopy.span_id) spanCopy.span_id = spanCopy.id;
+        
+        spanMap.set(spanId, spanCopy);
+        // Also index by both IDs
+        if (span.id && span.id !== spanId) {
+          spanMap.set(span.id, spanCopy);
+        }
+        if (span.span_id && span.span_id !== spanId) {
+          spanMap.set(span.span_id, spanCopy);
+        }
+      }
     });
 
     // Build tree
     spans.forEach((span) => {
-      const spanId = span.id || span.span_id;
-      const spanCopy = spanMap.get(spanId)!;
+      const spanId = span.span_id || span.id;
+      if (!spanId) return;
+      
+      const spanCopy = spanMap.get(spanId);
+      if (!spanCopy) return;
+      
       if (!span.parent_span_id) {
         rootSpans.push(spanCopy);
       } else {
@@ -153,13 +189,16 @@ export default function TraceWaterfall({
   };
 
   const renderSpan = (span: Span & { children?: Span[] }, depth: number = 0) => {
-    const spanId = span.id || span.span_id; // Use id if available, fallback to span_id
-    const isExpanded = expandedSpans.has(spanId) || expandedSpans.has(span.span_id);
-    const isSelected = selectedSpanId === spanId || selectedSpanId === span.span_id;
+    // CRITICAL FIX: Use span_id as primary ID, fallback to id
+    // This ensures consistency with backend lookup maps
+    const spanId = span.span_id || span.id || '';
+    const altSpanId = span.id || span.span_id || '';
+    const isExpanded = expandedSpans.has(spanId) || expandedSpans.has(altSpanId) || expandedSpans.has(span.span_id || '');
+    const isSelected = selectedSpanId === spanId || selectedSpanId === altSpanId || selectedSpanId === span.span_id;
     const hasChildren = span.children && span.children.length > 0;
 
     return (
-      <div key={spanId} className="mb-2">
+      <div key={spanId || altSpanId} className="mb-2">
         <Card
           className={`cursor-pointer transition-colors ${
             isSelected ? "border-primary bg-primary/5" : "hover:bg-muted/50"
@@ -168,14 +207,21 @@ export default function TraceWaterfall({
             // CRITICAL FIX: Don't collapse when clicking on span, just select it
             // Only collapse/expand when clicking the chevron button
             e.stopPropagation();
-            onSelectSpan(spanId);
-            // Auto-expand parent when selecting a child span
-            if (span.parent_span_id) {
-              const parentId = span.parent_span_id;
-              if (!expandedSpans.has(parentId)) {
-                const newExpanded = new Set(expandedSpans);
-                newExpanded.add(parentId);
-                setExpandedSpans(newExpanded);
+            
+            // Try both ID formats to ensure we find the span
+            // Prefer span_id as it's more consistent with backend
+            const idToSelect = span.span_id || span.id || spanId;
+            if (idToSelect) {
+              onSelectSpan(idToSelect);
+              
+              // Auto-expand parent when selecting a child span
+              if (span.parent_span_id) {
+                const parentId = span.parent_span_id;
+                if (!expandedSpans.has(parentId)) {
+                  const newExpanded = new Set(expandedSpans);
+                  newExpanded.add(parentId);
+                  setExpandedSpans(newExpanded);
+                }
               }
             }
           }}
@@ -188,7 +234,8 @@ export default function TraceWaterfall({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      const idToToggle = spanId;
+                      // Use the same ID format for consistency
+                      const idToToggle = span.span_id || span.id || spanId;
                       toggleExpand(idToToggle);
                     }}
                     className="p-1 hover:bg-muted rounded"
