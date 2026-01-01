@@ -20,7 +20,12 @@ export async function GET(
     const apiUrl = process.env.API_URL || 'http://localhost:3000';
     const traceId = params.traceId;
     
-    const response = await fetch(`${apiUrl}/api/v1/traces/${traceId}`, {
+    // Forward query parameters (e.g., format=tree)
+    const searchParams = request.nextUrl.searchParams;
+    const queryString = searchParams.toString();
+    const url = `${apiUrl}/api/v1/traces/${traceId}${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,
