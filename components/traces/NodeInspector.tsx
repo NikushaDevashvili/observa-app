@@ -22,6 +22,7 @@ interface Span {
   id?: string;
   span_id: string;
   parent_span_id: string | null;
+  original_span_id?: string; // Original span ID from events (for child spans)
   name: string;
   start_time: string;
   end_time: string;
