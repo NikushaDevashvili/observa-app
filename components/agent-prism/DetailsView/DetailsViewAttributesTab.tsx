@@ -65,15 +65,41 @@ export const DetailsViewAttributesTab = ({
           );
         }
 
+        // Determine color based on attribute key prefix for better visual organization
+        const getAttributeKeyColor = (key: string): string => {
+          const keyLower = key.toLowerCase();
+          if (keyLower.startsWith("gen_ai.") || keyLower.startsWith("llm_")) {
+            return "bg-blue-500/10 text-blue-400 border-blue-500/20";
+          } else if (keyLower.startsWith("tool.") || keyLower.startsWith("tool_")) {
+            return "bg-orange-500/10 text-orange-400 border-orange-500/20";
+          } else if (keyLower.startsWith("retrieval.") || keyLower.startsWith("retrieval_")) {
+            return "bg-purple-500/10 text-purple-400 border-purple-500/20";
+          } else if (keyLower.startsWith("output.") || keyLower.startsWith("output_")) {
+            return "bg-green-500/10 text-green-400 border-green-500/20";
+          } else if (keyLower.includes("error") || keyLower.includes("status")) {
+            return "bg-red-500/10 text-red-400 border-red-500/20";
+          } else if (keyLower.includes("time") || keyLower.includes("duration") || keyLower.includes("latency")) {
+            return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
+          } else {
+            return "bg-gray-500/10 text-gray-400 border-gray-500/20";
+          }
+        };
+
+        const keyColorClasses = getAttributeKeyColor(attribute.key);
+
         return (
           <div
             key={`${attribute.key}-${index}`}
             className="border-agentprism-border rounded-md border p-4"
           >
-            <dt className="text-agentprism-muted-foreground mb-1 text-sm">
-              {attribute.key}
+            <dt className="mb-1">
+              <span
+                className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${keyColorClasses}`}
+              >
+                {attribute.key}
+              </span>
             </dt>
-            <dd className="text-agentprism-foreground break-words text-sm">
+            <dd className="text-agentprism-foreground break-words text-sm mt-2">
               {simpleValue}
             </dd>
           </div>
@@ -88,6 +114,7 @@ interface AttributeSectionProps {
   content: string;
   parsedContent: string;
   id: string;
+  keyColorClasses: string;
 }
 
 const AttributeSection = ({
@@ -95,12 +122,19 @@ const AttributeSection = ({
   content,
   parsedContent,
   id,
+  keyColorClasses,
 }: AttributeSectionProps): ReactElement => {
   const [tab, setTab] = useState<DetailsViewContentViewMode>("json");
 
   return (
     <CollapsibleSection
-      title={attributeKey}
+      title={
+        <span
+          className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${keyColorClasses}`}
+        >
+          {attributeKey}
+        </span>
+      }
       defaultOpen
       rightContent={
         <TabSelector<DetailsViewContentViewMode>
