@@ -3,13 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { SafeText } from "@/components/SafeHTML";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface TraceDetail {
   traceId: string;
   tenantId: string;
   projectId: string;
   analyzedAt: string;
-  // ALL original trace data - every field
   spanId?: string | null;
   parentSpanId?: string | null;
   query?: string | null;
@@ -22,7 +26,6 @@ interface TraceDetail {
   latencyMs?: number | null;
   timeToFirstTokenMs?: number | null;
   streamingDurationMs?: number | null;
-  responseLength?: number | null;
   status?: number | null;
   statusText?: string | null;
   finishReason?: string | null;
@@ -32,7 +35,6 @@ interface TraceDetail {
   headers?: Record<string, string> | null;
   timestamp?: string | null;
   environment?: string | null;
-  // Analysis results
   analysis: {
     isHallucination: boolean | null;
     hallucinationConfidence: number | null;
@@ -101,178 +103,9 @@ export default function TraceDetailPage() {
     }
   }, [traceId, router]);
 
-  const IssueCard = ({
-    title,
-    hasIssue,
-    score,
-    description,
-    reasoning,
-    color,
-    showPercentage = true,
-    modelName,
-  }: {
-    title: string;
-    hasIssue: boolean;
-    score?: number | string | null;
-    description?: string | null;
-    reasoning?: string | null;
-    color: string;
-    showPercentage?: boolean;
-    modelName?: string | null;
-  }) => (
-    <div
-      style={{
-        backgroundColor: "#fff",
-        padding: "1.5rem",
-        borderRadius: "0.5rem",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        borderLeft: `4px solid ${hasIssue ? color : "#e5e5e5"}`,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "0.75rem",
-        }}
-      >
-        <h3 style={{ fontSize: "1rem", fontWeight: 600, color: "#111827" }}>
-          {title}
-        </h3>
-        <span
-          style={{
-            padding: "0.25rem 0.75rem",
-            borderRadius: "0.25rem",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            backgroundColor: hasIssue ? `${color}20` : "#f3f4f6",
-            color: hasIssue ? color : "#6b7280",
-          }}
-        >
-          {hasIssue ? "⚠️ Issue Detected" : "✓ No Issue"}
-        </span>
-      </div>
-      
-      {/* Score/Confidence with percentage */}
-      {score !== null && score !== undefined && (
-        <div style={{ marginBottom: "0.75rem" }}>
-          <div
-            style={{
-              fontSize: "0.875rem",
-              color: "#6b7280",
-              marginBottom: "0.25rem",
-            }}
-          >
-            {showPercentage ? "Confidence" : "Score"}
-          </div>
-          <div
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: "bold",
-              color: hasIssue ? color : "#111827",
-            }}
-          >
-            {typeof score === "number"
-              ? `${(score * 100).toFixed(1)}%`
-              : typeof score === "string"
-              ? !isNaN(parseFloat(score))
-                ? `${(parseFloat(score) * 100).toFixed(1)}%`
-                : score
-              : score}
-          </div>
-          {/* Visual progress bar */}
-          {typeof score === "number" && (
-            <div
-              style={{
-                width: "100%",
-                height: "6px",
-                backgroundColor: "#e5e5e5",
-                borderRadius: "3px",
-                marginTop: "0.5rem",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  width: `${Math.min(100, score * 100)}%`,
-                  height: "100%",
-                  backgroundColor: hasIssue ? color : "#10b981",
-                  transition: "width 0.3s ease",
-                }}
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Model Name Badge */}
-      {modelName && (
-        <div
-          style={{
-            marginTop: "0.75rem",
-            display: "inline-block",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "0.75rem",
-              padding: "0.25rem 0.5rem",
-              backgroundColor: "#e0e7ff",
-              color: "#4338ca",
-              borderRadius: "0.375rem",
-              fontWeight: 500,
-            }}
-          >
-            Model: {modelName}
-          </span>
-        </div>
-      )}
-
-      {/* Reasoning/Description */}
-      {reasoning && (
-        <div
-          style={{
-            fontSize: "0.875rem",
-            color: "#6b7280",
-            marginTop: "0.75rem",
-            padding: "0.75rem",
-            backgroundColor: "#f9fafb",
-            borderRadius: "0.375rem",
-            lineHeight: "1.5",
-          }}
-        >
-          <strong style={{ color: "#111827" }}>Reasoning:</strong> {reasoning}
-        </div>
-      )}
-      {description && !reasoning && (
-        <div
-          style={{
-            fontSize: "0.875rem",
-            color: "#6b7280",
-            marginTop: "0.75rem",
-            padding: "0.75rem",
-            backgroundColor: "#f9fafb",
-            borderRadius: "0.375rem",
-            lineHeight: "1.5",
-          }}
-        >
-          {description}
-        </div>
-      )}
-    </div>
-  );
-
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "400px",
-        }}
-      >
+      <div className="flex items-center justify-center h-96">
         <div>Loading trace...</div>
       </div>
     );
@@ -280,921 +113,361 @@ export default function TraceDetailPage() {
 
   if (!trace) {
     return (
-      <div style={{ textAlign: "center", padding: "3rem" }}>
-        <h2
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: "bold",
-            color: "#111827",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Trace Not Found
-        </h2>
-        <p style={{ color: "#6b7280", marginBottom: "1.5rem" }}>
-          The trace you're looking for doesn't exist or you don't have access to
-          it.
+      <div className="flex flex-col items-center justify-center h-96 space-y-4">
+        <h2 className="text-2xl font-bold">Trace Not Found</h2>
+        <p className="text-muted-foreground">
+          The trace you're looking for doesn't exist or you don't have access to it.
         </p>
-        <Link
-          href="/dashboard/traces"
-          style={{
-            display: "inline-block",
-            padding: "0.75rem 1.5rem",
-            backgroundColor: "#2563eb",
-            color: "#fff",
-            borderRadius: "0.375rem",
-            textDecoration: "none",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-          }}
-        >
-          Back to Traces
+        <Link href="/dashboard/traces">
+          <Button>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Traces
+          </Button>
         </Link>
       </div>
     );
   }
 
+  const IssueCard = ({
+    title,
+    hasIssue,
+    score,
+    description,
+    reasoning,
+    color,
+  }: {
+    title: string;
+    hasIssue: boolean;
+    score?: number | string | null;
+    description?: string | null;
+    reasoning?: string | null;
+    color: string;
+  }) => (
+    <Card className={hasIssue ? `border-l-4 border-l-[${color}]` : ""}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{title}</CardTitle>
+          <Badge variant={hasIssue ? "destructive" : "secondary"}>
+            {hasIssue ? (
+              <>
+                <AlertCircle className="mr-1 h-3 w-3" />
+                Issue Detected
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mr-1 h-3 w-3" />
+                No Issue
+              </>
+            )}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {score !== null && score !== undefined && (
+          <div className="mb-4">
+            <div className="text-sm text-muted-foreground mb-1">Confidence</div>
+            <div className="text-3xl font-bold" style={{ color: hasIssue ? color : undefined }}>
+              {typeof score === "number"
+                ? `${(score * 100).toFixed(1)}%`
+                : typeof score === "string"
+                ? !isNaN(parseFloat(score))
+                  ? `${(parseFloat(score) * 100).toFixed(1)}%`
+                  : score
+                : score}
+            </div>
+            {typeof score === "number" && (
+              <div className="w-full h-2 bg-muted rounded-full mt-2 overflow-hidden">
+                <div
+                  className="h-full transition-all"
+                  style={{
+                    width: `${Math.min(100, score * 100)}%`,
+                    backgroundColor: hasIssue ? color : "#10b981",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        {reasoning && (
+          <div className="text-sm">
+            <strong>Reasoning:</strong> <SafeText content={reasoning} />
+          </div>
+        )}
+        {description && !reasoning && (
+          <div className="text-sm text-muted-foreground">
+            <SafeText content={description} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div>
-      <div style={{ marginBottom: "2rem" }}>
-        <Link
-          href="/dashboard/traces"
-          style={{
-            color: "#2563eb",
-            textDecoration: "none",
-            fontSize: "0.875rem",
-            marginBottom: "1rem",
-            display: "inline-block",
-          }}
-        >
-          ← Back to Traces
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <Link href="/dashboard/traces">
+          <Button variant="ghost" size="sm" className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Traces
+          </Button>
         </Link>
-        <h1
-          style={{
-            fontSize: "2rem",
-            fontWeight: "bold",
-            color: "#111827",
-            marginTop: "0.5rem",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Trace Details
-        </h1>
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            flexWrap: "wrap",
-            fontSize: "0.875rem",
-            color: "#6b7280",
-          }}
-        >
+        <h1 className="text-3xl font-bold tracking-tight">Trace Details</h1>
+        <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
           <div>
             <strong>Trace ID:</strong>{" "}
-            <code
-              style={{
-                backgroundColor: "#f3f4f6",
-                padding: "0.25rem 0.5rem",
-                borderRadius: "0.25rem",
-              }}
-            >
-              {trace.traceId}
-            </code>
+            <code className="bg-muted px-2 py-1 rounded text-xs">{trace.traceId}</code>
           </div>
           {trace.timestamp && (
             <div>
-              <strong>Timestamp:</strong>{" "}
-              {new Date(trace.timestamp).toLocaleString()}
+              <strong>Timestamp:</strong> {new Date(trace.timestamp).toLocaleString()}
             </div>
           )}
           <div>
-            <strong>Analyzed:</strong>{" "}
-            {new Date(trace.analyzedAt).toLocaleString()}
+            <strong>Analyzed:</strong> {new Date(trace.analyzedAt).toLocaleString()}
           </div>
           {trace.environment && (
             <div>
               <strong>Environment:</strong>{" "}
-              <span style={{ textTransform: "uppercase", fontWeight: 600 }}>
-                {trace.environment}
-              </span>
+              <Badge variant="outline" className="ml-1">
+                {trace.environment.toUpperCase()}
+              </Badge>
             </div>
           )}
         </div>
       </div>
 
-      {/* Original Trace Data */}
-      <div style={{ marginBottom: "2rem" }}>
-        <h2
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: "bold",
-            color: "#111827",
-            marginBottom: "1rem",
-          }}
-        >
-          Trace Data
-        </h2>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-            gap: "1rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          {trace.model && (
-            <div
-              style={{
-                backgroundColor: "#fff",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#6b7280",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                Model
-              </div>
-              <div
-                style={{
-                  fontSize: "1.125rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                }}
-              >
-                {trace.model}
-              </div>
-            </div>
-          )}
-          {trace.latencyMs !== null && trace.latencyMs !== undefined && (
-            <div
-              style={{
-                backgroundColor: "#fff",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#6b7280",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                Total Latency
-              </div>
-              <div
-                style={{
-                  fontSize: "1.125rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                }}
-              >
+      {/* Trace Metadata */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {trace.model && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Model</CardDescription>
+              <CardTitle className="text-lg">{trace.model}</CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        {trace.latencyMs !== null && trace.latencyMs !== undefined && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Latency</CardDescription>
+              <CardTitle className="text-lg">
                 {trace.latencyMs}ms
                 {trace.analysis.hasLatencyAnomaly && (
-                  <span
-                    style={{
-                      marginLeft: "0.5rem",
-                      color: "#ef4444",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    ⚠️ Anomaly
-                  </span>
+                  <Badge variant="destructive" className="ml-2">
+                    Anomaly
+                  </Badge>
                 )}
-              </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               {trace.timeToFirstTokenMs && (
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "#9ca3af",
-                    marginTop: "0.25rem",
-                  }}
-                >
+                <div className="text-xs text-muted-foreground">
                   TTFB: {trace.timeToFirstTokenMs}ms
                 </div>
               )}
               {trace.streamingDurationMs && (
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "#9ca3af",
-                  }}
-                >
+                <div className="text-xs text-muted-foreground">
                   Streaming: {trace.streamingDurationMs}ms
                 </div>
               )}
-            </div>
-          )}
-          {trace.status !== null && trace.status !== undefined && (
-            <div
-              style={{
-                backgroundColor: "#fff",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#6b7280",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                HTTP Status
-              </div>
-              <div
-                style={{
-                  fontSize: "1.125rem",
-                  fontWeight: 600,
-                  color:
-                    trace.status >= 200 && trace.status < 300
-                      ? "#10b981"
-                      : "#ef4444",
-                }}
+            </CardContent>
+          </Card>
+        )}
+        {trace.status !== null && trace.status !== undefined && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>HTTP Status</CardDescription>
+              <CardTitle
+                className={`text-lg ${
+                  trace.status >= 200 && trace.status < 300
+                    ? "text-green-600"
+                    : "text-destructive"
+                }`}
               >
                 {trace.status} {trace.statusText || ""}
-              </div>
-            </div>
-          )}
-          {trace.finishReason && (
-            <div
-              style={{
-                backgroundColor: "#fff",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#6b7280",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                Finish Reason
-              </div>
-              <div
-                style={{
-                  fontSize: "1.125rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                }}
-              >
-                {trace.finishReason}
-              </div>
-            </div>
-          )}
-          {trace.responseId && (
-            <div
-              style={{
-                backgroundColor: "#fff",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#6b7280",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                Response ID
-              </div>
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  fontFamily: "monospace",
-                  color: "#111827",
-                  wordBreak: "break-all",
-                }}
-              >
-                {trace.responseId}
-              </div>
-            </div>
-          )}
-          {trace.systemFingerprint && (
-            <div
-              style={{
-                backgroundColor: "#fff",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#6b7280",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                System Fingerprint
-              </div>
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  fontFamily: "monospace",
-                  color: "#111827",
-                  wordBreak: "break-all",
-                }}
-              >
-                {trace.systemFingerprint}
-              </div>
-            </div>
-          )}
-          {trace.tokensTotal !== null && trace.tokensTotal !== undefined && (
-            <div
-              style={{
-                backgroundColor: "#fff",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#6b7280",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                Total Tokens
-              </div>
-              <div
-                style={{
-                  fontSize: "1.125rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                }}
-              >
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        {trace.tokensTotal !== null && trace.tokensTotal !== undefined && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Tokens</CardDescription>
+              <CardTitle className="text-lg">
                 {trace.tokensTotal.toLocaleString()}
                 {trace.analysis.hasCostAnomaly && (
-                  <span
-                    style={{
-                      marginLeft: "0.5rem",
-                      color: "#ef4444",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    ⚠️ Anomaly
-                  </span>
+                  <Badge variant="destructive" className="ml-2">
+                    Anomaly
+                  </Badge>
                 )}
-              </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               {(trace.tokensPrompt || trace.tokensCompletion) && (
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "#9ca3af",
-                    marginTop: "0.25rem",
-                  }}
-                >
-                  {trace.tokensPrompt &&
-                    `Prompt: ${trace.tokensPrompt.toLocaleString()}`}
+                <div className="text-xs text-muted-foreground">
+                  {trace.tokensPrompt && `Prompt: ${trace.tokensPrompt.toLocaleString()}`}
                   {trace.tokensPrompt && trace.tokensCompletion && " • "}
                   {trace.tokensCompletion &&
                     `Completion: ${trace.tokensCompletion.toLocaleString()}`}
                 </div>
               )}
-            </div>
-          )}
-          {trace.responseLength !== null &&
-            trace.responseLength !== undefined && (
-              <div
-                style={{
-                  backgroundColor: "#fff",
-                  padding: "1rem",
-                  borderRadius: "0.5rem",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "#6b7280",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Response Length
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.125rem",
-                    fontWeight: 600,
-                    color: "#111827",
-                  }}
-                >
-                  {trace.responseLength.toLocaleString()} chars
-                </div>
-              </div>
-            )}
-        </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-        {/* Query, Context, Response */}
+      {/* Query, Context, Response */}
+      <div className="grid gap-4">
         {trace.query && (
-          <div
-            style={{
-              backgroundColor: "#fff",
-              padding: "1.5rem",
-              borderRadius: "0.5rem",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              marginBottom: "1rem",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "1rem",
-                fontWeight: 600,
-                color: "#111827",
-                marginBottom: "0.75rem",
-              }}
-            >
-              Query
-            </h3>
-            <div
-              style={{
-                backgroundColor: "#f9fafb",
-                padding: "1rem",
-                borderRadius: "0.375rem",
-                fontSize: "0.875rem",
-                color: "#111827",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}
-            >
-              {trace.query}
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Query</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-muted p-4 rounded-md">
+                <SafeText content={trace.query} preserveWhitespace />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {trace.context && (
-          <div
-            style={{
-              backgroundColor: "#fff",
-              padding: "1.5rem",
-              borderRadius: "0.5rem",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              marginBottom: "1rem",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "1rem",
-                fontWeight: 600,
-                color: "#111827",
-                marginBottom: "0.75rem",
-              }}
-            >
-              Context
-              {trace.analysis.hasContextDrop && (
-                <span
-                  style={{
-                    marginLeft: "0.5rem",
-                    color: "#ef4444",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  ⚠️ Context Drop Detected
-                </span>
-              )}
-            </h3>
-            <div
-              style={{
-                backgroundColor: "#f9fafb",
-                padding: "1rem",
-                borderRadius: "0.375rem",
-                fontSize: "0.875rem",
-                color: "#111827",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                maxHeight: "300px",
-                overflowY: "auto",
-              }}
-            >
-              {trace.context}
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Context</CardTitle>
+                {trace.analysis.hasContextDrop && (
+                  <Badge variant="destructive">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Context Drop Detected
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-muted p-4 rounded-md max-h-72 overflow-y-auto">
+                <SafeText content={trace.context} preserveWhitespace />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {trace.response && (
-          <div
-            style={{
-              backgroundColor: "#fff",
-              padding: "1.5rem",
-              borderRadius: "0.5rem",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              marginBottom: "1rem",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "1rem",
-                fontWeight: 600,
-                color: "#111827",
-                marginBottom: "0.75rem",
-              }}
-            >
-              Response
-              {trace.analysis.isHallucination && (
-                <span
-                  style={{
-                    marginLeft: "0.5rem",
-                    color: "#ef4444",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  ⚠️ Hallucination Detected
-                </span>
-              )}
-              {trace.analysis.hasFaithfulnessIssue && (
-                <span
-                  style={{
-                    marginLeft: "0.5rem",
-                    color: "#8b5cf6",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  ⚠️ Faithfulness Issue
-                </span>
-              )}
-            </h3>
-            <div
-              style={{
-                backgroundColor: "#f9fafb",
-                padding: "1rem",
-                borderRadius: "0.375rem",
-                fontSize: "0.875rem",
-                color: "#111827",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                maxHeight: "400px",
-                overflowY: "auto",
-              }}
-            >
-              {trace.response}
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <CardTitle>Response</CardTitle>
+                {trace.analysis.isHallucination && (
+                  <Badge variant="destructive">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Hallucination
+                  </Badge>
+                )}
+                {trace.analysis.hasFaithfulnessIssue && (
+                  <Badge variant="secondary">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Faithfulness Issue
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
+                <SafeText content={trace.response} preserveWhitespace />
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 
       {/* Analysis Results */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "1.5rem",
-          marginBottom: "2rem",
-        }}
-      >
-        <IssueCard
-          title="Hallucination Detection"
-          hasIssue={trace.analysis.isHallucination === true}
-          score={trace.analysis.hallucinationConfidence}
-          reasoning={trace.analysis.hallucinationReasoning || undefined}
-          color="#ef4444"
-          showPercentage={true}
-          modelName={trace.analysis.analysisModel || undefined}
-        />
-        <IssueCard
-          title="Context Drop Detection"
-          hasIssue={trace.analysis.hasContextDrop}
-          score={
-            trace.analysis.contextRelevanceScore
-              ? parseFloat(trace.analysis.contextRelevanceScore)
-              : null
-          }
-          description={
-            trace.analysis.contextRelevanceScore
-              ? `Context relevance score indicates how well the query matches the provided context. Lower scores suggest potential context drops.`
-              : undefined
-          }
-          color="#f59e0b"
-          showPercentage={true}
-        />
-        <IssueCard
-          title="Answer Faithfulness"
-          hasIssue={trace.analysis.hasFaithfulnessIssue}
-          score={trace.analysis.answerFaithfulnessScore}
-          description={
-            trace.analysis.answerFaithfulnessScore !== null
-              ? `Measures how faithful the answer is to the provided context. Higher scores indicate better adherence to context.`
-              : undefined
-          }
-          color="#8b5cf6"
-          showPercentage={true}
-        />
-        <IssueCard
-          title="Model Drift Detection"
-          hasIssue={trace.analysis.hasModelDrift}
-          score={trace.analysis.driftScore}
-          description={
-            trace.analysis.driftScore !== null
-              ? `Detects changes in model behavior over time. Higher scores indicate potential model drift.`
-              : undefined
-          }
-          color="#ec4899"
-          showPercentage={true}
-        />
-        <IssueCard
-          title="Cost Anomaly Detection"
-          hasIssue={trace.analysis.hasCostAnomaly}
-          score={trace.analysis.anomalyScore}
-          description={
-            trace.analysis.anomalyScore !== null
-              ? `Identifies unusual token usage patterns that may indicate cost anomalies.`
-              : undefined
-          }
-          color="#14b8a6"
-          showPercentage={true}
-        />
-        <IssueCard
-          title="Overall Quality Score"
-          hasIssue={false}
-          score={
-            trace.analysis.qualityScore !== null
-              ? trace.analysis.qualityScore / 100
-              : null
-          }
-          description={
-            trace.analysis.qualityScore !== null
-              ? `Composite quality score based on coherence, relevance, and helpfulness metrics.`
-              : undefined
-          }
-          color="#10b981"
-          showPercentage={true}
-        />
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Analysis Results</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <IssueCard
+            title="Hallucination Detection"
+            hasIssue={trace.analysis.isHallucination === true}
+            score={trace.analysis.hallucinationConfidence}
+            reasoning={trace.analysis.hallucinationReasoning || undefined}
+            color="#ef4444"
+          />
+          <IssueCard
+            title="Context Drop Detection"
+            hasIssue={trace.analysis.hasContextDrop}
+            score={
+              trace.analysis.contextRelevanceScore
+                ? parseFloat(trace.analysis.contextRelevanceScore)
+                : null
+            }
+            description={
+              trace.analysis.contextRelevanceScore
+                ? "Context relevance score indicates how well the query matches the provided context."
+                : undefined
+            }
+            color="#f59e0b"
+          />
+          <IssueCard
+            title="Answer Faithfulness"
+            hasIssue={trace.analysis.hasFaithfulnessIssue}
+            score={trace.analysis.answerFaithfulnessScore}
+            description="Measures how faithful the answer is to the provided context."
+            color="#8b5cf6"
+          />
+          <IssueCard
+            title="Model Drift Detection"
+            hasIssue={trace.analysis.hasModelDrift}
+            score={trace.analysis.driftScore}
+            description="Detects changes in model behavior over time."
+            color="#ec4899"
+          />
+          <IssueCard
+            title="Cost Anomaly Detection"
+            hasIssue={trace.analysis.hasCostAnomaly}
+            score={trace.analysis.anomalyScore}
+            description="Identifies unusual token usage patterns."
+            color="#14b8a6"
+          />
+          <IssueCard
+            title="Overall Quality Score"
+            hasIssue={false}
+            score={
+              trace.analysis.qualityScore !== null
+                ? trace.analysis.qualityScore / 100
+                : null
+            }
+            description="Composite quality score based on coherence, relevance, and helpfulness."
+            color="#10b981"
+          />
+        </div>
       </div>
 
-      {/* Additional Metrics */}
-      {(trace.analysis.coherenceScore !== null ||
-        trace.analysis.relevanceScore !== null ||
-        trace.analysis.helpfulnessScore !== null) && (
-        <div
-          style={{
-            backgroundColor: "#fff",
-            padding: "1.5rem",
-            borderRadius: "0.5rem",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            marginBottom: "2rem",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: "bold",
-              color: "#111827",
-              marginBottom: "1rem",
-            }}
-          >
-            Quality Metrics
-          </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "1rem",
-            }}
-          >
-            {trace.analysis.coherenceScore !== null && (
-              <div>
-                <div
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "#6b7280",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Coherence
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: "bold",
-                    color: "#111827",
-                  }}
-                >
-                  {(trace.analysis.coherenceScore * 100).toFixed(1)}%
-                </div>
-              </div>
-            )}
-            {trace.analysis.relevanceScore !== null && (
-              <div>
-                <div
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "#6b7280",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Relevance
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: "bold",
-                    color: "#111827",
-                  }}
-                >
-                  {(trace.analysis.relevanceScore * 100).toFixed(1)}%
-                </div>
-              </div>
-            )}
-            {trace.analysis.helpfulnessScore !== null && (
-              <div>
-                <div
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "#6b7280",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Helpfulness
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: "bold",
-                    color: "#111827",
-                  }}
-                >
-                  {(trace.analysis.helpfulnessScore * 100).toFixed(1)}%
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Additional Trace Metadata */}
+      {/* Additional Metadata */}
       {(trace.metadata || trace.headers) && (
-        <div
-          style={{
-            backgroundColor: "#fff",
-            padding: "1.5rem",
-            borderRadius: "0.5rem",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            marginBottom: "2rem",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: "bold",
-              color: "#111827",
-              marginBottom: "1rem",
-            }}
-          >
-            Additional Metadata
-          </h2>
-          {trace.metadata && (
-            <div style={{ marginBottom: "1.5rem" }}>
-              <h3
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                  marginBottom: "0.75rem",
-                }}
-              >
-                Metadata
-              </h3>
-              <div
-                style={{
-                  backgroundColor: "#f9fafb",
-                  padding: "1rem",
-                  borderRadius: "0.375rem",
-                  fontSize: "0.875rem",
-                  fontFamily: "monospace",
-                  color: "#111827",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  maxHeight: "300px",
-                  overflowY: "auto",
-                }}
-              >
-                {JSON.stringify(trace.metadata, null, 2)}
+        <Card>
+          <CardHeader>
+            <CardTitle>Additional Metadata</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {trace.metadata && (
+              <div>
+                <h3 className="text-sm font-medium mb-2">Metadata</h3>
+                <pre className="bg-muted p-4 rounded-md text-xs overflow-auto max-h-72">
+                  {JSON.stringify(trace.metadata, null, 2)}
+                </pre>
               </div>
-            </div>
-          )}
-          {trace.headers && (
-            <div>
-              <h3
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                  marginBottom: "0.75rem",
-                }}
-              >
-                Headers
-              </h3>
-              <div
-                style={{
-                  backgroundColor: "#f9fafb",
-                  padding: "1rem",
-                  borderRadius: "0.375rem",
-                  fontSize: "0.875rem",
-                  fontFamily: "monospace",
-                  color: "#111827",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  maxHeight: "300px",
-                  overflowY: "auto",
-                }}
-              >
-                {JSON.stringify(trace.headers, null, 2)}
+            )}
+            {trace.headers && (
+              <div>
+                <h3 className="text-sm font-medium mb-2">Headers</h3>
+                <pre className="bg-muted p-4 rounded-md text-xs overflow-auto max-h-72">
+                  {JSON.stringify(trace.headers, null, 2)}
+                </pre>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       )}
-
-      {/* Analysis Metadata */}
-      <div
-        style={{
-          backgroundColor: "#fff",
-          padding: "1.5rem",
-          borderRadius: "0.5rem",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: "bold",
-            color: "#111827",
-            marginBottom: "1rem",
-          }}
-        >
-          Analysis Metadata
-        </h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "1rem",
-            fontSize: "0.875rem",
-          }}
-        >
-          <div>
-            <div style={{ color: "#6b7280", marginBottom: "0.25rem" }}>
-              Analysis Model
-            </div>
-            <div style={{ color: "#111827", fontWeight: 500 }}>
-              {trace.analysis.analysisModel ? (
-                <span
-                  style={{
-                    display: "inline-block",
-                    padding: "0.25rem 0.5rem",
-                    backgroundColor: trace.analysis.analysisModel.includes("deberta") 
-                      ? "#dbeafe" 
-                      : "#e0e7ff",
-                    color: trace.analysis.analysisModel.includes("deberta")
-                      ? "#1e40af"
-                      : "#4338ca",
-                    borderRadius: "0.375rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  {trace.analysis.analysisModel}
-                </span>
-              ) : (
-                <span style={{ color: "#9ca3af" }}>N/A</span>
-              )}
-            </div>
-          </div>
-          <div>
-            <div style={{ color: "#6b7280", marginBottom: "0.25rem" }}>
-              Analysis Version
-            </div>
-            <div style={{ color: "#111827", fontWeight: 500 }}>
-              {trace.analysis.analysisVersion}
-            </div>
-          </div>
-          <div>
-            <div style={{ color: "#6b7280", marginBottom: "0.25rem" }}>
-              Processing Time
-            </div>
-            <div style={{ color: "#111827", fontWeight: 500 }}>
-              {trace.analysis.processingTimeMs
-                ? `${trace.analysis.processingTimeMs}ms`
-                : "N/A"}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
