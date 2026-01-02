@@ -1,5 +1,5 @@
 :root {
-  @media (prefers-color-scheme: light) {
+  /* Light mode (default) */
     /* General purpose colors */
     --agentprism-background: 1 0 0; /* white */
     --agentprism-foreground: 21% 0.034 264.665; /* gray.900 */
@@ -121,9 +121,10 @@
     --agentprism-badge-unknown: 98.5% 0.002 247.839; /* gray.50 */
     --agentprism-badge-unknown-foreground: 55.1% 0.027 264.364; /* gray.500 */
     --agentprism-timeline-unknown: 70.7% 0.022 261.325; /* gray.400 */
-  }
+}
 
-  @media (prefers-color-scheme: dark) {
+/* Dark mode (class-based for Tailwind darkMode: ["class"]) */
+.dark {
     /* General purpose colors */
     --agentprism-background: 13% 0.028 261.692; /* gray.950 */
     --agentprism-foreground: 96.7% 0.003 264.542; /* gray.100 */
