@@ -30,24 +30,29 @@ export default function TraceDetailPage() {
         }
 
         // Fetch agent-prism formatted data
-        const response = await fetch(`/api/traces/${traceId}?format=agent-prism`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `/api/traces/${traceId}?format=agent-prism`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           if (response.status === 404) {
             setError("Trace not found");
           } else {
             const errorData = await response.json().catch(() => ({}));
-            setError(errorData.error || `Failed to fetch trace: ${response.statusText}`);
+            setError(
+              errorData.error || `Failed to fetch trace: ${response.statusText}`
+            );
           }
           return;
         }
 
         const data = await response.json();
-        
+
         if (!data.success || !data.trace) {
           console.error("Invalid trace data:", data);
           setError("Invalid trace data");
@@ -63,15 +68,19 @@ export default function TraceDetailPage() {
         }
 
         // Validate traceRecord has required fields
-        if (!trace.traceRecord.id || typeof trace.traceRecord.spansCount !== 'number') {
+        if (
+          !trace.traceRecord.id ||
+          typeof trace.traceRecord.spansCount !== "number"
+        ) {
           console.error("Invalid traceRecord:", trace.traceRecord);
           setError("Invalid trace record structure");
           return;
         }
 
         // Ensure agentDescription is a string (required by TraceRecord)
-        if (typeof trace.traceRecord.agentDescription !== 'string') {
-          trace.traceRecord.agentDescription = trace.traceRecord.agentDescription || "";
+        if (typeof trace.traceRecord.agentDescription !== "string") {
+          trace.traceRecord.agentDescription =
+            trace.traceRecord.agentDescription || "";
         }
 
         // Ensure spans is an array
@@ -131,7 +140,8 @@ export default function TraceDetailPage() {
       <div className="flex flex-col items-center justify-center h-screen space-y-4">
         <h2 className="text-2xl font-bold">Trace Not Found</h2>
         <p className="text-muted-foreground">
-          The trace you're looking for doesn't exist or you don't have access to it.
+          The trace you're looking for doesn't exist or you don't have access to
+          it.
         </p>
         <Link href="/dashboard/traces">
           <Button>
@@ -158,7 +168,10 @@ export default function TraceDetailPage() {
             <div>
               <h1 className="text-xl font-semibold">Trace Details</h1>
               <div className="text-sm text-muted-foreground mt-1">
-                Trace ID: <code className="bg-muted px-2 py-1 rounded text-xs">{traceId.substring(0, 12)}...</code>
+                Trace ID:{" "}
+                <code className="bg-muted px-2 py-1 rounded text-xs">
+                  {traceId.substring(0, 12)}...
+                </code>
               </div>
             </div>
           </div>

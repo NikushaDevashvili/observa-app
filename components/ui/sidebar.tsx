@@ -8,10 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
@@ -137,10 +134,7 @@ function Sidebar({
 
   if (collapsible === "none") {
     return (
-      <div
-        className={cn("hidden md:block w-64", className)}
-        {...props}
-      >
+      <div className={cn("hidden md:block w-64", className)} {...props}>
         <div className="fixed inset-y-0 left-0 z-10 flex h-screen w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
           {children}
         </div>
@@ -163,7 +157,12 @@ function Sidebar({
 
   return (
     <>
-      <div className={cn("hidden md:block", state === "collapsed" && collapsible === "icon" ? "w-16" : "w-64")} />
+      <div
+        className={cn(
+          "hidden md:block",
+          state === "collapsed" && collapsible === "icon" ? "w-16" : "w-64"
+        )}
+      />
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-10 hidden h-screen flex-col border-r bg-sidebar text-sidebar-foreground transition-all md:flex",
@@ -204,34 +203,18 @@ function SidebarTrigger({
 }
 
 function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
-  const { state, isMobile } = useSidebar();
-  return (
-    <main
-      className={cn(
-        "flex-1 transition-all",
-        !isMobile && (state === "collapsed" ? "md:ml-16" : "md:ml-64"),
-        className
-      )}
-      {...props}
-    />
-  );
+  return <main className={cn("flex-1 transition-all", className)} {...props} />;
 }
 
 function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      className={cn("flex flex-col gap-2 p-4", className)}
-      {...props}
-    />
+    <div className={cn("flex flex-col gap-2 p-4", className)} {...props} />
   );
 }
 
 function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      className={cn("flex flex-col gap-2 p-4", className)}
-      {...props}
-    />
+    <div className={cn("flex flex-col gap-2 p-4", className)} {...props} />
   );
 }
 
@@ -239,18 +222,16 @@ function SidebarSeparator({
   className,
   ...props
 }: React.ComponentProps<typeof Separator>) {
-  return (
-    <Separator
-      className={cn("mx-4", className)}
-      {...props}
-    />
-  );
+  return <Separator className={cn("mx-4", className)} {...props} />;
 }
 
 function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2", className)}
+      className={cn(
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2",
+        className
+      )}
       {...props}
     />
   );
@@ -301,12 +282,7 @@ function SidebarGroupContent({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn("w-full text-sm", className)}
-      {...props}
-    />
-  );
+  return <div className={cn("w-full text-sm", className)} {...props} />;
 }
 
 function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
@@ -319,12 +295,7 @@ function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
 }
 
 function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
-  return (
-    <li
-      className={cn("group relative", className)}
-      {...props}
-    />
-  );
+  return <li className={cn("group relative", className)} {...props} />;
 }
 
 const sidebarMenuButtonVariants = cva(
@@ -333,7 +304,8 @@ const sidebarMenuButtonVariants = cva(
     variants: {
       variant: {
         default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        outline: "border border-sidebar-border bg-background hover:bg-sidebar-accent",
+        outline:
+          "border border-sidebar-border bg-background hover:bg-sidebar-accent",
       },
       size: {
         default: "h-8 text-sm",
@@ -367,7 +339,12 @@ function SidebarMenuButton({
   const button = (
     <Comp
       data-active={isActive}
-      className={cn(sidebarMenuButtonVariants({ variant, size }), isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium", className)}
+      className={cn(
+        sidebarMenuButtonVariants({ variant, size }),
+        isActive &&
+          "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+        className
+      )}
       {...props}
     />
   );
@@ -424,4 +401,3 @@ export {
   SidebarTrigger,
   // useSidebar is exported separately above
 };
-
