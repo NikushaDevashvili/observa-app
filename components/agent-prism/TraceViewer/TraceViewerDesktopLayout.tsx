@@ -23,6 +23,7 @@ export const TraceViewerDesktopLayout = ({
   handleCollapseAll,
   handleTraceSelect,
   spanCardViewOptions,
+  onJumpToSpan,
 }: TraceViewerLayoutProps) => {
   const actualSelectedTrace =
     traceRecords.find((t) => t.id === selectedTraceId) || selectedTrace;
@@ -66,6 +67,7 @@ export const TraceViewerDesktopLayout = ({
             setExpandedSpansIds={setExpandedSpansIds}
             spanCardViewOptions={spanCardViewOptions}
             selectedTrace={selectedTrace}
+            onJumpToSpan={onJumpToSpan}
           />
         </Panel>
       ) : (

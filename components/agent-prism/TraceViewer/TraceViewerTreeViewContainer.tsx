@@ -6,6 +6,7 @@ import { Badge } from "../Badge";
 import { TraceListItemHeader } from "../TraceList/TraceListItemHeader";
 import { TreeView } from "../TreeView";
 import { type TraceRecordWithDisplayData } from "./TraceViewer";
+import { ErrorSummaryBanner } from "./ErrorSummaryBanner";
 import { TraceViewerSearchAndControls } from "./TraceViewerSearchAndControls";
 
 export const TraceViewerTreeViewContainer = ({
@@ -21,6 +22,7 @@ export const TraceViewerTreeViewContainer = ({
   spanCardViewOptions,
   selectedTrace,
   showHeader = true,
+  onJumpToSpan,
 }: {
   searchValue: string;
   setSearchValue: (value: string) => void;
@@ -34,6 +36,7 @@ export const TraceViewerTreeViewContainer = ({
   spanCardViewOptions?: SpanCardViewOptions;
   selectedTrace?: TraceRecordWithDisplayData;
   showHeader?: boolean;
+  onJumpToSpan?: (spanId: string) => void;
 }) => (
   <>
     {showHeader && selectedTrace && (
@@ -55,6 +58,14 @@ export const TraceViewerTreeViewContainer = ({
         handleExpandAll={handleExpandAll}
         handleCollapseAll={handleCollapseAll}
       />
+      {selectedTrace?.errorSummary && (
+        <div className="px-2">
+          <ErrorSummaryBanner
+            errorSummary={selectedTrace.errorSummary}
+            onJumpToError={onJumpToSpan}
+          />
+        </div>
+      )}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {filteredSpans.length === 0 ? (
           <div className="text-agentprism-muted-foreground p-3 text-center">

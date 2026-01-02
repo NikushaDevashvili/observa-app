@@ -12,11 +12,19 @@ import { type SpanCardViewOptions } from "../SpanCard/SpanCard";
 import { TraceViewerDesktopLayout } from "./TraceViewerDesktopLayout";
 import { TraceViewerMobileLayout } from "./TraceViewerMobileLayout";
 
+export interface ErrorSummary {
+  totalErrors: number;
+  errorTypes: Record<string, number>;
+  errorSpans: string[];
+  hasErrors: boolean;
+}
+
 export interface TraceViewerData {
   traceRecord: TraceRecord;
   badges?: Array<BadgeProps>;
   spans: TraceSpan[];
   spanCardViewOptions?: SpanCardViewOptions;
+  errorSummary?: ErrorSummary;
 }
 
 export interface TraceViewerProps {
@@ -55,6 +63,7 @@ export const TraceViewer = ({
       ...item.traceRecord,
       badges: item.badges,
       spanCardViewOptions: item.spanCardViewOptions,
+      errorSummary: item.errorSummary,
     }));
   }, [data]);
 
@@ -97,10 +106,18 @@ export const TraceViewer = ({
     (trace: TraceRecord) => {
       setSelectedSpan(undefined);
       setExpandedSpansIds([]);
-      setSelectedTrace(trace);
-      setSelectedTraceSpans(
-        data.find((item) => item.traceRecord.id === trace.id)?.spans ?? [],
+      const traceData = data.find((item) => item.traceRecord.id === trace.id);
+      setSelectedTrace(
+        traceData
+          ? {
+              ...traceData.traceRecord,
+              badges: traceData.badges,
+              spanCardViewOptions: traceData.spanCardViewOptions,
+              errorSummary: traceData.errorSummary,
+            }
+          : undefined,
       );
+      setSelectedTraceSpans(traceData?.spans ?? []);
     },
     [data],
   );
@@ -111,6 +128,26 @@ export const TraceViewer = ({
     setSelectedSpan(undefined);
     setExpandedSpansIds([]);
   }, []);
+
+  // Function to find span by ID and select it
+  const handleJumpToSpan = useCallback(
+    (spanId: string) => {
+      const allSpans = flattenSpans(selectedTraceSpans);
+      const targetSpan = allSpans.find((span) => span.id === spanId);
+      if (targetSpan) {
+        setSelectedSpan(targetSpan);
+        // Expand parent spans to make the target span visible
+        const parentIds: string[] = [];
+        let currentSpan: TraceSpan | undefined = targetSpan;
+        while (currentSpan?.parentId) {
+          parentIds.push(currentSpan.parentId);
+          currentSpan = allSpans.find((s) => s.id === currentSpan?.parentId);
+        }
+        setExpandedSpansIds((prev) => [...new Set([...prev, ...parentIds])]);
+      }
+    },
+    [selectedTraceSpans],
+  );
 
   const props: TraceViewerLayoutProps = {
     traceRecords,
@@ -131,6 +168,7 @@ export const TraceViewer = ({
     spanCardViewOptions:
       spanCardViewOptions || selectedTrace?.spanCardViewOptions,
     onClearTraceSelection: handleClearTraceSelection,
+    onJumpToSpan: handleJumpToSpan,
   };
 
   return (
@@ -148,6 +186,7 @@ export const TraceViewer = ({
 export interface TraceRecordWithDisplayData extends TraceRecord {
   spanCardViewOptions?: SpanCardViewOptions;
   badges?: BadgeProps[];
+  errorSummary?: ErrorSummary;
 }
 
 export interface TraceViewerLayoutProps {
@@ -168,4 +207,5 @@ export interface TraceViewerLayoutProps {
   handleTraceSelect: (trace: TraceRecord) => void;
   spanCardViewOptions?: SpanCardViewOptions;
   onClearTraceSelection: () => void;
+  onJumpToSpan?: (spanId: string) => void;
 }

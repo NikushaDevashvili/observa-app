@@ -2,8 +2,8 @@ import type { TraceSpan } from "@evilmartians/agent-prism-types";
 import type { ReactElement, ReactNode } from "react";
 
 import cn from "classnames";
-import { SquareTerminal, Tags, ArrowRightLeft } from "lucide-react";
-import { useState } from "react";
+import { SquareTerminal, Tags, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { useState, useEffect } from "react";
 
 import type { AvatarProps } from "../Avatar";
 import type { TabItem } from "../Tabs";
@@ -13,8 +13,9 @@ import { DetailsViewAttributesTab } from "./DetailsViewAttributesTab";
 import { DetailsViewHeader } from "./DetailsViewHeader";
 import { DetailsViewInputOutputTab } from "./DetailsViewInputOutputTab";
 import { DetailsViewRawDataTab } from "./DetailsViewRawDataTab";
+import { DetailsViewErrorTab } from "./DetailsViewErrorTab";
 
-type DetailsViewTab = "input-output" | "attributes" | "raw";
+type DetailsViewTab = "error" | "input-output" | "attributes" | "raw";
 
 export interface DetailsViewProps {
   /**
@@ -62,23 +63,37 @@ export interface DetailsViewProps {
   onTabChange?: (tabValue: DetailsViewTab) => void;
 }
 
-const TAB_ITEMS: TabItem<DetailsViewTab>[] = [
-  {
-    value: "input-output",
-    label: "In/Out",
-    icon: <ArrowRightLeft className="size-4" />,
-  },
-  {
-    value: "attributes",
-    label: "Attributes",
-    icon: <Tags className="size-4" />,
-  },
-  {
-    value: "raw",
-    label: "RAW",
-    icon: <SquareTerminal className="size-4" />,
-  },
-];
+const getTabItems = (hasError: boolean): TabItem<DetailsViewTab>[] => {
+  const tabs: TabItem<DetailsViewTab>[] = [];
+  
+  if (hasError) {
+    tabs.push({
+      value: "error",
+      label: "Error",
+      icon: <AlertTriangle className="size-4" />,
+    });
+  }
+  
+  tabs.push(
+    {
+      value: "input-output",
+      label: "In/Out",
+      icon: <ArrowRightLeft className="size-4" />,
+    },
+    {
+      value: "attributes",
+      label: "Attributes",
+      icon: <Tags className="size-4" />,
+    },
+    {
+      value: "raw",
+      label: "RAW",
+      icon: <SquareTerminal className="size-4" />,
+    }
+  );
+  
+  return tabs;
+};
 
 export const DetailsView = ({
   data,
@@ -90,7 +105,22 @@ export const DetailsView = ({
   customHeader,
   onTabChange,
 }: DetailsViewProps): ReactElement => {
-  const [tab, setTab] = useState<DetailsViewTab>(defaultTab);
+  const hasError = !!(data as any).errorInfo;
+  const tabItems = getTabItems(hasError);
+  
+  // Auto-select error tab if error exists and no default tab was provided
+  const initialTab = hasError && defaultTab === "input-output" ? "error" : defaultTab;
+  const [tab, setTab] = useState<DetailsViewTab>(initialTab);
+
+  // Update tab when data changes (e.g., when selecting a different span)
+  useEffect(() => {
+    const newHasError = !!(data as any).errorInfo;
+    if (newHasError && tab !== "error" && defaultTab === "input-output") {
+      setTab("error");
+    } else if (!newHasError && tab === "error") {
+      setTab("input-output");
+    }
+  }, [data, defaultTab]);
 
   const handleTabChange = (tabValue: DetailsViewTab) => {
     setTab(tabValue);
@@ -125,15 +155,16 @@ export const DetailsView = ({
       <div className="mb-4 shrink-0">{headerContent}</div>
       <div className="shrink-0">
         <TabSelector
-          items={TAB_ITEMS}
+          items={tabItems}
           value={tab}
           onValueChange={handleTabChange}
           theme="underline"
-          defaultValue={defaultTab}
+          defaultValue={initialTab}
         />
       </div>
 
       <div key={tab} className="min-h-0 flex-1 overflow-y-auto py-4">
+        {tab === "error" && <DetailsViewErrorTab data={data} />}
         {tab === "input-output" && <DetailsViewInputOutputTab data={data} />}
         {tab === "attributes" && <DetailsViewAttributesTab data={data} />}
         {tab === "raw" && <DetailsViewRawDataTab data={data} />}

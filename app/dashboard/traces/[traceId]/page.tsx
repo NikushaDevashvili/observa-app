@@ -172,6 +172,27 @@ export default function TraceDetailPage() {
                 <code className="bg-muted px-2 py-1 rounded text-xs">
                   {traceId.substring(0, 12)}...
                 </code>
+                {traceData?.errorSummary && traceData.errorSummary.hasErrors && (
+                  <span className="ml-3 inline-flex items-center gap-1">
+                    <span className="text-destructive font-medium">
+                      {traceData.errorSummary.totalErrors} Error
+                      {traceData.errorSummary.totalErrors !== 1 ? "s" : ""}
+                    </span>
+                    {Object.keys(traceData.errorSummary.errorTypes).length > 0 && (
+                      <span className="text-muted-foreground">
+                        (
+                        {Object.entries(traceData.errorSummary.errorTypes)
+                          .slice(0, 2)
+                          .map(([type, count]) => `${count} ${type}`)
+                          .join(", ")}
+                        {Object.keys(traceData.errorSummary.errorTypes).length > 2
+                          ? "..."
+                          : ""}
+                        )
+                      </span>
+                    )}
+                  </span>
+                )}
               </div>
             </div>
           </div>

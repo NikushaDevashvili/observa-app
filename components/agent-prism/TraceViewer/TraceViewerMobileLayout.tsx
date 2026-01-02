@@ -83,6 +83,7 @@ export const TraceViewerMobileLayout = ({
           setExpandedSpansIds={setExpandedSpansIds}
           spanCardViewOptions={spanCardViewOptions}
           selectedTrace={selectedTrace}
+          onJumpToSpan={onJumpToSpan}
         />
       </div>
     );

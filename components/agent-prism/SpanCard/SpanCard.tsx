@@ -363,6 +363,8 @@ export const SpanCard: FC<SpanCardProps> = ({
               "before:bg-agentprism-muted/75 before:absolute before:-top-2 before:h-2 before:w-full",
             state.isSelected &&
               "from-agentprism-muted/75 to-agentprism-muted/75 bg-gradient-to-b",
+            (data as any).errorInfo &&
+              "border-l-2 border-agentprism-error",
           )}
           style={{
             gridTemplateColumns,
@@ -421,6 +423,15 @@ export const SpanCard: FC<SpanCardProps> = ({
               </h3>
 
               <SpanCardBadges data={data} />
+
+              {(data as any).errorInfo && (
+                <div
+                  className="text-agentprism-error text-xs max-w-48 truncate"
+                  title={(data as any).errorInfo.message}
+                >
+                  {(data as any).errorInfo.message}
+                </div>
+              )}
             </div>
 
             <div className="flex grow flex-wrap items-center justify-end gap-1">
