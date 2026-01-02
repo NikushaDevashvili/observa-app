@@ -15,7 +15,7 @@ export const TraceViewerSearchAndControls = ({
   handleExpandAll: () => void;
   handleCollapseAll: () => void;
 }) => (
-  <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-2 pt-1">
+  <div className="flex shrink-0 items-center justify-between gap-3 px-2 pb-2 pt-1">
     <SearchInput
       id="trace-span-search"
       value={searchValue}

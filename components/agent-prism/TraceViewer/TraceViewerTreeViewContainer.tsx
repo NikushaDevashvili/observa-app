@@ -37,7 +37,7 @@ export const TraceViewerTreeViewContainer = ({
 }) => (
   <>
     {showHeader && selectedTrace && (
-      <div className="flex shrink-0 gap-2 px-4">
+      <div className="flex shrink-0 gap-2 px-2">
         <TraceListItemHeader trace={selectedTrace} />
 
         <div className="flex flex-wrap items-center gap-2">

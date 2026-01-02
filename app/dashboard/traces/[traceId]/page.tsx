@@ -144,9 +144,9 @@ export default function TraceDetailPage() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col">
+    <div className="h-screen w-full flex flex-col -mx-4">
       {/* Header */}
-      <div className="border-b p-4 bg-background">
+      <div className="border-b px-2 py-4 bg-background">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/dashboard/traces">
@@ -166,7 +166,7 @@ export default function TraceDetailPage() {
       </div>
 
       {/* TraceViewer */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden px-2">
         <TraceViewerErrorBoundary>
           {traceData && traceData.traceRecord && traceData.spans ? (
             <TraceViewer data={[traceData]} />
