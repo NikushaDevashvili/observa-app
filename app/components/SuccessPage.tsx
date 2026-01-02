@@ -1,31 +1,31 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useState } from "react";
+import Link from "next/link";
 
 interface SuccessPageProps {
   data: {
-    apiKey: string
-    tenantId: string
-    projectId: string
-    environment: string
-    message: string
-  }
-  onBack: () => void
+    apiKey: string;
+    tenantId: string;
+    projectId: string;
+    environment: string;
+    message: string;
+  };
+  onBack: () => void;
 }
 
 export default function SuccessPage({ data, onBack }: SuccessPageProps) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(data.apiKey)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(data.apiKey);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err)
+      console.error("Failed to copy:", err);
     }
-  }
+  };
 
   return (
     <div style={styles.container}>
@@ -40,9 +40,13 @@ export default function SuccessPage({ data, onBack }: SuccessPageProps) {
             <code style={styles.apiKey}>{data.apiKey}</code>
             <button
               onClick={copyToClipboard}
-              style={copied ? { ...styles.copyButton, ...styles.copied } : styles.copyButton}
+              style={
+                copied
+                  ? { ...styles.copyButton, ...styles.copied }
+                  : styles.copyButton
+              }
             >
-              {copied ? '✓ Copied!' : 'Copy'}
+              {copied ? "✓ Copied!" : "Copy"}
             </button>
           </div>
         </div>
@@ -91,10 +95,7 @@ const observa = init({
         </div>
 
         <div style={styles.actions}>
-          <Link
-            href="/docs"
-            style={styles.linkButton}
-          >
+          <Link href="/docs" style={styles.linkButton}>
             View Documentation
           </Link>
           <button onClick={onBack} style={styles.backButton}>
@@ -103,147 +104,146 @@ const observa = init({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
-    width: '100%',
-    maxWidth: '800px',
+    width: "100%",
+    maxWidth: "800px",
   },
   card: {
-    background: 'white',
-    borderRadius: '12px',
-    padding: '40px',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+    background: "white",
+    borderRadius: "12px",
+    padding: "40px",
+    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
   },
   successIcon: {
-    width: '64px',
-    height: '64px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    fontSize: '32px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 24px',
-    fontWeight: 'bold',
+    width: "64px",
+    height: "64px",
+    borderRadius: "50%",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    color: "white",
+    fontSize: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    margin: "0 auto 24px",
+    fontWeight: "bold",
   },
   title: {
-    fontSize: '32px',
-    fontWeight: 'bold',
-    marginBottom: '8px',
-    color: '#1a202c',
-    textAlign: 'center',
+    fontSize: "32px",
+    fontWeight: "bold",
+    marginBottom: "8px",
+    color: "#1a202c",
+    textAlign: "center",
   },
   message: {
-    fontSize: '16px',
-    color: '#718096',
-    marginBottom: '32px',
-    textAlign: 'center',
+    fontSize: "16px",
+    color: "#718096",
+    marginBottom: "32px",
+    textAlign: "center",
   },
   apiKeySection: {
-    marginBottom: '32px',
+    marginBottom: "32px",
   },
   label: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#2d3748',
-    marginBottom: '8px',
-    display: 'block',
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#2d3748",
+    marginBottom: "8px",
+    display: "block",
   },
   apiKeyContainer: {
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'stretch',
+    display: "flex",
+    gap: "12px",
+    alignItems: "stretch",
   },
   apiKey: {
     flex: 1,
-    padding: '12px 16px',
-    backgroundColor: '#f7fafc',
-    border: '2px solid #e2e8f0',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontFamily: 'monospace',
-    wordBreak: 'break-all',
-    overflowWrap: 'break-word',
+    padding: "12px 16px",
+    backgroundColor: "#f7fafc",
+    border: "2px solid #e2e8f0",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontFamily: "monospace",
+    wordBreak: "break-all",
+    overflowWrap: "break-word",
   },
   copyButton: {
-    padding: '12px 24px',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: 'white',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    transition: 'transform 0.2s',
+    padding: "12px 24px",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "white",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    transition: "transform 0.2s",
   },
   copied: {
-    background: '#48bb78',
+    background: "#48bb78",
   },
   infoSection: {
-    backgroundColor: '#f7fafc',
-    padding: '20px',
-    borderRadius: '8px',
-    marginBottom: '32px',
+    backgroundColor: "#f7fafc",
+    padding: "20px",
+    borderRadius: "8px",
+    marginBottom: "32px",
   },
   infoItem: {
-    marginBottom: '12px',
-    fontSize: '14px',
-    color: '#2d3748',
+    marginBottom: "12px",
+    fontSize: "14px",
+    color: "#2d3748",
   },
   quickStart: {
-    marginBottom: '32px',
+    marginBottom: "32px",
   },
   quickStartTitle: {
-    fontSize: '20px',
-    fontWeight: 'bold',
-    marginBottom: '16px',
-    color: '#1a202c',
+    fontSize: "20px",
+    fontWeight: "bold",
+    marginBottom: "16px",
+    color: "#1a202c",
   },
   steps: {
-    paddingLeft: '20px',
+    paddingLeft: "20px",
   },
   codeBlock: {
-    backgroundColor: '#1a202c',
-    color: '#e2e8f0',
-    padding: '16px',
-    borderRadius: '8px',
-    overflow: 'auto',
-    marginTop: '8px',
-    fontSize: '14px',
-    fontFamily: 'monospace',
+    backgroundColor: "#1a202c",
+    color: "#e2e8f0",
+    padding: "16px",
+    borderRadius: "8px",
+    overflow: "auto",
+    marginTop: "8px",
+    fontSize: "14px",
+    fontFamily: "monospace",
   },
   actions: {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
+    display: "flex",
+    gap: "12px",
+    justifyContent: "center",
+    flexWrap: "wrap",
   },
   linkButton: {
-    padding: '12px 24px',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: 'white',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    borderRadius: '8px',
-    textDecoration: 'none',
-    display: 'inline-block',
-    transition: 'transform 0.2s',
+    padding: "12px 24px",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "white",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    borderRadius: "8px",
+    textDecoration: "none",
+    display: "inline-block",
+    transition: "transform 0.2s",
   },
   backButton: {
-    padding: '12px 24px',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#667eea',
-    background: 'white',
-    border: '2px solid #667eea',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'transform 0.2s',
+    padding: "12px 24px",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#667eea",
+    background: "white",
+    border: "2px solid #667eea",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "transform 0.2s",
   },
-}
-
+};

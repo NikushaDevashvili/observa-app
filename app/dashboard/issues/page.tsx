@@ -27,29 +27,21 @@ import {
 import { ColumnDef } from "@tanstack/react-table";
 
 interface Issue {
-  trace_id: string;
-  issue_type:
-    | "hallucination"
-    | "context_drop"
-    | "faithfulness"
-    | "drift"
-    | "cost_anomaly";
-  severity: "high" | "medium" | "low";
-  confidence?: number | null;
   timestamp: string;
-  model?: string | null;
-  latency_ms?: number | null;
-  tokens_total?: number | null;
+  issue_type: string;
+  severity: "high" | "medium" | "low";
+  trace_id: string;
+  span_id: string;
+  details: Record<string, any>;
+  signal_value: number | boolean | string;
+  signal_type: string;
 }
 
 interface IssueStats {
   total: number;
-  hallucinations: number;
-  contextDrops: number;
-  faithfulnessIssues: number;
-  modelDrift: number;
-  costAnomalies: number;
-  highSeverity: number;
+  high: number;
+  medium: number;
+  low: number;
 }
 
 export default function IssuesPage() {
@@ -58,36 +50,32 @@ export default function IssuesPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<IssueStats>({
     total: 0,
-    hallucinations: 0,
-    contextDrops: 0,
-    faithfulnessIssues: 0,
-    modelDrift: 0,
-    costAnomalies: 0,
-    highSeverity: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
   });
-  const [filter, setFilter] = useState<string>("all");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [signalTypeFilter, setSignalTypeFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchIssues();
-  }, [filter]);
+  }, [severityFilter, signalTypeFilter]);
 
   const fetchIssues = async () => {
     try {
       const token = localStorage.getItem("sessionToken");
       if (!token) return;
 
-      // For now, we'll fetch traces and filter for issues
-      // TODO: Create a dedicated issues API endpoint
       const params = new URLSearchParams({
-        limit: "100", // Get more traces to find issues
+        limit: "100",
         offset: "0",
       });
 
-      if (filter !== "all") {
-        params.append("issueType", filter);
+      if (severityFilter !== "all") {
+        params.append("severity", severityFilter);
       }
 
-      const response = await fetch(`/api/traces?${params.toString()}`, {
+      const response = await fetch(`/api/issues?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -95,107 +83,28 @@ export default function IssuesPage() {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.traces) {
-          // Convert traces with issues to issue records
-          const issuesList: Issue[] = [];
+        if (data.success && data.issues) {
+          let filteredIssues = data.issues;
+
+          // Filter by signal type if specified
+          if (signalTypeFilter !== "all") {
+            filteredIssues = filteredIssues.filter(
+              (issue: Issue) => issue.issue_type === signalTypeFilter
+            );
+          }
+
+          setIssues(filteredIssues);
+
+          // Calculate stats
           const statsData: IssueStats = {
-            total: 0,
-            hallucinations: 0,
-            contextDrops: 0,
-            faithfulnessIssues: 0,
-            modelDrift: 0,
-            costAnomalies: 0,
-            highSeverity: 0,
+            total: filteredIssues.length,
+            high: filteredIssues.filter((i: Issue) => i.severity === "high")
+              .length,
+            medium: filteredIssues.filter((i: Issue) => i.severity === "medium")
+              .length,
+            low: filteredIssues.filter((i: Issue) => i.severity === "low")
+              .length,
           };
-
-          data.traces.forEach((trace: any) => {
-            const traceIssues: Issue[] = [];
-
-            if (trace.is_hallucination === true) {
-              traceIssues.push({
-                trace_id: trace.trace_id,
-                issue_type: "hallucination",
-                severity:
-                  (trace.hallucination_confidence || 0) > 0.7
-                    ? "high"
-                    : "medium",
-                confidence: trace.hallucination_confidence,
-                timestamp: trace.timestamp || trace.analyzed_at,
-                model: trace.model,
-                latency_ms: trace.latency_ms,
-                tokens_total: trace.tokens_total,
-              });
-              statsData.hallucinations++;
-            }
-
-            if (trace.has_context_drop) {
-              traceIssues.push({
-                trace_id: trace.trace_id,
-                issue_type: "context_drop",
-                severity: "medium",
-                timestamp: trace.timestamp || trace.analyzed_at,
-                model: trace.model,
-                latency_ms: trace.latency_ms,
-                tokens_total: trace.tokens_total,
-              });
-              statsData.contextDrops++;
-            }
-
-            if (trace.has_faithfulness_issue) {
-              traceIssues.push({
-                trace_id: trace.trace_id,
-                issue_type: "faithfulness",
-                severity: "medium",
-                confidence: trace.answer_faithfulness_score,
-                timestamp: trace.timestamp || trace.analyzed_at,
-                model: trace.model,
-                latency_ms: trace.latency_ms,
-                tokens_total: trace.tokens_total,
-              });
-              statsData.faithfulnessIssues++;
-            }
-
-            if (trace.has_model_drift) {
-              traceIssues.push({
-                trace_id: trace.trace_id,
-                issue_type: "drift",
-                severity: "low",
-                timestamp: trace.timestamp || trace.analyzed_at,
-                model: trace.model,
-                latency_ms: trace.latency_ms,
-                tokens_total: trace.tokens_total,
-              });
-              statsData.modelDrift++;
-            }
-
-            if (trace.has_cost_anomaly) {
-              traceIssues.push({
-                trace_id: trace.trace_id,
-                issue_type: "cost_anomaly",
-                severity: "medium",
-                timestamp: trace.timestamp || trace.analyzed_at,
-                model: trace.model,
-                latency_ms: trace.latency_ms,
-                tokens_total: trace.tokens_total,
-              });
-              statsData.costAnomalies++;
-            }
-
-            issuesList.push(...traceIssues);
-          });
-
-          // Sort by timestamp (newest first)
-          issuesList.sort(
-            (a, b) =>
-              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-          );
-
-          statsData.total = issuesList.length;
-          statsData.highSeverity = issuesList.filter(
-            (i) => i.severity === "high"
-          ).length;
-
-          setIssues(issuesList);
           setStats(statsData);
         }
       }
@@ -206,26 +115,19 @@ export default function IssuesPage() {
     }
   };
 
-  const getIssueTypeLabel = (type: Issue["issue_type"]) => {
-    const labels = {
-      hallucination: "Hallucination",
-      context_drop: "Context Drop",
-      faithfulness: "Faithfulness",
-      drift: "Model Drift",
-      cost_anomaly: "Cost Anomaly",
-    };
-    return labels[type];
+  const getIssueTypeLabel = (type: string) => {
+    // Convert snake_case to Title Case
+    return type
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
-  const getIssueTypeColor = (type: Issue["issue_type"]) => {
-    const colors = {
-      hallucination: "destructive",
-      context_drop: "secondary",
-      faithfulness: "secondary",
-      drift: "secondary",
-      cost_anomaly: "secondary",
-    } as const;
-    return colors[type];
+  const getIssueTypeColor = (type: string) => {
+    if (type.includes("error") || type.includes("hallucination")) {
+      return "destructive";
+    }
+    return "secondary";
   };
 
   const getSeverityColor = (severity: Issue["severity"]) => {
@@ -264,7 +166,7 @@ export default function IssuesPage() {
       accessorKey: "issue_type",
       header: "Issue Type",
       cell: ({ row }) => {
-        const issueType = row.getValue("issue_type") as Issue["issue_type"];
+        const issueType = row.getValue("issue_type") as string;
         return (
           <Badge variant={getIssueTypeColor(issueType)}>
             {getIssueTypeLabel(issueType)}
@@ -295,35 +197,17 @@ export default function IssuesPage() {
       },
     },
     {
-      accessorKey: "confidence",
-      header: "Confidence",
+      accessorKey: "signal_value",
+      header: "Value",
       cell: ({ row }) => {
-        const confidence = row.getValue("confidence") as
-          | number
-          | null
-          | undefined;
-        if (confidence === null || confidence === undefined) {
-          return <span className="text-muted-foreground">—</span>;
+        const value = row.getValue("signal_value");
+        if (typeof value === "boolean") {
+          return value ? "Yes" : "No";
         }
-        return (
-          <span
-            className={confidence > 0.7 ? "text-destructive font-medium" : ""}
-          >
-            {(confidence * 100).toFixed(0)}%
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: "model",
-      header: "Model",
-      cell: ({ row }) => {
-        const model = row.getValue("model") as string | undefined;
-        return model ? (
-          <span className="text-sm">{model}</span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        );
+        if (typeof value === "number") {
+          return value.toLocaleString();
+        }
+        return String(value);
       },
     },
     {
@@ -369,30 +253,10 @@ export default function IssuesPage() {
     router.push(`/dashboard/traces/${row.trace_id}`);
   };
 
-  const filterButtons = [
-    { id: "all", label: "All Issues", variant: "outline" as const },
-    {
-      id: "hallucination",
-      label: "Hallucinations",
-      variant: "destructive" as const,
-    },
-    {
-      id: "context_drop",
-      label: "Context Drops",
-      variant: "secondary" as const,
-    },
-    {
-      id: "faithfulness",
-      label: "Faithfulness",
-      variant: "secondary" as const,
-    },
-    { id: "drift", label: "Model Drift", variant: "secondary" as const },
-    {
-      id: "cost_anomaly",
-      label: "Cost Anomalies",
-      variant: "secondary" as const,
-    },
-  ];
+  // Get unique signal types for filter
+  const signalTypes = Array.from(
+    new Set(issues.map((issue) => issue.issue_type))
+  );
 
   if (loading) {
     return (
@@ -421,38 +285,21 @@ export default function IssuesPage() {
         />
         <StatisticsCard
           title="High Severity"
-          value={stats.highSeverity}
-          tooltip="Issues with high confidence or severity"
+          value={stats.high}
+          tooltip="Issues with high severity"
           icon={<AlertCircle className="h-5 w-5 text-destructive" />}
         />
         <StatisticsCard
-          title="Hallucinations"
-          value={stats.hallucinations}
-          icon={<AlertCircle className="h-5 w-5 text-red-500" />}
+          title="Medium Severity"
+          value={stats.medium}
+          tooltip="Issues with medium severity"
+          icon={<AlertCircle className="h-5 w-5 text-orange-500" />}
         />
         <StatisticsCard
-          title="Context Drops"
-          value={stats.contextDrops}
-          icon={<TrendingDown className="h-5 w-5 text-orange-500" />}
-        />
-      </div>
-
-      {/* Additional Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatisticsCard
-          title="Faithfulness Issues"
-          value={stats.faithfulnessIssues}
-          icon={<Zap className="h-5 w-5 text-purple-500" />}
-        />
-        <StatisticsCard
-          title="Model Drift"
-          value={stats.modelDrift}
-          icon={<TrendingDown className="h-5 w-5 text-pink-500" />}
-        />
-        <StatisticsCard
-          title="Cost Anomalies"
-          value={stats.costAnomalies}
-          icon={<DollarSign className="h-5 w-5 text-teal-500" />}
+          title="Low Severity"
+          value={stats.low}
+          tooltip="Issues with low severity"
+          icon={<TrendingDown className="h-5 w-5 text-yellow-500" />}
         />
       </div>
 
@@ -460,20 +307,69 @@ export default function IssuesPage() {
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
-          <CardDescription>Filter issues by type</CardDescription>
+          <CardDescription>Filter issues by severity and type</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {filterButtons.map((btn) => (
-              <Button
-                key={btn.id}
-                variant={filter === btn.id ? btn.variant : "outline"}
-                onClick={() => setFilter(btn.id)}
-                size="sm"
-              >
-                {btn.label}
-              </Button>
-            ))}
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Severity</label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={severityFilter === "all" ? "default" : "outline"}
+                  onClick={() => setSeverityFilter("all")}
+                  size="sm"
+                >
+                  All
+                </Button>
+                <Button
+                  variant={
+                    severityFilter === "high" ? "destructive" : "outline"
+                  }
+                  onClick={() => setSeverityFilter("high")}
+                  size="sm"
+                >
+                  High
+                </Button>
+                <Button
+                  variant={severityFilter === "medium" ? "default" : "outline"}
+                  onClick={() => setSeverityFilter("medium")}
+                  size="sm"
+                >
+                  Medium
+                </Button>
+                <Button
+                  variant={severityFilter === "low" ? "secondary" : "outline"}
+                  onClick={() => setSeverityFilter("low")}
+                  size="sm"
+                >
+                  Low
+                </Button>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Issue Type
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={signalTypeFilter === "all" ? "default" : "outline"}
+                  onClick={() => setSignalTypeFilter("all")}
+                  size="sm"
+                >
+                  All Types
+                </Button>
+                {signalTypes.map((type) => (
+                  <Button
+                    key={type}
+                    variant={signalTypeFilter === type ? "default" : "outline"}
+                    onClick={() => setSignalTypeFilter(type)}
+                    size="sm"
+                  >
+                    {getIssueTypeLabel(type)}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -483,7 +379,10 @@ export default function IssuesPage() {
         <CardHeader>
           <CardTitle>Issues</CardTitle>
           <CardDescription>
-            {filter !== "all" && `Showing ${filter} issues`}
+            {severityFilter !== "all" &&
+              `Showing ${severityFilter} severity issues`}
+            {signalTypeFilter !== "all" &&
+              ` - ${getIssueTypeLabel(signalTypeFilter)}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -492,8 +391,8 @@ export default function IssuesPage() {
               <AlertCircle className="mx-auto h-12 w-12 mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">No issues found</p>
               <p>
-                {filter !== "all"
-                  ? `No ${filter} issues detected. Your AI application is performing well!`
+                {severityFilter !== "all" || signalTypeFilter !== "all"
+                  ? `No issues match the selected filters.`
                   : "No issues detected. Your AI application is performing well!"}
               </p>
             </div>

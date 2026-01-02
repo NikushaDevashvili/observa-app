@@ -20,7 +20,56 @@ import {
   TrendingUp,
   Eye,
   ArrowRight,
+  Clock,
+  CheckCircle2,
+  TrendingDown,
+  Zap,
 } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+interface DashboardMetrics {
+  error_rate: {
+    rate: number;
+    total: number;
+    errors: number;
+    error_types: Record<string, number>;
+  };
+  latency: {
+    p50: number;
+    p95: number;
+    p99: number;
+    avg: number;
+    min: number;
+    max: number;
+  };
+  cost: {
+    total: number;
+    avg_per_trace: number;
+    by_model: Record<string, number>;
+    by_route: Record<string, number>;
+  };
+  active_issues: {
+    high: number;
+    medium: number;
+    low: number;
+    total: number;
+  };
+  tokens: {
+    total: number;
+    avg_per_trace: number;
+    input: number;
+    output: number;
+    by_model: Record<string, { total: number; avg: number }>;
+  };
+  success_rate: number;
+  trace_count: number;
+}
 
 interface Trace {
   trace_id: string;
@@ -36,71 +85,56 @@ interface Trace {
 }
 
 export default function DashboardPage() {
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [traces, setTraces] = useState<Trace[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    hallucinations: 0,
-    contextDrops: 0,
-    faithfulnessIssues: 0,
-    modelDrift: 0,
-    costAnomalies: 0,
-  });
+  const [timeRange, setTimeRange] = useState("1"); // days
 
   useEffect(() => {
-    const fetchTraces = async () => {
-      try {
-        const token = localStorage.getItem("sessionToken");
-        if (!token) return;
+    fetchDashboardData();
+  }, [timeRange]);
 
-        const response = await fetch("/api/traces?limit=10", {
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem("sessionToken");
+      if (!token) return;
+
+      // Fetch dashboard overview metrics
+      const metricsResponse = await fetch(
+        `/api/dashboard/overview?days=${timeRange}`,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.traces) {
-            setTraces(data.traces);
-
-            // Calculate stats from pagination total if available, otherwise from traces
-            const total = data.pagination?.total || data.traces.length;
-            const hallucinations = data.traces.filter(
-              (t: Trace) => t.is_hallucination === true
-            ).length;
-            const contextDrops = data.traces.filter(
-              (t: Trace) => t.has_context_drop === true
-            ).length;
-            const faithfulnessIssues = data.traces.filter(
-              (t: Trace) => t.has_faithfulness_issue === true
-            ).length;
-            const modelDrift = data.traces.filter(
-              (t: Trace) => t.has_model_drift === true
-            ).length;
-            const costAnomalies = data.traces.filter(
-              (t: Trace) => t.has_cost_anomaly === true
-            ).length;
-
-            setStats({
-              total,
-              hallucinations,
-              contextDrops,
-              faithfulnessIssues,
-              modelDrift,
-              costAnomalies,
-            });
-          }
         }
-      } catch (error) {
-        console.error("Failed to fetch traces:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      );
 
-    fetchTraces();
-  }, []);
+      if (metricsResponse.ok) {
+        const metricsData = await metricsResponse.json();
+        if (metricsData.success && metricsData.metrics) {
+          setMetrics(metricsData.metrics);
+        }
+      }
+
+      // Fetch recent traces
+      const tracesResponse = await fetch("/api/traces?limit=10", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (tracesResponse.ok) {
+        const tracesData = await tracesResponse.json();
+        if (tracesData.success && tracesData.traces) {
+          setTraces(tracesData.traces);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const IssueBadge = ({
     hasIssue,
@@ -131,52 +165,225 @@ export default function DashboardPage() {
         <div className="flex flex-row justify-between items-center">
           <div className="py-4">
             <h1 className="text-xl">Dashboard</h1>
-            <p className="text-gray-500 pt-">Monitor your AI application's performance and quality</p>
+            <p className="text-gray-500 pt-1">
+              Monitor your AI application's performance and quality
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={timeRange === "1" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("1")}
+            >
+              24h
+            </Button>
+            <Button
+              variant={timeRange === "7" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("7")}
+            >
+              7d
+            </Button>
+            <Button
+              variant={timeRange === "30" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("30")}
+            >
+              30d
+            </Button>
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4">
+
+        {/* Key Metrics Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4 mb-6">
           <StatisticsCard
             title="Total Traces"
-            value={stats.total}
+            value={metrics?.trace_count || 0}
             icon={<Activity className="h-5 w-5" />}
+            tooltip={`Total traces in the last ${timeRange} day(s)`}
           />
           <StatisticsCard
-            title="Hallucinations"
-            value={stats.hallucinations}
-            tooltip={`${stats.total > 0 ? Math.round((stats.hallucinations / stats.total) * 100) : 0}% of all traces`}
+            title="Success Rate"
+            value={`${metrics?.success_rate.toFixed(1) || 0}%`}
+            icon={<CheckCircle2 className="h-5 w-5 text-green-600" />}
+            tooltip={`${
+              metrics?.success_rate.toFixed(2) || 0
+            }% of traces succeeded`}
+          />
+          <StatisticsCard
+            title="Error Rate"
+            value={`${metrics?.error_rate.rate.toFixed(1) || 0}%`}
             icon={<AlertCircle className="h-5 w-5 text-destructive" />}
+            tooltip={`${metrics?.error_rate.errors || 0} errors out of ${
+              metrics?.error_rate.total || 0
+            } traces`}
           />
           <StatisticsCard
-            title="Context Drops"
-            value={stats.contextDrops}
-            tooltip={`${stats.total > 0 ? Math.round((stats.contextDrops / stats.total) * 100) : 0}% of all traces`}
+            title="Active Issues"
+            value={metrics?.active_issues.total || 0}
             icon={<AlertCircle className="h-5 w-5 text-orange-500" />}
-          />
-          <StatisticsCard
-            title="Faithfulness Issues"
-            value={stats.faithfulnessIssues}
-            tooltip={`${stats.total > 0 ? Math.round((stats.faithfulnessIssues / stats.total) * 100) : 0}% of all traces`}
-            icon={<AlertCircle className="h-5 w-5 text-purple-500" />}
-          />
-          <StatisticsCard
-            title="Model Drift"
-            value={stats.modelDrift}
-            tooltip={`${stats.total > 0 ? Math.round((stats.modelDrift / stats.total) * 100) : 0}% of all traces`}
-            icon={<TrendingUp className="h-5 w-5 text-pink-500" />}
-          />
-          <StatisticsCard
-            title="Cost Anomalies"
-            value={stats.costAnomalies}
-            tooltip={`${stats.total > 0 ? Math.round((stats.costAnomalies / stats.total) * 100) : 0}% of all traces`}
-            icon={<DollarSign className="h-5 w-5 text-teal-500" />}
+            tooltip={`${metrics?.active_issues.high || 0} high, ${
+              metrics?.active_issues.medium || 0
+            } medium, ${metrics?.active_issues.low || 0} low`}
           />
         </div>
+
+        {/* Performance Metrics Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Latency
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics?.latency ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">P50</span>
+                    <span className="font-medium">
+                      {metrics.latency.p50.toFixed(0)}ms
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">P95</span>
+                    <span className="font-medium">
+                      {metrics.latency.p95.toFixed(0)}ms
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">P99</span>
+                    <span className="font-medium">
+                      {metrics.latency.p99.toFixed(0)}ms
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <span className="text-muted-foreground text-sm">Avg</span>
+                    <span className="font-medium">
+                      {metrics.latency.avg.toFixed(0)}ms
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm">
+                  No latency data
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Cost
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics?.cost ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Total</span>
+                    <span className="font-medium">
+                      ${metrics.cost.total.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">
+                      Avg/Trace
+                    </span>
+                    <span className="font-medium">
+                      ${metrics.cost.avg_per_trace.toFixed(4)}
+                    </span>
+                  </div>
+                  {Object.keys(metrics.cost.by_model).length > 0 && (
+                    <div className="pt-2 border-t">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Top Model
+                      </div>
+                      {Object.entries(metrics.cost.by_model)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 1)
+                        .map(([model, cost]) => (
+                          <div key={model} className="flex justify-between">
+                            <span className="text-xs truncate">{model}</span>
+                            <span className="text-xs font-medium">
+                              ${cost.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm">
+                  No cost data
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Tokens
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics?.tokens ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Total</span>
+                    <span className="font-medium">
+                      {(metrics.tokens.total / 1000).toFixed(1)}k
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">
+                      Avg/Trace
+                    </span>
+                    <span className="font-medium">
+                      {metrics.tokens.avg_per_trace.toFixed(0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs pt-2 border-t">
+                    <span className="text-muted-foreground">
+                      In: {(metrics.tokens.input / 1000).toFixed(1)}k
+                    </span>
+                    <span className="text-muted-foreground">
+                      Out: {(metrics.tokens.output / 1000).toFixed(1)}k
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm">
+                  No token data
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Traces */}
         <div className="py-6">
-          <h1 className="font-semibold text-lg pt-6">Recent Traces</h1>
-          <div className="rounded-none ">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="font-semibold text-lg">Recent Traces</h1>
+            <Link href="/dashboard/traces">
+              <Button variant="outline" size="sm">
+                View All
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+          <div className="rounded-none">
             {traces.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">
-                <p>No traces yet. Start sending traces to see analysis results here.</p>
+              <div className="py-12 text-center text-muted-foreground rounded-md border">
+                <p>
+                  No traces yet. Start sending traces to see analysis results
+                  here.
+                </p>
               </div>
             ) : (
               <div className="rounded-md border">
@@ -231,7 +438,10 @@ export default function DashboardPage() {
                                 />
                               </div>
                             ) : (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              <Badge
+                                variant="outline"
+                                className="bg-green-50 text-green-700 border-green-200"
+                              >
                                 ✓ No issues
                               </Badge>
                             )}
@@ -245,7 +455,10 @@ export default function DashboardPage() {
                                     : ""
                                 }
                               >
-                                {(trace.hallucination_confidence * 100).toFixed(0)}%
+                                {(trace.hallucination_confidence * 100).toFixed(
+                                  0
+                                )}
+                                %
                               </span>
                             ) : (
                               <span className="text-muted-foreground">—</span>
