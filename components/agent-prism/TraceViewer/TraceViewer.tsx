@@ -139,9 +139,14 @@ export const TraceViewer = ({
         // Expand parent spans to make the target span visible
         const parentIds: string[] = [];
         let currentSpan: TraceSpan | undefined = targetSpan;
-        while (currentSpan?.parentId) {
-          parentIds.push(currentSpan.parentId);
-          currentSpan = allSpans.find((s) => s.id === currentSpan?.parentId);
+        const parentId = (currentSpan as any).parentId;
+        if (parentId) {
+          let currentParentId: string | null = parentId;
+          while (currentParentId) {
+            parentIds.push(currentParentId);
+            const parentSpan = allSpans.find((s) => s.id === currentParentId);
+            currentParentId = parentSpan ? (parentSpan as any).parentId : null;
+          }
         }
         setExpandedSpansIds((prev) => [...new Set([...prev, ...parentIds])]);
       }

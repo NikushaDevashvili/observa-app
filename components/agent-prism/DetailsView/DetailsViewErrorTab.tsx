@@ -132,13 +132,11 @@ export const DetailsViewErrorTab = ({
           title="Error Context"
           defaultOpen={false}
         >
-          <DetailsViewContentViewer
-            content={JSON.stringify(errorInfo.context, null, 2)}
-            parsedContent={errorInfo.context}
-            mode="json"
-            label="Error Context"
-            id="error-context"
-          />
+          <div className="bg-agentprism-muted rounded-md p-3 overflow-x-auto">
+            <pre className="text-agentprism-foreground text-xs font-mono whitespace-pre-wrap break-words">
+              {JSON.stringify(errorInfo.context, null, 2)}
+            </pre>
+          </div>
         </CollapsibleSection>
       )}
 

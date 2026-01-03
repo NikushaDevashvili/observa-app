@@ -24,6 +24,7 @@ export const TraceViewerMobileLayout = ({
   handleTraceSelect,
   spanCardViewOptions,
   onClearTraceSelection,
+  onJumpToSpan,
 }: TraceViewerLayoutProps) => {
   if (
     selectedTrace &&
