@@ -51,6 +51,7 @@ export const TraceViewer = ({
           ...data[0].traceRecord,
           badges: data[0].badges,
           spanCardViewOptions: data[0].spanCardViewOptions,
+          errorSummary: data[0].errorSummary,
         }
       : undefined,
   );
