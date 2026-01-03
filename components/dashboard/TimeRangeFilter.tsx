@@ -121,14 +121,20 @@ export default function TimeRangeFilter({
           <input
             type="datetime-local"
             value={localStartTime ? new Date(localStartTime).toISOString().slice(0, 16) : ""}
-            onChange={(e) => setLocalStartTime(e.target.value ? new Date(e.target.value).toISOString() : "")}
+            onChange={(e) => {
+              const value = e.target.value;
+              setLocalStartTime(value ? new Date(value).toISOString() : "");
+            }}
             className="text-sm border rounded px-2 py-1"
           />
           <span className="text-muted-foreground">to</span>
           <input
             type="datetime-local"
             value={localEndTime ? new Date(localEndTime).toISOString().slice(0, 16) : ""}
-            onChange={(e) => setLocalEndTime(e.target.value ? new Date(e.target.value).toISOString() : "")}
+            onChange={(e) => {
+              const value = e.target.value;
+              setLocalEndTime(value ? new Date(value).toISOString() : "");
+            }}
             className="text-sm border rounded px-2 py-1"
           />
           <Button size="sm" onClick={handleCustomApply}>
