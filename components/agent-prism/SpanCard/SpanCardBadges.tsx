@@ -37,7 +37,7 @@ export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
         <Badge
           size="4"
           label="Error"
-          className="bg-agentprism-error text-agentprism-error-foreground"
+          className="bg-agentprism-error text-white"
         />
       )}
 
