@@ -12,12 +12,18 @@ import { TraceViewerErrorBoundary } from "@/components/TraceViewerErrorBoundary"
 export default function TraceDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const traceId = params.traceId as string;
+  const traceId = params?.traceId as string | undefined;
   const [traceData, setTraceData] = useState<TraceViewerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!traceId) {
+      setError("Trace ID is required");
+      setLoading(false);
+      return;
+    }
+
     const fetchTrace = async () => {
       try {
         setLoading(true);

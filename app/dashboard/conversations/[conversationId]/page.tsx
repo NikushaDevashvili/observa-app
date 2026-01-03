@@ -45,7 +45,7 @@ interface Analytics {
 export default function ConversationDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const conversationId = params.conversationId as string;
+  const conversationId = params?.conversationId as string | undefined;
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -57,6 +57,9 @@ export default function ConversationDetailPage() {
       fetchConversation();
       fetchMessages();
       fetchAnalytics();
+    } else {
+      setError("Conversation ID is required");
+      setLoading(false);
     }
   }, [conversationId]);
 

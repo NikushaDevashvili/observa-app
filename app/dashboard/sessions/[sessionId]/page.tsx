@@ -43,7 +43,7 @@ interface Analytics {
 export default function SessionDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const sessionId = params.sessionId as string;
+  const sessionId = params?.sessionId as string | undefined;
   const [session, setSession] = useState<Session | null>(null);
   const [traces, setTraces] = useState<Trace[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -55,6 +55,9 @@ export default function SessionDetailPage() {
       fetchSession();
       fetchTraces();
       fetchAnalytics();
+    } else {
+      setError("Session ID is required");
+      setLoading(false);
     }
   }, [sessionId]);
 
