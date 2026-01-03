@@ -34,18 +34,14 @@ export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
       {typeof data.cost === "number" && <PriceBadge cost={data.cost} />}
 
       {errorInfo && (
-        <Badge
-          size="4"
-          label="Error"
-          className="bg-agentprism-error text-white"
-        />
+        <Badge size="4" label="Error" className="bg-red-600 text-white" />
       )}
 
       {errorCount && errorCount > 0 && !errorInfo && (
         <Badge
           size="4"
           label={`${errorCount} Error${errorCount !== 1 ? "s" : ""}`}
-          className="bg-agentprism-error/80 text-agentprism-error-foreground"
+          className="bg-red-600 text-white"
         />
       )}
     </div>
