@@ -17,7 +17,10 @@ export default function TracesPage() {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
   const [environment, setEnvironment] = useState<string>("all");
-  const [model, setModel] = useState<string>("");
+  const [model, setModel] = useState<string>("all");
+  const [availableModels, setAvailableModels] = useState<
+    Array<{ model: string; count: number; lastSeen?: string | null }>
+  >([]);
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 50,
@@ -28,7 +31,11 @@ export default function TracesPage() {
 
   useEffect(() => {
     fetchTraces();
-  }, [filter, pagination.offset, environment]);
+  }, [filter, pagination.offset, environment, model]);
+
+  useEffect(() => {
+    fetchModels();
+  }, [environment]);
 
   const fetchTraces = async () => {
     try {
@@ -49,8 +56,8 @@ export default function TracesPage() {
         params.append("environment", environment);
       }
 
-      if (model.trim()) {
-        params.append("model", model.trim());
+      if (model !== "all") {
+        params.append("model", model);
       }
 
       if (search.trim()) {
@@ -99,6 +106,32 @@ export default function TracesPage() {
       console.error("Failed to fetch traces:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchModels = async () => {
+    try {
+      const token = localStorage.getItem("sessionToken");
+      if (!token) return;
+
+      const params = new URLSearchParams();
+      if (environment !== "all") {
+        params.append("environment", environment);
+      }
+
+      const resp = await fetch(`/api/traces/models?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (data?.success && Array.isArray(data.models)) {
+        setAvailableModels(data.models);
+      }
+    } catch (e) {
+      console.error("Failed to fetch models:", e);
     }
   };
 
@@ -179,18 +212,21 @@ export default function TracesPage() {
                   }
                 }}
               />
-              <input
-                className="h-9 w-full md:w-[220px] rounded-md border bg-background px-3 text-sm"
-                placeholder="Model (e.g. gpt-4o, claude-3-opus)…"
+              <select
+                className="h-9 w-full md:w-[260px] rounded-md border bg-background px-3 text-sm"
                 value={model}
-                onChange={(e) => setModel(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setPagination((prev) => ({ ...prev, offset: 0 }));
-                    fetchTraces();
-                  }
+                onChange={(e) => {
+                  setModel(e.target.value);
+                  setPagination((prev) => ({ ...prev, offset: 0 }));
                 }}
-              />
+              >
+                <option value="all">All models</option>
+                {availableModels.map((m) => (
+                  <option key={m.model} value={m.model}>
+                    {m.model} ({m.count})
+                  </option>
+                ))}
+              </select>
               <select
                 className="h-9 rounded-md border bg-background px-3 text-sm"
                 value={environment}
@@ -228,7 +264,7 @@ export default function TracesPage() {
                   });
                   if (filter !== "all") params.append("issueType", filter);
                   if (environment !== "all") params.append("environment", environment);
-                  if (model.trim()) params.append("model", model.trim());
+                  if (model !== "all") params.append("model", model);
                   if (search.trim()) params.append("search", search.trim());
 
                   const resp = await fetch(`/api/traces/export?${params.toString()}`, {
