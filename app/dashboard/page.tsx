@@ -88,20 +88,19 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [traces, setTraces] = useState<Trace[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("7"); // days - default to 7 days to show more data
 
   useEffect(() => {
     fetchDashboardData();
-  }, [timeRange]);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem("sessionToken");
       if (!token) return;
 
-      // Fetch dashboard overview metrics
+      // Fetch dashboard overview metrics - no time filter, show all data
       const metricsResponse = await fetch(
-        `/api/dashboard/overview?days=${timeRange}`,
+        `/api/dashboard/overview`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -169,29 +168,6 @@ export default function DashboardPage() {
               Monitor your AI application's performance and quality
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant={timeRange === "1" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("1")}
-            >
-              24h
-            </Button>
-            <Button
-              variant={timeRange === "7" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("7")}
-            >
-              7d
-            </Button>
-            <Button
-              variant={timeRange === "30" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("30")}
-            >
-              30d
-            </Button>
-          </div>
         </div>
 
         {/* Key Metrics Row */}
@@ -200,7 +176,7 @@ export default function DashboardPage() {
             title="Total Traces"
             value={metrics?.trace_count || 0}
             icon={<Activity className="h-5 w-5" />}
-            tooltip={`Total traces in the last ${timeRange} day(s)`}
+            tooltip="Total traces (all time)"
           />
           <StatisticsCard
             title="Success Rate"
