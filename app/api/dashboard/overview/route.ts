@@ -33,10 +33,24 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     
     if (!response.ok) {
+      console.error('[API Proxy] Dashboard overview error:', {
+        status: response.status,
+        error: data.error,
+        url,
+        queryString,
+      });
       return NextResponse.json(
         { error: data.error || 'Failed to fetch dashboard overview' },
         { status: response.status }
       );
+    }
+
+    // Log successful response for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API Proxy] Dashboard overview success:', {
+        traceCount: data.metrics?.trace_count,
+        timeRange: queryString,
+      });
     }
 
     return NextResponse.json(data);

@@ -88,7 +88,7 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [traces, setTraces] = useState<Trace[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("1"); // days
+  const [timeRange, setTimeRange] = useState("7"); // days - default to 7 days to show more data
 
   useEffect(() => {
     fetchDashboardData();
