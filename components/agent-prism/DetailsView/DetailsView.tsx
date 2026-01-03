@@ -106,6 +106,10 @@ export const DetailsView = ({
   onTabChange,
 }: DetailsViewProps): ReactElement => {
   const hasError = !!(data as any).errorInfo;
+  // Debug: log errorInfo to verify it's present
+  if (hasError) {
+    console.log("[DetailsView] Error detected:", (data as any).errorInfo);
+  }
   const tabItems = getTabItems(hasError);
   
   // Auto-select error tab if error exists and no default tab was provided
@@ -159,7 +163,6 @@ export const DetailsView = ({
           value={tab}
           onValueChange={handleTabChange}
           theme="underline"
-          defaultValue={initialTab}
         />
       </div>
 
