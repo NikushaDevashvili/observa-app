@@ -177,7 +177,7 @@ export default function TraceDetailPage() {
               <div className="text-sm text-muted-foreground mt-1">
                 Trace ID:{" "}
                 <code className="bg-muted px-2 py-1 rounded text-xs">
-                  {traceId.substring(0, 12)}...
+                  {traceId ? `${traceId.substring(0, 12)}...` : "N/A"}
                 </code>
                 {traceData?.errorSummary && traceData.errorSummary.hasErrors && (
                   <span className="ml-3 inline-flex items-center gap-1">
