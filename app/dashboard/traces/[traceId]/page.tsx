@@ -95,6 +95,7 @@ export default function TraceDetailPage() {
           traceRecord: trace.traceRecord,
           spansCount: trace.spans?.length || 0,
           badgesCount: trace.badges?.length || 0,
+          errorSummary: trace.errorSummary,
         });
 
         // The trace data is already in agent-prism format from the backend
