@@ -15,24 +15,20 @@ export default function TracesPage() {
   const [traces, setTraces] = useState<Trace[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [search, setSearch] = useState<string>("");
+  const [environment, setEnvironment] = useState<string>("all");
+  const [model, setModel] = useState<string>("");
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 50,
     offset: 0,
     hasMore: false,
   });
-  const [stats, setStats] = useState({
-    total: 0,
-    hallucinations: 0,
-    contextDrops: 0,
-    faithfulnessIssues: 0,
-    modelDrift: 0,
-    costAnomalies: 0,
-  });
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     fetchTraces();
-  }, [filter, pagination.offset]);
+  }, [filter, pagination.offset, environment]);
 
   const fetchTraces = async () => {
     try {
@@ -42,10 +38,23 @@ export default function TracesPage() {
       const params = new URLSearchParams({
         limit: pagination.limit.toString(),
         offset: pagination.offset.toString(),
+        includeStats: "true",
       });
 
       if (filter !== "all") {
         params.append("issueType", filter);
+      }
+
+      if (environment !== "all") {
+        params.append("environment", environment);
+      }
+
+      if (model.trim()) {
+        params.append("model", model.trim());
+      }
+
+      if (search.trim()) {
+        params.append("search", search.trim());
       }
 
       const response = await fetch(`/api/traces?${params.toString()}`, {
@@ -64,32 +73,26 @@ export default function TracesPage() {
             hasMore: data.pagination?.hasMore || false,
           }));
 
-          // Calculate stats
-          const total = data.pagination?.total || data.traces.length;
-          const hallucinations = data.traces.filter(
-            (t: Trace) => t.is_hallucination === true
-          ).length;
-          const contextDrops = data.traces.filter(
-            (t: Trace) => t.has_context_drop === true
-          ).length;
-          const faithfulnessIssues = data.traces.filter(
-            (t: Trace) => t.has_faithfulness_issue === true
-          ).length;
-          const modelDrift = data.traces.filter(
-            (t: Trace) => t.has_model_drift === true
-          ).length;
-          const costAnomalies = data.traces.filter(
-            (t: Trace) => t.has_cost_anomaly === true
-          ).length;
-
-          setStats({
-            total,
-            hallucinations,
-            contextDrops,
-            faithfulnessIssues,
-            modelDrift,
-            costAnomalies,
-          });
+          // Prefer server-side stats (Phase 2); fallback if missing
+          if (data.stats) {
+            setStats(data.stats);
+          } else {
+            const total = data.pagination?.total || data.traces.length;
+            const hallucinations = data.traces.filter(
+              (t: Trace) => t.is_hallucination === true
+            ).length;
+            const costAnomalies = data.traces.filter(
+              (t: Trace) => t.has_cost_anomaly === true
+            ).length;
+            setStats({
+              totalTraces: total,
+              issueCount: hallucinations + costAnomalies,
+              errorRate: 0,
+              avgLatencyMs: null,
+              totalCostUsd: null,
+              avgQualityScore: null,
+            });
+          }
         }
       }
     } catch (error) {
@@ -134,19 +137,23 @@ export default function TracesPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatisticsCard
           title="Total Traces"
-          value={stats.total}
+          value={stats?.totalTraces ?? pagination.total}
           icon={<Activity className="h-5 w-5" />}
         />
         <StatisticsCard
-          title="Hallucinations"
-          value={stats.hallucinations}
-          tooltip={`${stats.total > 0 ? Math.round((stats.hallucinations / stats.total) * 100) : 0}% of all traces`}
-          icon={<AlertCircle className="h-5 w-5 text-destructive" />}
+          title="Error Rate"
+          value={`${(stats?.errorRate ?? 0).toFixed(1)}%`}
+          tooltip="Percentage of traces with status >= 400"
+          icon={<AlertCircle className="h-5 w-5" />}
         />
         <StatisticsCard
-          title="Cost Anomalies"
-          value={stats.costAnomalies}
-          tooltip={`${stats.total > 0 ? Math.round((stats.costAnomalies / stats.total) * 100) : 0}% of all traces`}
+          title="Total Cost"
+          value={
+            stats?.totalCostUsd === null || stats?.totalCostUsd === undefined
+              ? "—"
+              : `$${Number(stats.totalCostUsd).toFixed(2)}`
+          }
+          tooltip="Estimated total cost (token-based approximation)"
           icon={<DollarSign className="h-5 w-5" />}
         />
       </div>
@@ -155,10 +162,95 @@ export default function TracesPage() {
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
-          <CardDescription>Filter traces by issue type</CardDescription>
+          <CardDescription>Filter traces by issue type, env, and search</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2 items-center">
+              <input
+                className="h-9 w-full md:w-[320px] rounded-md border bg-background px-3 text-sm"
+                placeholder="Search query/response/context…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setPagination((prev) => ({ ...prev, offset: 0 }));
+                    fetchTraces();
+                  }
+                }}
+              />
+              <input
+                className="h-9 w-full md:w-[220px] rounded-md border bg-background px-3 text-sm"
+                placeholder="Model (e.g. gpt-4o, claude-3-opus)…"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setPagination((prev) => ({ ...prev, offset: 0 }));
+                    fetchTraces();
+                  }
+                }}
+              />
+              <select
+                className="h-9 rounded-md border bg-background px-3 text-sm"
+                value={environment}
+                onChange={(e) => {
+                  setEnvironment(e.target.value);
+                  setPagination((prev) => ({ ...prev, offset: 0 }));
+                }}
+              >
+                <option value="all">All envs</option>
+                <option value="prod">prod</option>
+                <option value="dev">dev</option>
+              </select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setPagination((prev) => ({ ...prev, offset: 0 }));
+                  fetchTraces();
+                }}
+              >
+                Apply
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const token = localStorage.getItem("sessionToken");
+                  if (!token) return;
+                  const params = new URLSearchParams({
+                    limit: "5000",
+                    offset: "0",
+                    format: "csv",
+                  });
+                  if (filter !== "all") params.append("issueType", filter);
+                  if (environment !== "all") params.append("environment", environment);
+                  if (model.trim()) params.append("model", model.trim());
+                  if (search.trim()) params.append("search", search.trim());
+
+                  const resp = await fetch(`/api/traces/export?${params.toString()}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  if (!resp.ok) return;
+                  const blob = await resp.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "traces-export.csv";
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+                }}
+              >
+                Export CSV
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
             {filterButtons.map((btn) => (
               <Button
                 key={btn.id}
@@ -172,6 +264,7 @@ export default function TracesPage() {
                 {btn.label}
               </Button>
             ))}
+          </div>
           </div>
         </CardContent>
       </Card>

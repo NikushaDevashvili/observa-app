@@ -21,6 +21,12 @@ export interface Trace {
   model?: string;
   latency_ms?: number;
   tokens_total?: number;
+  estimated_cost_usd?: number | null;
+  issue_count?: number | null;
+  performance_badge?: "fast" | "medium" | "slow" | null;
+  quality_score?: number | null;
+  status?: number | null;
+  environment?: string | null;
 }
 
 const IssueBadge = ({ hasIssue, label, variant }: { hasIssue: boolean; label: string; variant?: "destructive" | "secondary" | "outline" }) => {
@@ -115,6 +121,19 @@ export const traceColumns: ColumnDef<Trace>[] = [
     },
   },
   {
+    accessorKey: "environment",
+    header: "Env",
+    cell: ({ row }) => {
+      const env = row.getValue("environment") as string | undefined;
+      if (!env) return <span className="text-muted-foreground">—</span>;
+      return (
+        <Badge variant="outline" className="uppercase text-xs">
+          {env}
+        </Badge>
+      );
+    },
+  },
+  {
     accessorKey: "latency_ms",
     header: ({ column }) => {
       return (
@@ -134,9 +153,25 @@ export const traceColumns: ColumnDef<Trace>[] = [
       }
       const isHigh = latency > 5000;
       return (
-        <span className={isHigh ? "text-destructive font-medium" : ""}>
-          {latency}ms
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={isHigh ? "text-destructive font-medium" : ""}>
+            {latency}ms
+          </span>
+          {row.original.performance_badge && (
+            <Badge
+              variant="outline"
+              className={
+                row.original.performance_badge === "fast"
+                  ? "border-green-200 text-green-700 bg-green-50"
+                  : row.original.performance_badge === "slow"
+                  ? "border-red-200 text-red-700 bg-red-50"
+                  : "border-yellow-200 text-yellow-700 bg-yellow-50"
+              }
+            >
+              {row.original.performance_badge}
+            </Badge>
+          )}
+        </div>
       );
     },
   },
@@ -159,6 +194,83 @@ export const traceColumns: ColumnDef<Trace>[] = [
         return <span className="text-muted-foreground">—</span>;
       }
       return <span>{tokens.toLocaleString()}</span>;
+    },
+  },
+  {
+    accessorKey: "estimated_cost_usd",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Cost
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const cost = row.getValue("estimated_cost_usd") as number | null | undefined;
+      if (cost === null || cost === undefined) {
+        return <span className="text-muted-foreground">—</span>;
+      }
+      return <span>${cost.toFixed(4)}</span>;
+    },
+  },
+  {
+    accessorKey: "quality_score",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Quality
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const score = row.getValue("quality_score") as number | null | undefined;
+      if (score === null || score === undefined) {
+        return <span className="text-muted-foreground">—</span>;
+      }
+      const variant = score >= 4 ? "outline" : score >= 3 ? "secondary" : "destructive";
+      return (
+        <Badge variant={variant as any}>
+          {score}/5
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "issue_count",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Issues
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const n = row.getValue("issue_count") as number | null | undefined;
+      if (n === null || n === undefined) return <span className="text-muted-foreground">—</span>;
+      if (n === 0) {
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            0
+          </Badge>
+        );
+      }
+      return (
+        <Badge variant="secondary">
+          {n}
+        </Badge>
+      );
     },
   },
   {
