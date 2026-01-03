@@ -1,12 +1,19 @@
 const { withSentryConfig } = require("@sentry/nextjs");
+const withNextra = require("nextra")({
+  theme: "nextra-theme-docs",
+  themeConfig: "./theme.config.tsx",
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-}
+};
+
+// Apply Nextra first, then Sentry
+const config = withNextra(nextConfig);
 
 // Make sure adding Sentry options is the last code to run before exporting
-module.exports = withSentryConfig(nextConfig, {
+module.exports = withSentryConfig(config, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
@@ -37,4 +44,3 @@ module.exports = withSentryConfig(nextConfig, {
   // Enables automatic instrumentation of Vercel Cron Monitors.
   automaticVercelMonitors: true,
 });
-

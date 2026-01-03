@@ -1,0 +1,72 @@
+{
+  "index": "README",
+  "getting-started": {
+    "title": "Getting Started",
+    "type": "page",
+    "pages": {
+      "quick-start": "Quick Start",
+      "onboarding": "Customer Onboarding",
+      "installation": "Installation"
+    }
+  },
+  "sdk": {
+    "title": "SDK & Integration",
+    "type": "page",
+    "pages": {
+      "installation": "SDK Installation",
+      "migration": "Migration Guide",
+      "examples": "Examples",
+      "events-reference": "Events Reference"
+    }
+  },
+  "api": {
+    "title": "API Reference",
+    "type": "page",
+    "pages": {
+      "overview": "API Overview",
+      "authentication": "Authentication",
+      "endpoints": "Endpoints"
+    }
+  },
+  "guides": {
+    "title": "Guides",
+    "type": "page",
+    "pages": {
+      "dashboard": "Dashboard Guide",
+      "traces": "Traces Guide",
+      "sessions": "Sessions Guide",
+      "users": "Users Guide",
+      "issues": "Issues Guide",
+      "costs": "Costs Guide"
+    }
+  },
+  "development": {
+    "title": "Development",
+    "type": "page",
+    "pages": {
+      "env-setup": "Environment Setup",
+      "deployment": "Deployment",
+      "testing": "Testing",
+      "architecture": "Architecture"
+    }
+  },
+  "troubleshooting": {
+    "title": "Troubleshooting",
+    "type": "page",
+    "pages": {
+      "common-issues": "Common Issues",
+      "error-codes": "Error Codes",
+      "debugging": "Debugging Guide"
+    }
+  },
+  "reference": {
+    "title": "Reference",
+    "type": "page",
+    "pages": {
+      "data-models": "Data Models",
+      "event-formats": "Event Formats",
+      "rate-limits": "Rate Limits",
+      "quotas": "Quotas"
+    }
+  }
+}
