@@ -26,6 +26,7 @@ export interface Trace {
   performance_badge?: "fast" | "medium" | "slow" | null;
   quality_score?: number | null;
   status?: number | null;
+  status_text?: string | null;
   environment?: string | null;
 }
 
@@ -101,11 +102,31 @@ export const traceColumns: ColumnDef<Trace>[] = [
         );
       }
 
+      // Parse status_text to get a readable error type
+      // Format: "error:tool_error", "error:retrieval_error", "error:unknown", "OK"
+      const getErrorLabel = () => {
+        if (!trace.status_text) return null;
+        if (trace.status_text === "OK") return null;
+        
+        // Extract error type from "error:type" format
+        const match = trace.status_text.match(/^error:(.+)$/);
+        if (match) {
+          const errorType = match[1];
+          // Convert snake_case to Title Case
+          return errorType.split('_').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ');
+        }
+        return trace.status_text;
+      };
+
+      const errorLabel = getErrorLabel();
+
       return (
         <div className="flex flex-wrap gap-1">
           {hasHttpError && (
             <Badge variant="destructive">
-              {trace.status! >= 500 ? "Error" : "Client Error"} {trace.status}
+              {errorLabel || (trace.status! >= 500 ? "Error" : "Client Error")}
             </Badge>
           )}
           <IssueBadge hasIssue={trace.is_hallucination === true} label="Hallucination" />
