@@ -66,9 +66,16 @@ export default function IssuesPage() {
       const token = localStorage.getItem("sessionToken");
       if (!token) return;
 
+      // Use 7-day time range to capture recent issues
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+
       const params = new URLSearchParams({
         limit: "100",
         offset: "0",
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
       });
 
       if (severityFilter !== "all") {
