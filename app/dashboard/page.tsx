@@ -29,6 +29,7 @@ import ProjectFilter from "@/components/dashboard/ProjectFilter";
 import EnhancedMetricCard from "@/components/dashboard/EnhancedMetricCard";
 import AlertsBanner from "@/components/dashboard/AlertsBanner";
 import MetricsChart from "@/components/dashboard/MetricsChart";
+import { OnboardingBanner } from "@/components/onboarding/OnboardingBanner";
 
 interface DashboardMetrics {
   error_rate: {
@@ -343,6 +344,9 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Onboarding Banner */}
+      <OnboardingBanner />
 
       {/* Alerts Banner */}
       {alerts.length > 0 && (

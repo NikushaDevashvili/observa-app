@@ -11,6 +11,7 @@ import {
   User,
   ChevronUp,
   User2,
+  Rocket,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -85,6 +86,22 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarSeparator />
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Getting Started</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Onboarding">
+                  <Link href="/onboarding">
+                    <Rocket />
+                    <span>Onboarding</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarSeparator />
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
