@@ -82,26 +82,32 @@ export const traceColumns: ColumnDef<Trace>[] = [
   },
   {
     id: "issues",
-    header: "Issues",
+    header: "Status",
     cell: ({ row }) => {
       const trace = row.original;
-      const hasAnyIssue =
+      const hasHttpError = trace.status !== null && trace.status !== undefined && trace.status >= 400;
+      const hasQualityIssue =
         trace.is_hallucination === true ||
         trace.has_context_drop ||
         trace.has_faithfulness_issue ||
         trace.has_model_drift ||
         trace.has_cost_anomaly;
 
-      if (!hasAnyIssue) {
+      if (!hasHttpError && !hasQualityIssue) {
         return (
           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            ✓ No issues
+            ✓ OK
           </Badge>
         );
       }
 
       return (
         <div className="flex flex-wrap gap-1">
+          {hasHttpError && (
+            <Badge variant="destructive">
+              {trace.status! >= 500 ? "Error" : "Client Error"} {trace.status}
+            </Badge>
+          )}
           <IssueBadge hasIssue={trace.is_hallucination === true} label="Hallucination" />
           <IssueBadge hasIssue={trace.has_context_drop} label="Context Drop" variant="secondary" />
           <IssueBadge hasIssue={trace.has_faithfulness_issue} label="Faithfulness" variant="secondary" />
@@ -218,78 +224,6 @@ export const traceColumns: ColumnDef<Trace>[] = [
     },
   },
   {
-    accessorKey: "quality_score",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Quality
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const score = row.getValue("quality_score") as number | null | undefined;
-      if (score === null || score === undefined) {
-        return <span className="text-muted-foreground">—</span>;
-      }
-      const variant = score >= 4 ? "outline" : score >= 3 ? "secondary" : "destructive";
-      return (
-        <Badge variant={variant as any}>
-          {score}/5
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "issue_count",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Issues
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const n = row.getValue("issue_count") as number | null | undefined;
-      if (n === null || n === undefined) return <span className="text-muted-foreground">—</span>;
-      if (n === 0) {
-        return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            0
-          </Badge>
-        );
-      }
-      return (
-        <Badge variant="secondary">
-          {n}
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "hallucination_confidence",
-    header: "Confidence",
-    cell: ({ row }) => {
-      const confidence = row.getValue("hallucination_confidence") as number | null;
-      if (confidence === null || confidence === undefined) {
-        return <span className="text-muted-foreground">—</span>;
-      }
-      const isHigh = confidence > 0.7;
-      return (
-        <span className={isHigh ? "text-destructive font-medium" : ""}>
-          {(confidence * 100).toFixed(0)}%
-        </span>
-      );
-    },
-  },
-  {
     accessorKey: "analyzed_at",
     header: ({ column }) => {
       return (
@@ -323,4 +257,3 @@ export const traceColumns: ColumnDef<Trace>[] = [
     },
   },
 ];
-
