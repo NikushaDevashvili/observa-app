@@ -37,12 +37,24 @@ export function OnboardingBanner() {
         });
 
         if (!response.ok) {
+          // Handle 401 - unauthorized (silently fail, don't show banner)
+          if (response.status === 401 || response.status === 404) {
+            setLoading(false);
+            return;
+          }
+          // Handle 500 - server error (silently fail, don't show banner)
+          if (response.status >= 500) {
+            setLoading(false);
+            return;
+          }
           throw new Error("Failed to fetch banner");
         }
 
         const data = await response.json();
+        // Handle response structure - banner endpoint returns data directly
         setBannerData(data);
       } catch (error) {
+        // Silently fail - don't show banner if there's an error
         console.error("Error fetching banner:", error);
       } finally {
         setLoading(false);

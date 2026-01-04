@@ -60,11 +60,27 @@ export function OnboardingChecklist({
       });
 
       if (!response.ok) {
+        // Handle 401 - unauthorized (silently fail)
+        if (response.status === 401) {
+          setLoading(false);
+          return;
+        }
         throw new Error("Failed to fetch checklist");
       }
 
       const data = await response.json();
-      setChecklist(data);
+      // Handle response structure: API returns { success: true, items: [...], ... }
+      if (data.success && data.items) {
+        setChecklist({
+          items: data.items,
+          overallProgress: data.overallProgress || 0,
+          completedCount: data.completedCount || 0,
+          totalCount: data.totalCount || 0,
+        });
+      } else {
+        // Fallback for direct structure
+        setChecklist(data);
+      }
     } catch (error) {
       console.error("Error fetching checklist:", error);
     } finally {
@@ -89,6 +105,9 @@ export function OnboardingChecklist({
       );
 
       if (response.ok) {
+        await fetchChecklist();
+      } else {
+        // Refresh anyway to show updated state
         await fetchChecklist();
       }
     } catch (error) {
@@ -118,6 +137,9 @@ export function OnboardingChecklist({
 
       if (response.ok) {
         await fetchChecklist();
+      } else {
+        // Refresh anyway to show updated state
+        await fetchChecklist();
       }
     } catch (error) {
       console.error("Error completing task:", error);
@@ -134,7 +156,7 @@ export function OnboardingChecklist({
     );
   }
 
-  if (!checklist) {
+  if (!checklist || !checklist.items || checklist.items.length === 0) {
     return null;
   }
 

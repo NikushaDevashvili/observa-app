@@ -32,12 +32,31 @@ export function NextStepsCard() {
         });
 
         if (!response.ok) {
+          // Handle 401 - unauthorized (silently fail)
+          if (response.status === 401 || response.status === 404) {
+            setLoading(false);
+            return;
+          }
+          // Handle 500 - server error (silently fail)
+          if (response.status >= 500) {
+            setLoading(false);
+            return;
+          }
           throw new Error("Failed to fetch next steps");
         }
 
         const data = await response.json();
-        setNextSteps(data.nextSteps || []);
+        // Handle response structure: API returns { success: true, nextSteps: [...] }
+        if (data.success && Array.isArray(data.nextSteps)) {
+          setNextSteps(data.nextSteps);
+        } else if (Array.isArray(data)) {
+          // Fallback for direct array response
+          setNextSteps(data);
+        } else {
+          setNextSteps([]);
+        }
       } catch (error) {
+        // Silently fail - don't show next steps if there's an error
         console.error("Error fetching next steps:", error);
       } finally {
         setLoading(false);

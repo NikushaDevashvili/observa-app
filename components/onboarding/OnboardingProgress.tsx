@@ -38,12 +38,29 @@ export function OnboardingProgress({
         });
 
         if (!response.ok) {
+          // Handle 401 - unauthorized (silently fail)
+          if (response.status === 401 || response.status === 404) {
+            setLoading(false);
+            return;
+          }
+          // Handle 500 - server error (silently fail)
+          if (response.status >= 500) {
+            setLoading(false);
+            return;
+          }
           throw new Error("Failed to fetch progress");
         }
 
         const data = await response.json();
-        setProgress(data.progress);
+        // Handle response structure: API returns { success: true, progress: {...} }
+        if (data.success && data.progress) {
+          setProgress(data.progress);
+        } else if (data.currentStep || data.progressPercentage !== undefined) {
+          // Fallback for direct structure
+          setProgress(data);
+        }
       } catch (error) {
+        // Silently fail - don't show progress if there's an error
         console.error("Error fetching progress:", error);
       } finally {
         setLoading(false);
