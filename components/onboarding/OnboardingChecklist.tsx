@@ -44,17 +44,19 @@ export function OnboardingChecklist({
 
   useEffect(() => {
     fetchChecklist();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Retry fetching if initial fetch fails
+  // Retry fetching if initial fetch fails (only once)
   useEffect(() => {
-    if (error && !checklist) {
+    if (error === "Initializing onboarding..." && !checklist && !loading) {
       const timer = setTimeout(() => {
         fetchChecklist();
       }, 3000); // Retry after 3 seconds
       return () => clearTimeout(timer);
     }
-  }, [error, checklist]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error, checklist, loading]);
 
   const fetchChecklist = async () => {
     try {
