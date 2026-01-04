@@ -68,7 +68,7 @@ export function NextStepsCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm p-6">
         <div className="flex items-center justify-center">
           <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
         </div>
@@ -77,7 +77,16 @@ export function NextStepsCard() {
   }
 
   if (nextSteps.length === 0) {
-    return null;
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Recommended Next Steps
+        </h3>
+        <p className="text-sm text-gray-600">
+          Your next steps are being prepared. Please refresh the page in a moment.
+        </p>
+      </div>
+    );
   }
 
   return (

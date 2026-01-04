@@ -40,10 +40,21 @@ export function OnboardingChecklist({
   const [checklist, setChecklist] = useState<ChecklistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchChecklist();
   }, []);
+
+  // Retry fetching if initial fetch fails
+  useEffect(() => {
+    if (error && !checklist) {
+      const timer = setTimeout(() => {
+        fetchChecklist();
+      }, 3000); // Retry after 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error, checklist]);
 
   const fetchChecklist = async () => {
     try {
@@ -63,6 +74,13 @@ export function OnboardingChecklist({
         // Handle 401 - unauthorized (silently fail)
         if (response.status === 401) {
           setLoading(false);
+          setError("Unauthorized");
+          return;
+        }
+        // Handle 500 - server error, might need initialization
+        if (response.status === 500) {
+          setError("Initializing onboarding...");
+          setLoading(false);
           return;
         }
         throw new Error("Failed to fetch checklist");
@@ -77,12 +95,15 @@ export function OnboardingChecklist({
           completedCount: data.completedCount || 0,
           totalCount: data.totalCount || 0,
         });
+        setError(null); // Clear error on success
       } else {
         // Fallback for direct structure
         setChecklist(data);
+        setError(null); // Clear error on success
       }
     } catch (error) {
       console.error("Error fetching checklist:", error);
+      setError("Failed to load checklist");
     } finally {
       setLoading(false);
     }
@@ -150,14 +171,40 @@ export function OnboardingChecklist({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
+        <div className="flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+        </div>
       </div>
     );
   }
 
   if (!checklist || !checklist.items || checklist.items.length === 0) {
-    return null;
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Onboarding Checklist
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            {error === "Initializing onboarding..." 
+              ? "Your onboarding checklist is being set up. This may take a moment..."
+              : "Your onboarding checklist is being set up. Please refresh the page in a moment."}
+          </p>
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              fetchChecklist();
+            }}
+            disabled={loading}
+            className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Refresh"}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const sortedItems = [...checklist.items].sort(

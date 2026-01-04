@@ -70,8 +70,44 @@ export function OnboardingProgress({
     fetchProgress();
   }, []);
 
-  if (loading || !progress) {
-    return null;
+  if (loading) {
+    return (
+      <div className="w-full">
+        {showLabel && (
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Onboarding Progress
+            </span>
+          </div>
+        )}
+        <div className={`w-full bg-gray-200 rounded-full ${heightClasses[size]}`}>
+          <div className={`bg-gray-300 ${heightClasses[size]} rounded-full animate-pulse`} style={{ width: "50%" }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!progress) {
+    return (
+      <div className="w-full">
+        {showLabel && (
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Onboarding Progress
+            </span>
+            <span className="text-sm font-medium text-gray-500">
+              Not started
+            </span>
+          </div>
+        )}
+        <div className={`w-full bg-gray-200 rounded-full ${heightClasses[size]}`}>
+          <div className={`bg-gray-300 ${heightClasses[size]} rounded-full`} style={{ width: "0%" }} />
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Your onboarding is being initialized. Please refresh in a moment.
+        </p>
+      </div>
+    );
   }
 
   const heightClasses = {
