@@ -4,10 +4,12 @@ import cn from "classnames";
 
 import { Badge, type BadgeProps } from "./Badge";
 import { getSpanCategoryIcon, getSpanCategoryLabel } from "./shared";
+import { ThumbsUp, ThumbsDown, Star, MessageCircle } from "lucide-react";
 
 export interface SpanBadgeProps
   extends Omit<BadgeProps, "label" | "iconStart" | "iconEnd"> {
   category: TraceSpanCategory;
+  title?: string; // Add title prop to detect feedback
 }
 
 const badgeClasses: Record<TraceSpanCategory, string> = {
@@ -32,17 +34,56 @@ const badgeClasses: Record<TraceSpanCategory, string> = {
     "bg-agentprism-badge-unknown text-agentprism-badge-unknown-foreground",
 };
 
+// Feedback-specific badge classes
+const feedbackBadgeClasses: Record<string, string> = {
+  like: "bg-green-100 text-green-700 border-green-300",
+  dislike: "bg-red-100 text-red-700 border-red-300",
+  rating: "bg-yellow-100 text-yellow-700 border-yellow-300",
+  correction: "bg-blue-100 text-blue-700 border-blue-300",
+};
+
+// Detect feedback type from title
+function detectFeedbackType(title?: string): string | null {
+  if (!title) return null;
+  if (title.includes("👍") || title.toLowerCase().includes("like")) return "like";
+  if (title.includes("👎") || title.toLowerCase().includes("dislike")) return "dislike";
+  if (title.includes("⭐") || title.toLowerCase().includes("rating")) return "rating";
+  if (title.includes("✏️") || title.toLowerCase().includes("correction")) return "correction";
+  return null;
+}
+
 export const SpanBadge = ({
   category,
   className,
+  title,
   ...props
 }: SpanBadgeProps) => {
-  const Icon = getSpanCategoryIcon(category);
-  const label = getSpanCategoryLabel(category);
+  const feedbackType = detectFeedbackType(title);
+  const isFeedback = feedbackType !== null;
+  
+  // Use feedback-specific styling if detected
+  const badgeClass = isFeedback && feedbackType
+    ? feedbackBadgeClasses[feedbackType] || badgeClasses[category]
+    : badgeClasses[category];
+  
+  // Get icon - use feedback icon if detected, otherwise use category icon
+  let Icon = getSpanCategoryIcon(category);
+  if (isFeedback && feedbackType) {
+    if (feedbackType === "like") Icon = ThumbsUp;
+    else if (feedbackType === "dislike") Icon = ThumbsDown;
+    else if (feedbackType === "rating") Icon = Star;
+    else if (feedbackType === "correction") Icon = MessageCircle;
+  }
+  
+  // Get label - use feedback label if detected
+  let label = getSpanCategoryLabel(category);
+  if (isFeedback && feedbackType) {
+    label = feedbackType.charAt(0).toUpperCase() + feedbackType.slice(1).toUpperCase();
+  }
 
   return (
     <Badge
-      className={cn(badgeClasses[category], className)}
+      className={cn(badgeClass, className)}
       iconStart={<Icon className="size-2.5" />}
       {...props}
       label={label}

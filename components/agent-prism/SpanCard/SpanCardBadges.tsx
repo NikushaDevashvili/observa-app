@@ -25,7 +25,7 @@ export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
 
   return (
     <div className="flex flex-wrap items-center justify-start gap-1">
-      <SpanBadge category={data.type} />
+      <SpanBadge category={data.type} title={data.title} />
 
       {typeof data.tokensCount === "number" && (
         <TokensBadge tokensCount={data.tokensCount} />
