@@ -21,6 +21,9 @@ import {
   CheckCircle2,
   Zap,
   Info,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -67,6 +70,28 @@ interface DashboardMetrics {
   };
   success_rate: number;
   trace_count: number;
+  feedback?: {
+    total: number;
+    likes: number;
+    dislikes: number;
+    ratings: number;
+    corrections: number;
+    feedback_rate: number;
+    avg_rating: number;
+    with_comments: number;
+    by_outcome: {
+      success: number;
+      failure: number;
+      partial: number;
+      unknown: number;
+    };
+    by_type: {
+      like: number;
+      dislike: number;
+      rating: number;
+      correction: number;
+    };
+  };
 }
 
 interface DashboardResponse {
@@ -105,6 +130,12 @@ interface TimeSeriesData {
   cost: number;
   tokens: number;
   trace_count: number;
+  feedback?: {
+    total: number;
+    likes: number;
+    dislikes: number;
+    feedback_rate: number;
+  };
 }
 
 interface ComparisonData {
@@ -506,6 +537,130 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* Feedback Metrics Row */}
+      {metrics?.feedback && metrics.feedback.total > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4 mb-6">
+          <EnhancedMetricCard
+            title="User Feedback"
+            value={metrics.feedback.total}
+            icon={<MessageSquare className="h-5 w-5 text-blue-600" />}
+            tooltip={`${metrics.feedback.total} total feedback events (${metrics.feedback.feedback_rate.toFixed(1)}% of traces)`}
+            status={
+              metrics.feedback.feedback_rate > 10
+                ? "healthy"
+                : metrics.feedback.feedback_rate > 5
+                ? "warning"
+                : "critical"
+            }
+          />
+          <EnhancedMetricCard
+            title="Likes"
+            value={metrics.feedback.likes}
+            icon={<ThumbsUp className="h-5 w-5 text-green-600" />}
+            tooltip={`${metrics.feedback.likes} positive feedback (${metrics.feedback.total > 0 ? ((metrics.feedback.likes / metrics.feedback.total) * 100).toFixed(1) : 0}% of feedback)`}
+            status={
+              metrics.feedback.total > 0 && metrics.feedback.likes / metrics.feedback.total > 0.7
+                ? "healthy"
+                : metrics.feedback.total > 0 && metrics.feedback.likes / metrics.feedback.total > 0.5
+                ? "warning"
+                : "critical"
+            }
+          />
+          <EnhancedMetricCard
+            title="Dislikes"
+            value={metrics.feedback.dislikes}
+            icon={<ThumbsDown className="h-5 w-5 text-red-600" />}
+            tooltip={`${metrics.feedback.dislikes} negative feedback (${metrics.feedback.total > 0 ? ((metrics.feedback.dislikes / metrics.feedback.total) * 100).toFixed(1) : 0}% of feedback)`}
+            status={
+              metrics.feedback.total > 0 && metrics.feedback.dislikes / metrics.feedback.total < 0.2
+                ? "healthy"
+                : metrics.feedback.total > 0 && metrics.feedback.dislikes / metrics.feedback.total < 0.3
+                ? "warning"
+                : "critical"
+            }
+          />
+          <EnhancedMetricCard
+            title="Feedback Rate"
+            value={`${metrics.feedback.feedback_rate.toFixed(1)}%`}
+            icon={<Activity className="h-5 w-5 text-purple-600" />}
+            tooltip={`${metrics.feedback.feedback_rate.toFixed(2)}% of traces received user feedback`}
+            status={
+              metrics.feedback.feedback_rate > 10
+                ? "healthy"
+                : metrics.feedback.feedback_rate > 5
+                ? "warning"
+                : "critical"
+            }
+          />
+        </div>
+      )}
+
+      {/* Feedback Details Card */}
+      {metrics?.feedback && metrics.feedback.total > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              User Feedback Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div>
+                <div className="text-muted-foreground">Total Feedback</div>
+                <div className="font-medium">{metrics.feedback.total}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Like/Dislike Ratio</div>
+                <div className="font-medium">
+                  {metrics.feedback.dislikes > 0
+                    ? (metrics.feedback.likes / metrics.feedback.dislikes).toFixed(2)
+                    : metrics.feedback.likes > 0
+                    ? "∞"
+                    : "0"}
+                  :1
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Average Rating</div>
+                <div className="font-medium">
+                  {metrics.feedback.avg_rating > 0
+                    ? `${metrics.feedback.avg_rating.toFixed(1)}/5`
+                    : "N/A"}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">With Comments</div>
+                <div className="font-medium">
+                  {metrics.feedback.with_comments} (
+                  {metrics.feedback.total > 0
+                    ? ((metrics.feedback.with_comments / metrics.feedback.total) * 100).toFixed(1)
+                    : 0}
+                  %)
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t">
+              <div className="text-sm text-muted-foreground mb-2">Feedback by Outcome</div>
+              <div className="grid grid-cols-4 gap-2 text-xs">
+                <div>
+                  <span className="text-green-600">Success:</span> {metrics.feedback.by_outcome.success}
+                </div>
+                <div>
+                  <span className="text-red-600">Failure:</span> {metrics.feedback.by_outcome.failure}
+                </div>
+                <div>
+                  <span className="text-yellow-600">Partial:</span> {metrics.feedback.by_outcome.partial}
+                </div>
+                <div>
+                  <span className="text-gray-600">Unknown:</span> {metrics.feedback.by_outcome.unknown}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Charts Row 1: Latency + Error Rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <MetricsChart
@@ -537,6 +692,18 @@ export default function DashboardPage() {
           height={300}
         />
       </div>
+
+      {/* Charts Row 3: Feedback (if available) */}
+      {timeSeries.some((d) => d.feedback && d.feedback.total > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <MetricsChart
+            title="Feedback Over Time"
+            data={timeSeries}
+            type="feedback"
+            height={300}
+          />
+        </div>
+      )}
 
       {/* Recent Traces */}
       <div className="py-6">

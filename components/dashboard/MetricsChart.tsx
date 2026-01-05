@@ -23,12 +23,18 @@ interface TimeSeriesData {
   cost?: number;
   tokens?: number;
   trace_count?: number;
+  feedback?: {
+    total: number;
+    likes: number;
+    dislikes: number;
+    feedback_rate: number;
+  };
 }
 
 interface MetricsChartProps {
   title: string;
   data: TimeSeriesData[];
-  type: "latency" | "error_rate" | "cost" | "tokens";
+  type: "latency" | "error_rate" | "cost" | "tokens" | "feedback";
   height?: number;
 }
 
@@ -57,6 +63,8 @@ export default function MetricsChart({
         return `$${value.toFixed(2)}`;
       case "tokens":
         return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toString();
+      case "feedback":
+        return value.toFixed(0);
       default:
         return value.toString();
     }
@@ -246,6 +254,80 @@ export default function MetricsChart({
                 fillOpacity={1}
                 fill="url(#colorTokens)"
                 name="Tokens"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (type === "feedback") {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={height}>
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id="colorFeedback" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorLikes" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorDislikes" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="timestamp"
+                tickFormatter={formatTimestamp}
+                style={{ fontSize: "12px" }}
+              />
+              <YAxis
+                tickFormatter={(value) => value.toString()}
+                style={{ fontSize: "12px" }}
+              />
+              <Tooltip
+                formatter={(value: number, name: string) => {
+                  if (name === "feedback.feedback_rate") {
+                    return `${value.toFixed(2)}%`;
+                  }
+                  return value.toString();
+                }}
+                labelFormatter={formatTimestamp}
+              />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey="feedback.total"
+                stroke="#8b5cf6"
+                fillOpacity={1}
+                fill="url(#colorFeedback)"
+                name="Total Feedback"
+              />
+              <Area
+                type="monotone"
+                dataKey="feedback.likes"
+                stroke="#10b981"
+                fillOpacity={1}
+                fill="url(#colorLikes)"
+                name="Likes"
+              />
+              <Area
+                type="monotone"
+                dataKey="feedback.dislikes"
+                stroke="#ef4444"
+                fillOpacity={1}
+                fill="url(#colorDislikes)"
+                name="Dislikes"
               />
             </AreaChart>
           </ResponsiveContainer>
