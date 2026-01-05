@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   ChevronRight,
   ChevronDown,
   Clock,
@@ -319,7 +324,14 @@ export default function TraceWaterfall({
                         {span.name}
                       </h3>
                       {span.feedback_metadata?.has_comment && (
-                        <MessageCircle className="h-3 w-3 text-muted-foreground" title="Has comment" />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <MessageCircle className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Has comment</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   ) : (
