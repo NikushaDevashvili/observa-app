@@ -380,10 +380,17 @@ export default function TraceWaterfall({
                             </span>
                           )}
                           {event.event_type === "feedback" && event.attributes?.feedback?.comment && (
-                            <span className="text-xs opacity-75 flex items-center gap-1">
-                              <MessageCircle className="h-3 w-3" />
-                              Has comment
-                            </span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="text-xs opacity-75 flex items-center gap-1 cursor-help">
+                                  <MessageCircle className="h-3 w-3" />
+                                  Has comment
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{event.attributes.feedback.comment}</p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                           {event.event_type === "feedback" && event.attributes?.feedback?.rating && (
                             <span className="text-xs opacity-75 flex items-center gap-1">
