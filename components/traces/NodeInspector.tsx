@@ -14,6 +14,10 @@ import {
   Zap,
   Code,
   Eye,
+  ThumbsUp,
+  ThumbsDown,
+  Star,
+  MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -42,9 +46,25 @@ interface Span {
   tool_call?: any;
   retrieval?: any;
   output?: any;
+  feedback?: any;
+  feedback_metadata?: {
+    type?: string;
+    outcome?: string;
+    rating?: number | null;
+    has_comment?: boolean;
+    comment?: string | null;
+    icon?: string;
+    color_class?: string;
+    bg_color_class?: string;
+  };
+  feedback_type?: string;
+  feedback_outcome?: string;
+  feedback_rating?: number | null;
+  feedback_comment?: string | null;
   type?: string;
   hasDetails?: boolean;
   selectable?: boolean;
+  event_type?: string;
 }
 
 interface Event {
@@ -74,16 +94,29 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
   const toolData = span.tool_call || span.details?.tool_call;
   const retrievalData = span.retrieval || span.details?.retrieval;
   const outputData = span.output || span.details?.output;
+  const feedbackData = span.feedback || span.details?.feedback;
   
   // Also check events for backward compatibility
   const llmEvent = span.events?.find((e) => e.event_type === "llm_call");
   const toolEvents = span.events?.filter((e) => e.event_type === "tool_call") || [];
   const retrievalEvent = span.events?.find((e) => e.event_type === "retrieval");
+  const feedbackEvent = span.events?.find((e) => e.event_type === "feedback");
   
   // Use span data if available, otherwise use event data
   const llmCall = llmData || llmEvent?.attributes?.llm_call;
   const toolCalls = toolData ? [toolData] : toolEvents.map((e) => e.attributes?.tool_call).filter(Boolean);
   const retrieval = retrievalData || retrievalEvent?.attributes?.retrieval;
+  const feedback = feedbackData || feedbackEvent?.attributes?.feedback || (span.feedback_metadata ? {
+    type: span.feedback_metadata.type,
+    outcome: span.feedback_metadata.outcome,
+    rating: span.feedback_metadata.rating,
+    comment: span.feedback_metadata.comment,
+  } : null) || (span.feedback_type ? {
+    type: span.feedback_type,
+    outcome: span.feedback_outcome,
+    rating: span.feedback_rating,
+    comment: span.feedback_comment,
+  } : null);
 
   return (
     <div className="border-1 p-4 h-full flex flex-col">
@@ -375,6 +408,74 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
                     <div className="text-sm mt-3">
                       <span className="text-muted-foreground">Output Length: </span>
                       <span className="font-medium">{outputData.output_length} characters</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Feedback */}
+            {feedback && (
+              <Card className={
+                feedback.type === "like" ? "bg-green-50 border-green-200" :
+                feedback.type === "dislike" ? "bg-red-50 border-red-200" :
+                feedback.type === "rating" ? "bg-yellow-50 border-yellow-200" :
+                feedback.type === "correction" ? "bg-blue-50 border-blue-200" :
+                ""
+              }>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    {feedback.type === "like" && <ThumbsUp className="h-5 w-5 text-green-600" />}
+                    {feedback.type === "dislike" && <ThumbsDown className="h-5 w-5 text-red-600" />}
+                    {feedback.type === "rating" && <Star className="h-5 w-5 text-yellow-600" />}
+                    {feedback.type === "correction" && <MessageCircle className="h-5 w-5 text-blue-600" />}
+                    <CardTitle className={`text-base ${
+                      feedback.type === "like" ? "text-green-700" :
+                      feedback.type === "dislike" ? "text-red-700" :
+                      feedback.type === "rating" ? "text-yellow-700" :
+                      feedback.type === "correction" ? "text-blue-700" :
+                      ""
+                    }`}>
+                      User Feedback: {feedback.type ? feedback.type.charAt(0).toUpperCase() + feedback.type.slice(1) : "Feedback"}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-muted-foreground">Type</div>
+                      <div className="font-medium capitalize">{feedback.type || "Unknown"}</div>
+                    </div>
+                    {feedback.outcome && (
+                      <div>
+                        <div className="text-muted-foreground">Outcome</div>
+                        <Badge variant="outline" className="capitalize">
+                          {feedback.outcome}
+                        </Badge>
+                      </div>
+                    )}
+                    {feedback.rating !== null && feedback.rating !== undefined && (
+                      <div>
+                        <div className="text-muted-foreground">Rating</div>
+                        <div className="flex items-center gap-1 font-medium">
+                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                          {feedback.rating}/5
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {feedback.comment && (
+                    <div>
+                      <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <MessageCircle className="h-4 w-4" />
+                        Comment
+                      </div>
+                      <div className="bg-muted p-3 rounded-md border">
+                        <SafeText
+                          content={feedback.comment}
+                          preserveWhitespace
+                        />
+                      </div>
                     </div>
                   )}
                 </CardContent>

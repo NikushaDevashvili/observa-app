@@ -156,3 +156,4 @@ To test the onboarding UI:
 - Components handle loading and error states gracefully
 - No external dependencies required (lucide-react already installed)
 
+

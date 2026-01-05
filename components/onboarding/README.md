@@ -71,3 +71,4 @@ All components use Tailwind CSS matching the dashboard:
 - `lucide-react` - Already installed in the project
 - No additional dependencies required
 
+

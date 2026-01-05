@@ -15,6 +15,10 @@ import {
   Database,
   AlertCircle,
   CheckCircle2,
+  ThumbsUp,
+  ThumbsDown,
+  Star,
+  MessageCircle,
 } from "lucide-react";
 
 interface Span {
@@ -41,9 +45,21 @@ interface Span {
   tool_call?: any;
   retrieval?: any;
   output?: any;
+  feedback?: any;
+  feedback_metadata?: {
+    type?: string;
+    outcome?: string;
+    rating?: number | null;
+    has_comment?: boolean;
+    comment?: string | null;
+    icon?: string;
+    color_class?: string;
+    bg_color_class?: string;
+  };
   type?: string;
   hasDetails?: boolean;
   selectable?: boolean;
+  event_type?: string;
 }
 
 interface Event {
@@ -159,7 +175,7 @@ export default function TraceWaterfall({
     return rootSpans;
   };
 
-  const getEventIcon = (eventType: string) => {
+  const getEventIcon = (eventType: string, feedbackType?: string) => {
     switch (eventType) {
       case "llm_call":
         return <MessageSquare className="h-4 w-4" />;
@@ -169,12 +185,24 @@ export default function TraceWaterfall({
         return <Database className="h-4 w-4" />;
       case "error":
         return <AlertCircle className="h-4 w-4 text-destructive" />;
+      case "feedback":
+        // Use specific icons for feedback types
+        if (feedbackType === "like") {
+          return <ThumbsUp className="h-4 w-4 text-green-600" />;
+        } else if (feedbackType === "dislike") {
+          return <ThumbsDown className="h-4 w-4 text-red-600" />;
+        } else if (feedbackType === "rating") {
+          return <Star className="h-4 w-4 text-yellow-600" />;
+        } else if (feedbackType === "correction") {
+          return <MessageCircle className="h-4 w-4 text-blue-600" />;
+        }
+        return <MessageCircle className="h-4 w-4" />;
       default:
         return <Zap className="h-4 w-4" />;
     }
   };
 
-  const getEventColor = (eventType: string) => {
+  const getEventColor = (eventType: string, feedbackType?: string) => {
     switch (eventType) {
       case "llm_call":
         return "bg-blue-100 text-blue-700 border-blue-200";
@@ -184,6 +212,18 @@ export default function TraceWaterfall({
         return "bg-green-100 text-green-700 border-green-200";
       case "error":
         return "bg-red-100 text-red-700 border-red-200";
+      case "feedback":
+        // Distinct colors for feedback types
+        if (feedbackType === "like") {
+          return "bg-green-50 text-green-700 border-green-300 border-2";
+        } else if (feedbackType === "dislike") {
+          return "bg-red-50 text-red-700 border-red-300 border-2";
+        } else if (feedbackType === "rating") {
+          return "bg-yellow-50 text-yellow-700 border-yellow-300 border-2";
+        } else if (feedbackType === "correction") {
+          return "bg-blue-50 text-blue-700 border-blue-300 border-2";
+        }
+        return "bg-gray-50 text-gray-700 border-gray-300 border-2";
       default:
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
@@ -203,6 +243,16 @@ export default function TraceWaterfall({
         <Card
           className={`cursor-pointer transition-colors ${
             isSelected ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+          } ${
+            // Distinct styling for feedback spans
+            span.type === "feedback" || span.event_type === "feedback"
+              ? span.feedback_metadata?.bg_color_class || 
+                (span.feedback_metadata?.type === "like" ? "bg-green-50 border-green-200" :
+                 span.feedback_metadata?.type === "dislike" ? "bg-red-50 border-red-200" :
+                 span.feedback_metadata?.type === "rating" ? "bg-yellow-50 border-yellow-200" :
+                 span.feedback_metadata?.type === "correction" ? "bg-blue-50 border-blue-200" :
+                 "bg-gray-50 border-gray-200")
+              : ""
           }`}
           onClick={(e) => {
             // CRITICAL FIX: Don't collapse when clicking on span, just select it
@@ -255,7 +305,26 @@ export default function TraceWaterfall({
               {/* Span content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-semibold text-sm">{span.name}</h3>
+                  {/* Feedback icon for feedback spans */}
+                  {span.type === "feedback" || span.event_type === "feedback" ? (
+                    <div className="flex items-center gap-2">
+                      {getEventIcon("feedback", span.feedback_metadata?.type || span.feedback?.type)}
+                      <h3 className={`font-semibold text-sm ${
+                        span.feedback_metadata?.type === "like" ? "text-green-700" :
+                        span.feedback_metadata?.type === "dislike" ? "text-red-700" :
+                        span.feedback_metadata?.type === "rating" ? "text-yellow-700" :
+                        span.feedback_metadata?.type === "correction" ? "text-blue-700" :
+                        ""
+                      }`}>
+                        {span.name}
+                      </h3>
+                      {span.feedback_metadata?.has_comment && (
+                        <MessageCircle className="h-3 w-3 text-muted-foreground" title="Has comment" />
+                      )}
+                    </div>
+                  ) : (
+                    <h3 className="font-semibold text-sm">{span.name}</h3>
+                  )}
                   {span.metadata?.model && (
                     <Badge variant="outline" className="text-xs">
                       {span.metadata.model}
@@ -270,29 +339,49 @@ export default function TraceWaterfall({
                 {/* Events */}
                 {isExpanded && span.events && span.events.length > 0 && (
                   <div className="ml-6 mt-2 space-y-1">
-                    {span.events.map((event, idx) => (
-                      <div
-                        key={idx}
-                        className={`flex items-center gap-2 p-2 rounded border text-xs ${getEventColor(
-                          event.event_type
-                        )}`}
-                      >
-                        {getEventIcon(event.event_type)}
-                        <span className="font-medium">
-                          {event.event_type.replace("_", " ")}
-                        </span>
-                        {event.attributes?.llm_call?.total_tokens && (
-                          <span className="text-xs opacity-75">
-                            {event.attributes.llm_call.total_tokens} tokens
+                    {span.events.map((event, idx) => {
+                      const feedbackType = event.event_type === "feedback" 
+                        ? (event.attributes?.feedback?.type || span.feedback_metadata?.type)
+                        : undefined;
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center gap-2 p-2 rounded border text-xs ${getEventColor(
+                            event.event_type,
+                            feedbackType
+                          )}`}
+                        >
+                          {getEventIcon(event.event_type, feedbackType)}
+                          <span className="font-medium">
+                            {event.event_type === "feedback" && feedbackType
+                              ? `${feedbackType.charAt(0).toUpperCase() + feedbackType.slice(1)} Feedback`
+                              : event.event_type.replace("_", " ")}
                           </span>
-                        )}
-                        {event.attributes?.tool_call?.tool_name && (
-                          <span className="text-xs opacity-75">
-                            {event.attributes.tool_call.tool_name}
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                          {event.attributes?.llm_call?.total_tokens && (
+                            <span className="text-xs opacity-75">
+                              {event.attributes.llm_call.total_tokens} tokens
+                            </span>
+                          )}
+                          {event.attributes?.tool_call?.tool_name && (
+                            <span className="text-xs opacity-75">
+                              {event.attributes.tool_call.tool_name}
+                            </span>
+                          )}
+                          {event.event_type === "feedback" && event.attributes?.feedback?.comment && (
+                            <span className="text-xs opacity-75 flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" />
+                              Has comment
+                            </span>
+                          )}
+                          {event.event_type === "feedback" && event.attributes?.feedback?.rating && (
+                            <span className="text-xs opacity-75 flex items-center gap-1">
+                              <Star className="h-3 w-3" />
+                              {event.attributes.feedback.rating}/5
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
