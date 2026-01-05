@@ -25,6 +25,13 @@ The main dashboard shows:
 - **Tokens**: Total tokens, average per trace, input/output breakdown
 - **Success Rate**: Calculated success percentage
 - **Trace Count**: Total traces in the period
+- **Feedback Metrics**: 
+  - Total feedback count
+  - Likes and dislikes
+  - Average rating (for rating-type feedback)
+  - Feedback rate (percentage of traces with feedback)
+  - Breakdown by type (like/dislike/rating/correction)
+  - Breakdown by outcome (success/failure/partial)
 
 ### Traces Page
 
@@ -66,6 +73,24 @@ Monitor spending:
 - Cost breakdown by model
 - Cost breakdown by route
 - Cost trends over time
+
+### Feedback Analytics
+
+View user feedback metrics:
+- **Total Feedback**: Count of all feedback events
+- **Likes & Dislikes**: Breakdown of positive/negative feedback
+- **Average Rating**: Mean rating for rating-type feedback (1-5 scale)
+- **Feedback Rate**: Percentage of traces that received feedback
+- **By Type**: Breakdown by feedback type (like/dislike/rating/correction)
+- **By Outcome**: Breakdown by outcome (success/failure/partial)
+- **Feedback Trends**: Time-series chart showing feedback over time
+- **Comments**: Count of feedback with user comments
+
+Feedback metrics help you:
+- Identify problematic AI responses
+- Track user satisfaction trends
+- Monitor system quality improvements
+- Understand which operations receive the most feedback
 
 ## Time Range Filtering
 

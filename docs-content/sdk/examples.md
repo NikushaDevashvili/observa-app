@@ -224,6 +224,122 @@ function observaMiddleware(
 app.use(observaMiddleware);
 ```
 
+## User Feedback Tracking
+
+### Basic Like/Dislike Feedback
+
+```typescript
+// User clicks "like" button after receiving AI response
+observa.trackFeedback({
+  type: "like",
+  outcome: "success",
+  conversationId: "conv-123",
+  userId: "user-456",
+});
+
+// User clicks "dislike" button
+observa.trackFeedback({
+  type: "dislike",
+  outcome: "failure",
+  comment: "The answer was incorrect",
+  conversationId: "conv-123",
+  userId: "user-456",
+});
+```
+
+### Rating Feedback (1-5 Scale)
+
+```typescript
+// User provides a 5-star rating
+observa.trackFeedback({
+  type: "rating",
+  rating: 5, // Automatically clamped to 1-5 range
+  comment: "Excellent response!",
+  outcome: "success",
+  conversationId: "conv-123",
+  userId: "user-456",
+});
+```
+
+### Feedback Linked to Specific LLM Call
+
+```typescript
+async function chatWithFeedback(userMessage: string, userId: string) {
+  const traceId = observa.startTrace({
+    userId,
+    conversationId: `conv-${userId}-${Date.now()}`,
+    name: "Chat with Feedback",
+  });
+
+  try {
+    // Track LLM call
+    const llmSpanId = observa.trackLLMCall({
+      model: "gpt-4",
+      input: userMessage,
+      output: aiResponse,
+      tokensTotal: usage.total_tokens,
+      latencyMs: 1200,
+    });
+
+    // User provides feedback - link it to the LLM call
+    observa.trackFeedback({
+      type: "like",
+      parentSpanId: llmSpanId, // Attach feedback to specific LLM call
+      conversationId: `conv-${userId}-${Date.now()}`,
+      userId,
+      outcome: "success",
+    });
+
+    await observa.endTrace();
+  } catch (error) {
+    observa.trackError({
+      errorType: "chat_error",
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+    });
+    await observa.endTrace();
+  }
+}
+```
+
+### Express Route with Feedback Endpoint
+
+```typescript
+import express from "express";
+import { init } from "observa-sdk";
+
+const observa = init({ apiKey: process.env.OBSERVA_API_KEY! });
+
+// Endpoint to receive user feedback
+app.post("/api/feedback", async (req, res) => {
+  const { type, rating, comment, conversationId, traceId } = req.body;
+  const userId = req.user?.id;
+
+  try {
+    // Track feedback
+    observa.trackFeedback({
+      type: type, // "like" | "dislike" | "rating" | "correction"
+      rating: rating ? Number(rating) : undefined,
+      comment: comment || undefined,
+      outcome: type === "like" || (type === "rating" && rating >= 4) 
+        ? "success" 
+        : type === "dislike" || (type === "rating" && rating <= 2)
+        ? "failure"
+        : "partial",
+      conversationId: conversationId || undefined,
+      userId: userId || undefined,
+      agentName: "api-server",
+      version: process.env.APP_VERSION,
+      route: "/api/feedback",
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to track feedback:", error);
+    res.status(500).json({ error: "Failed to track feedback" });
+  }
+});
+```
+
 ## Related Documentation
 
 - [SDK Installation](./installation.md)

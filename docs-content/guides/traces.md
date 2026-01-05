@@ -55,6 +55,7 @@ Spans represent individual operations:
 - **Tool Call Spans**: Each tool/function call
 - **Retrieval Spans**: Each RAG retrieval
 - **Error Spans**: Errors that occurred
+- **Feedback Spans**: User feedback (likes, dislikes, ratings, corrections)
 
 ### Hierarchy
 
@@ -65,8 +66,15 @@ Trace (root)
   ├── LLM Call
   │   ├── Tool Call
   │   └── Tool Call
-  └── Output
+  ├── Output
+  └── Feedback (linked to LLM Call)
 ```
+
+**Feedback Spans**: User feedback can be linked to specific operations (like LLM calls) to provide context about which part of the trace the user is providing feedback on. Feedback spans are visually distinct with color-coded badges:
+- 👍 **Like**: Green badge
+- 👎 **Dislike**: Red badge
+- ⭐ **Rating**: Yellow badge (shows rating value)
+- ✏️ **Correction**: Blue badge
 
 ## Filtering Traces
 
@@ -88,6 +96,7 @@ Filter to see only traces with:
 - High latency
 - Cost spikes
 - Tool failures
+- User feedback (likes, dislikes, ratings)
 
 ## Understanding Trace Data
 
@@ -119,6 +128,43 @@ Traces may have signals indicating:
 - **Cost Spikes**: Unusually expensive calls
 - **Token Spikes**: Very large token usage
 - **Quality Issues**: Detected quality problems
+
+## User Feedback
+
+Traces can include user feedback to help identify system issues and improve AI responses:
+
+### Feedback Types
+
+- **Like** 👍: User liked the response (green badge)
+- **Dislike** 👎: User disliked the response (red badge)
+- **Rating** ⭐: 1-5 star rating (yellow badge)
+- **Correction** ✏️: User provided correction/feedback (blue badge)
+
+### Viewing Feedback
+
+1. Navigate to a trace detail view
+2. Look for feedback spans in the trace tree
+3. Feedback spans show:
+   - Feedback type with color-coded badge
+   - User comment (if provided)
+   - Rating value (for rating type)
+   - Outcome classification (success/failure/partial)
+   - Link to the specific operation being rated
+
+### Feedback Analytics
+
+View feedback metrics on the dashboard:
+- Total feedback count
+- Like/dislike ratio
+- Average rating
+- Feedback rate (percentage of traces with feedback)
+- Breakdown by type and outcome
+
+Feedback data helps AI developers:
+- Identify problematic responses
+- Track user satisfaction
+- Improve system quality
+- Monitor feedback trends over time
 
 ## Related Documentation
 
