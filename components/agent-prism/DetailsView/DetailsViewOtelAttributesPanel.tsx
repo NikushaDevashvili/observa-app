@@ -125,7 +125,12 @@ function extractCostAttributes(
   
   attributes.forEach((attr) => {
     const key = attr.key.toLowerCase();
-    const value = attr.value.doubleValue ?? attr.value.intValue;
+    // Use type-safe property access with optional chaining
+    const value = (attr.value as any).doubleValue ?? (attr.value as any).intValue;
+    
+    if (value === undefined || value === null) {
+      return;
+    }
     
     if (key.includes("input_cost")) {
       costAttrs.input_cost = value;
