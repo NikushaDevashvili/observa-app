@@ -8,6 +8,8 @@ import type { ReactElement } from "react";
 import { DollarSign, TrendingUp } from "lucide-react";
 import type { OtelAttributeGroup } from "@/types/trace";
 
+type SpanAttributes = NonNullable<TraceSpan["attributes"]>;
+
 interface OtelAttributesPanelProps {
   data: TraceSpan;
 }
@@ -15,7 +17,7 @@ interface OtelAttributesPanelProps {
 interface GroupedAttributes {
   group: OtelAttributeGroup;
   label: string;
-  attributes: TraceSpan["attributes"];
+  attributes: SpanAttributes;
   icon?: ReactElement;
 }
 
@@ -25,11 +27,11 @@ interface GroupedAttributes {
 function groupOtelAttributes(
   attributes: TraceSpan["attributes"]
 ): GroupedAttributes[] {
-  if (!attributes) {
+  if (!attributes || attributes.length === 0) {
     return [];
   }
 
-  const groups: Record<OtelAttributeGroup, typeof attributes> = {
+  const groups: Record<OtelAttributeGroup, SpanAttributes> = {
     operation: [],
     provider: [],
     usage: [],
@@ -44,7 +46,7 @@ function groupOtelAttributes(
     cache: [],
     agent: [],
     other: [],
-  };
+  } as Record<OtelAttributeGroup, SpanAttributes>;
 
   attributes.forEach((attr) => {
     const key = attr.key.toLowerCase();
