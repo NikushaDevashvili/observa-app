@@ -9,6 +9,7 @@ import {
   DetailsViewContentViewer,
   type DetailsViewContentViewMode,
 } from "./DetailsViewContentViewer";
+import { DetailsViewOtelAttributesPanel } from "./DetailsViewOtelAttributesPanel";
 
 interface AttributesTabProps {
   data: TraceSpan;
@@ -59,9 +60,64 @@ export const DetailsViewAttributesTab = ({
     );
   }
 
+  // Check if we have OTEL attributes
+  const hasOtelAttrs = data.attributes.some(
+    (attr) =>
+      attr.key.startsWith("gen_ai.") ||
+      attr.key.startsWith("server.") ||
+      attr.key.startsWith("error.")
+  );
+
+  // Separate OTEL and non-OTEL attributes
+  const otelAttributes = hasOtelAttrs
+    ? data.attributes.filter(
+        (attr) =>
+          attr.key.startsWith("gen_ai.") ||
+          attr.key.startsWith("server.") ||
+          attr.key.startsWith("error.") ||
+          attr.key.startsWith("retrieval.") ||
+          attr.key.startsWith("embedding.") ||
+          attr.key.startsWith("vector_db.") ||
+          attr.key.startsWith("cache.") ||
+          attr.key.startsWith("agent.")
+      )
+    : [];
+  const otherAttributes = hasOtelAttrs
+    ? data.attributes.filter(
+        (attr) =>
+          !attr.key.startsWith("gen_ai.") &&
+          !attr.key.startsWith("server.") &&
+          !attr.key.startsWith("error.") &&
+          !attr.key.startsWith("retrieval.") &&
+          !attr.key.startsWith("embedding.") &&
+          !attr.key.startsWith("vector_db.") &&
+          !attr.key.startsWith("cache.") &&
+          !attr.key.startsWith("agent.")
+      )
+    : data.attributes;
+
   return (
-    <div className="space-y-4">
-      {data.attributes.map((attribute, index) => {
+    <div className="space-y-6">
+      {/* OTEL Attributes Panel (Grouped) */}
+      {hasOtelAttrs && (
+        <div>
+          <h3 className="text-sm font-semibold mb-3 text-foreground">
+            OpenTelemetry Attributes
+          </h3>
+          <DetailsViewOtelAttributesPanel data={data} />
+        </div>
+      )}
+
+      {/* Other Attributes (Flat List) */}
+      {otherAttributes.length > 0 && (
+        <div>
+          {hasOtelAttrs && (
+            <h3 className="text-sm font-semibold mb-3 text-foreground">
+              Other Attributes
+            </h3>
+          )}
+          <div className="space-y-4">
+            {otherAttributes.map((attribute, index) => {
         const stringValue = attribute.value.stringValue;
         const simpleValue =
           stringValue ||
@@ -112,6 +168,9 @@ export const DetailsViewAttributesTab = ({
           </div>
         );
       })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

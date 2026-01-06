@@ -14,6 +14,7 @@ import { DetailsViewHeader } from "./DetailsViewHeader";
 import { DetailsViewInputOutputTab } from "./DetailsViewInputOutputTab";
 import { DetailsViewRawDataTab } from "./DetailsViewRawDataTab";
 import { DetailsViewErrorTab } from "./DetailsViewErrorTab";
+import { EmbeddingSpanView } from "@/components/traces/EmbeddingSpanView";
 
 type DetailsViewTab = "error" | "input-output" | "attributes" | "raw";
 
@@ -157,6 +158,14 @@ export const DetailsView = ({
       )}
     >
       <div className="mb-4 shrink-0">{headerContent}</div>
+      
+      {/* Embedding Span Visualization (if applicable) */}
+      {data.type === "embedding" && (
+        <div className="mb-4 shrink-0">
+          <EmbeddingSpanView span={data} />
+        </div>
+      )}
+      
       <div className="shrink-0">
         <TabSelector
           items={tabItems}

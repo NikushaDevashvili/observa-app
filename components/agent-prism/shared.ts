@@ -8,6 +8,8 @@ import {
   Link,
   Search,
   BarChart2,
+  Layers,
+  Database,
   Plus,
   HelpCircle,
   MoveHorizontal,
@@ -91,12 +93,12 @@ export const SPAN_CATEGORY_CONFIG: Record<
   embedding: {
     label: "EMBEDDING",
     theme: "emerald",
-    icon: BarChart2,
+    icon: Layers, // Better icon for embeddings
   },
   create_agent: {
     label: "CREATE AGENT",
     theme: "sky",
-    icon: Plus,
+    icon: Bot, // Better icon for agent creation
   },
   span: {
     label: "SPAN",
