@@ -8,14 +8,14 @@ import type { TraceSpanCategory } from "@evilmartians/agent-prism-types";
 /**
  * Extended span type to include all new SOTA span types
  */
-export type SpanType = 
+export type SpanType =
   | "llm_call"
   | "tool_execution"
   | "retrieval"
-  | "embedding"              // ✅ NEW: Embedding operations
-  | "vector_db_operation"     // ✅ NEW: Vector database operations
-  | "cache_operation"         // ✅ NEW: Cache hit/miss operations
-  | "agent_create"             // ✅ NEW: Agent creation
+  | "embedding" // ✅ NEW: Embedding operations
+  | "vector_db_operation" // ✅ NEW: Vector database operations
+  | "cache_operation" // ✅ NEW: Cache hit/miss operations
+  | "agent_create" // ✅ NEW: Agent creation
   | "agent_invocation"
   | "chain_operation"
   | "span"
@@ -26,7 +26,7 @@ export type SpanType =
 /**
  * OTEL attribute groups for better organization
  */
-export type OtelAttributeGroup = 
+export type OtelAttributeGroup =
   | "operation"
   | "provider"
   | "usage"
@@ -139,8 +139,9 @@ export function isNewSotaSpanType(type: SpanType | TraceSpanCategory): boolean {
 /**
  * Helper to get display name for span type
  */
-export function getSpanTypeDisplayName(type: SpanType | TraceSpanCategory): string {
-  const filter = DEFAULT_SPAN_TYPE_FILTERS.find(f => f.value === type);
+export function getSpanTypeDisplayName(
+  type: SpanType | TraceSpanCategory
+): string {
+  const filter = DEFAULT_SPAN_TYPE_FILTERS.find((f) => f.value === type);
   return filter?.label || type.toUpperCase().replace(/_/g, " ");
 }
-

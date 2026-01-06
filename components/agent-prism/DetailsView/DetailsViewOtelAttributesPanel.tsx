@@ -15,7 +15,7 @@ interface OtelAttributesPanelProps {
 interface GroupedAttributes {
   group: OtelAttributeGroup;
   label: string;
-  attributes: typeof TraceSpan.prototype.attributes;
+  attributes: TraceSpan["attributes"];
   icon?: ReactElement;
 }
 
