@@ -25,6 +25,10 @@ interface GroupedAttributes {
 function groupOtelAttributes(
   attributes: TraceSpan["attributes"]
 ): GroupedAttributes[] {
+  if (!attributes) {
+    return [];
+  }
+
   const groups: Record<OtelAttributeGroup, typeof attributes> = {
     operation: [],
     provider: [],
@@ -114,6 +118,10 @@ function extractCostAttributes(
   cost?: number;
 } {
   const costAttrs: any = {};
+  
+  if (!attributes) {
+    return costAttrs;
+  }
   
   attributes.forEach((attr) => {
     const key = attr.key.toLowerCase();
