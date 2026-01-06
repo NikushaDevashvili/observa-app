@@ -30,27 +30,27 @@ function extractEmbeddingData(span: TraceSpan) {
 
   attrs.forEach((attr) => {
     const key = attr.key.toLowerCase();
-    const value = attr.value;
+    const value = attr.value as any;
 
     if (key === "gen_ai.request.model" || key === "embedding.model") {
-      data.model = value.stringValue || undefined;
+      data.model = value?.stringValue ?? undefined;
     } else if (key === "gen_ai.embeddings.dimension.count" || key === "embedding.dimension_count") {
-      data.dimension_count = value.intValue || undefined;
+      data.dimension_count = value?.intValue ?? undefined;
     } else if (key === "gen_ai.request.encoding_formats") {
       try {
-        const parsed = JSON.parse(value.stringValue || "[]");
+        const parsed = JSON.parse(value?.stringValue ?? "[]");
         data.encoding_formats = Array.isArray(parsed) ? parsed : undefined;
       } catch {
         // Ignore parse errors
       }
     } else if (key === "gen_ai.usage.input_tokens" || key === "embedding.input_tokens") {
-      data.input_tokens = value.intValue || undefined;
+      data.input_tokens = value?.intValue ?? undefined;
     } else if (key === "gen_ai.usage.output_tokens" || key === "embedding.output_tokens") {
-      data.output_tokens = value.intValue || undefined;
+      data.output_tokens = value?.intValue ?? undefined;
     } else if (key === "gen_ai.usage.cost" || key === "embedding.cost") {
-      data.cost = value.doubleValue || value.intValue || undefined;
+      data.cost = value?.doubleValue ?? value?.intValue ?? undefined;
     } else if (key === "embedding.latency_ms") {
-      data.latency_ms = value.intValue || undefined;
+      data.latency_ms = value?.intValue ?? undefined;
     }
   });
 

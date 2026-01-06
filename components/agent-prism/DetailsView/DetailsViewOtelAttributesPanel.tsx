@@ -240,12 +240,19 @@ export const DetailsViewOtelAttributesPanel = ({
           </h4>
           <div className="space-y-2 pl-4 border-l-2 border-muted">
             {group.attributes.map((attr, index) => {
-              const stringValue = attr.value.stringValue;
+              const value = attr.value as any;
+              const stringValue = value?.stringValue;
               const simpleValue =
-                stringValue ||
-                attr.value.intValue?.toString() ||
-                attr.value.doubleValue?.toString() ||
-                attr.value.boolValue?.toString() ||
+                stringValue ??
+                (value?.intValue !== undefined
+                  ? value.intValue.toString()
+                  : undefined) ??
+                (value?.doubleValue !== undefined
+                  ? value.doubleValue.toString()
+                  : undefined) ??
+                (value?.boolValue !== undefined
+                  ? value.boolValue.toString()
+                  : undefined) ??
                 "N/A";
 
               return (
