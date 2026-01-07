@@ -1,19 +1,6 @@
 "use client";
 
-import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { LineChart, AreaChart, BarChart } from '@lobehub/charts';
 
 interface TimeSeriesData {
   timestamp: string;
@@ -52,22 +39,30 @@ export default function MetricsChart({
     });
   };
 
-  const formatValue = (value: number, type: string) => {
-    switch (type) {
-      case "latency":
-        return `${value.toFixed(0)}ms`;
-      case "error_rate":
-        return `${value.toFixed(2)}%`;
-      case "cost":
-        return `$${value.toFixed(2)}`;
-      case "tokens":
-        return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toString();
-      case "feedback":
-        return value.toFixed(0);
-      default:
-        return value.toString();
+  // Transform data for LobeHub charts
+  const transformedData = data.map((item) => {
+    const base: any = {
+      timestamp: formatTimestamp(item.timestamp),
+    };
+    
+    if (type === "latency" && item.latency) {
+      base.p50 = item.latency.p50;
+      base.p95 = item.latency.p95;
+      base.p99 = item.latency.p99;
+    } else if (type === "error_rate") {
+      base.error_rate = item.error_rate || 0;
+    } else if (type === "cost") {
+      base.cost = item.cost || 0;
+    } else if (type === "tokens") {
+      base.tokens = item.tokens || 0;
+    } else if (type === "feedback" && item.feedback) {
+      base.total = item.feedback.total;
+      base.likes = item.feedback.likes;
+      base.dislikes = item.feedback.dislikes;
     }
-  };
+    
+    return base;
+  });
 
   if (data.length === 0) {
     return (
@@ -84,46 +79,18 @@ export default function MetricsChart({
     return (
       <div className="p-6 border-1">
         <h3 className="text-sm font-medium mb-4">{title}</h3>
-        <ResponsiveContainer width="100%" height={height}>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                tickFormatter={formatTimestamp}
-                style={{ fontSize: "12px" }}
-              />
-              <YAxis
-                tickFormatter={(value) => `${value}ms`}
-                style={{ fontSize: "12px" }}
-              />
-              <Tooltip
-                formatter={(value: number) => `${value.toFixed(0)}ms`}
-                labelFormatter={formatTimestamp}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="latency.p50"
-                stroke="#8884d8"
-                name="P50"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="latency.p95"
-                stroke="#82ca9d"
-                name="P95"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="latency.p99"
-                stroke="#ffc658"
-                name="P99"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div style={{ height: `${height}px` }}>
+          <LineChart
+            data={transformedData}
+            xKey="timestamp"
+            yKeys={['p50', 'p95', 'p99']}
+            series={[
+              { key: 'p50', label: 'P50', color: '#8884d8' },
+              { key: 'p95', label: 'P95', color: '#82ca9d' },
+              { key: 'p99', label: 'P99', color: '#ffc658' },
+            ]}
+          />
+        </div>
       </div>
     );
   }
@@ -132,38 +99,16 @@ export default function MetricsChart({
     return (
       <div className="p-6 border-1">
         <h3 className="text-sm font-medium mb-4">{title}</h3>
-        <ResponsiveContainer width="100%" height={height}>
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id="colorError" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                tickFormatter={formatTimestamp}
-                style={{ fontSize: "12px" }}
-              />
-              <YAxis
-                tickFormatter={(value) => `${value}%`}
-                style={{ fontSize: "12px" }}
-              />
-              <Tooltip
-                formatter={(value: number) => `${value.toFixed(2)}%`}
-                labelFormatter={formatTimestamp}
-              />
-              <Area
-                type="monotone"
-                dataKey="error_rate"
-                stroke="#ef4444"
-                fillOpacity={1}
-                fill="url(#colorError)"
-                name="Error Rate"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div style={{ height: `${height}px` }}>
+          <AreaChart
+            data={transformedData}
+            xKey="timestamp"
+            yKeys={['error_rate']}
+            series={[
+              { key: 'error_rate', label: 'Error Rate', color: '#ef4444' },
+            ]}
+          />
+        </div>
       </div>
     );
   }
@@ -172,25 +117,16 @@ export default function MetricsChart({
     return (
       <div className="p-6 border-1">
         <h3 className="text-sm font-medium mb-4">{title}</h3>
-        <ResponsiveContainer width="100%" height={height}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                tickFormatter={formatTimestamp}
-                style={{ fontSize: "12px" }}
-              />
-              <YAxis
-                tickFormatter={(value) => `$${value.toFixed(2)}`}
-                style={{ fontSize: "12px" }}
-              />
-              <Tooltip
-                formatter={(value: number) => `$${value.toFixed(2)}`}
-                labelFormatter={formatTimestamp}
-              />
-              <Bar dataKey="cost" fill="#3b82f6" name="Cost" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div style={{ height: `${height}px` }}>
+          <BarChart
+            data={transformedData}
+            xKey="timestamp"
+            yKeys={['cost']}
+            series={[
+              { key: 'cost', label: 'Cost', color: '#3b82f6' },
+            ]}
+          />
+        </div>
       </div>
     );
   }
@@ -199,44 +135,16 @@ export default function MetricsChart({
     return (
       <div className="p-6 border-1">
         <h3 className="text-sm font-medium mb-4">{title}</h3>
-        <ResponsiveContainer width="100%" height={height}>
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                tickFormatter={formatTimestamp}
-                style={{ fontSize: "12px" }}
-              />
-              <YAxis
-                tickFormatter={(value) =>
-                  value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toString()
-                }
-                style={{ fontSize: "12px" }}
-              />
-              <Tooltip
-                formatter={(value: number) =>
-                  value >= 1000
-                    ? `${(value / 1000).toFixed(1)}k tokens`
-                    : `${value} tokens`
-                }
-                labelFormatter={formatTimestamp}
-              />
-              <Area
-                type="monotone"
-                dataKey="tokens"
-                stroke="#3b82f6"
-                fillOpacity={1}
-                fill="url(#colorTokens)"
-                name="Tokens"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div style={{ height: `${height}px` }}>
+          <AreaChart
+            data={transformedData}
+            xKey="timestamp"
+            yKeys={['tokens']}
+            series={[
+              { key: 'tokens', label: 'Tokens', color: '#3b82f6' },
+            ]}
+          />
+        </div>
       </div>
     );
   }
@@ -245,73 +153,21 @@ export default function MetricsChart({
     return (
       <div className="p-6 border-1">
         <h3 className="text-sm font-medium mb-4">{title}</h3>
-        <ResponsiveContainer width="100%" height={height}>
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id="colorFeedback" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorLikes" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorDislikes" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                tickFormatter={formatTimestamp}
-                style={{ fontSize: "12px" }}
-              />
-              <YAxis
-                tickFormatter={(value) => value.toString()}
-                style={{ fontSize: "12px" }}
-              />
-              <Tooltip
-                formatter={(value: number, name: string) => {
-                  if (name === "feedback.feedback_rate") {
-                    return `${value.toFixed(2)}%`;
-                  }
-                  return value.toString();
-                }}
-                labelFormatter={formatTimestamp}
-              />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="feedback.total"
-                stroke="#8b5cf6"
-                fillOpacity={1}
-                fill="url(#colorFeedback)"
-                name="Total Feedback"
-              />
-              <Area
-                type="monotone"
-                dataKey="feedback.likes"
-                stroke="#10b981"
-                fillOpacity={1}
-                fill="url(#colorLikes)"
-                name="Likes"
-              />
-              <Area
-                type="monotone"
-                dataKey="feedback.dislikes"
-                stroke="#ef4444"
-                fillOpacity={1}
-                fill="url(#colorDislikes)"
-                name="Dislikes"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div style={{ height: `${height}px` }}>
+          <AreaChart
+            data={transformedData}
+            xKey="timestamp"
+            yKeys={['total', 'likes', 'dislikes']}
+            series={[
+              { key: 'total', label: 'Total Feedback', color: '#8b5cf6' },
+              { key: 'likes', label: 'Likes', color: '#10b981' },
+              { key: 'dislikes', label: 'Dislikes', color: '#ef4444' },
+            ]}
+          />
+        </div>
       </div>
     );
   }
 
   return null;
 }
-
-

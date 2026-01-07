@@ -7,6 +7,7 @@ const withNextra = require("nextra")({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['@lobehub/charts'],
 };
 
 // Apply Nextra first, then Sentry
