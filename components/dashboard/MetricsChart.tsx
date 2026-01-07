@@ -14,7 +14,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TimeSeriesData {
   timestamp: string;
@@ -72,27 +71,20 @@ export default function MetricsChart({
 
   if (data.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-            No data available
-          </div>
-        </CardContent>
-      </Card>
+      <div className="p-6 border-1">
+        <h3 className="text-sm font-medium mb-4">{title}</h3>
+        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+          No data available
+        </div>
+      </div>
     );
   }
 
   if (type === "latency") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={height}>
+      <div className="p-6 border-1">
+        <h3 className="text-sm font-medium mb-4">{title}</h3>
+        <ResponsiveContainer width="100%" height={height}>
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
@@ -132,19 +124,15 @@ export default function MetricsChart({
               />
             </LineChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      </div>
     );
   }
 
   if (type === "error_rate") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={height}>
+      <div className="p-6 border-1">
+        <h3 className="text-sm font-medium mb-4">{title}</h3>
+        <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorError" x1="0" y1="0" x2="0" y2="1">
@@ -176,19 +164,15 @@ export default function MetricsChart({
               />
             </AreaChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      </div>
     );
   }
 
   if (type === "cost") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={height}>
+      <div className="p-6 border-1">
+        <h3 className="text-sm font-medium mb-4">{title}</h3>
+        <ResponsiveContainer width="100%" height={height}>
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
@@ -207,19 +191,15 @@ export default function MetricsChart({
               <Bar dataKey="cost" fill="#3b82f6" name="Cost" />
             </BarChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      </div>
     );
   }
 
   if (type === "tokens") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={height}>
+      <div className="p-6 border-1">
+        <h3 className="text-sm font-medium mb-4">{title}</h3>
+        <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
@@ -257,19 +237,15 @@ export default function MetricsChart({
               />
             </AreaChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      </div>
     );
   }
 
   if (type === "feedback") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={height}>
+      <div className="p-6 border-1">
+        <h3 className="text-sm font-medium mb-4">{title}</h3>
+        <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorFeedback" x1="0" y1="0" x2="0" y2="1">
@@ -331,8 +307,7 @@ export default function MetricsChart({
               />
             </AreaChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      </div>
     );
   }
 

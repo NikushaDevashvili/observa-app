@@ -25,7 +25,6 @@ import {
   ThumbsDown,
   MessageSquare,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import TimeRangeFilter, { TimeRange } from "@/components/dashboard/TimeRangeFilter";
 import ProjectFilter from "@/components/dashboard/ProjectFilter";
@@ -386,65 +385,61 @@ export default function DashboardPage() {
 
       {/* Summary Section */}
       {metrics && (
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                System Health
-              </CardTitle>
-              <Badge
-                className={
-                  healthStatus === "healthy"
-                    ? "bg-green-100 text-green-800"
-                    : healthStatus === "warning"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-                }
-              >
-                {healthStatus.charAt(0).toUpperCase() + healthStatus.slice(1)}
-              </Badge>
+        <div className="p-6 border-1 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              <h2 className="text-sm font-medium">System Health</h2>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <div className="text-muted-foreground">Error Rate</div>
-                <div className="font-medium">
-                  {metrics.error_rate.rate.toFixed(2)}%{" "}
-                  {metrics.error_rate.rate < 1 ? (
-                    <span className="text-green-600">✓ Good</span>
-                  ) : metrics.error_rate.rate < 5 ? (
-                    <span className="text-yellow-600">⚠ Warning</span>
-                  ) : (
-                    <span className="text-red-600">✗ Critical</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">P95 Latency</div>
-                <div className="font-medium">
-                  {metrics.latency.p95.toFixed(0)}ms{" "}
-                  {metrics.latency.p95 < 1000 ? (
-                    <span className="text-green-600">✓ Good</span>
-                  ) : metrics.latency.p95 < 5000 ? (
-                    <span className="text-yellow-600">⚠ Warning</span>
-                  ) : (
-                    <span className="text-red-600">✗ Critical</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Active Issues</div>
-                <div className="font-medium">
-                  {metrics.active_issues.total} total (
-                  {metrics.active_issues.high} high, {metrics.active_issues.medium}{" "}
-                  medium)
-                </div>
+            <Badge
+              className={
+                healthStatus === "healthy"
+                  ? "bg-green-100 text-green-800"
+                  : healthStatus === "warning"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              }
+            >
+              {healthStatus.charAt(0).toUpperCase() + healthStatus.slice(1)}
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <div className="text-muted-foreground mb-1">Error Rate</div>
+              <div className="font-medium">
+                {metrics.error_rate.rate.toFixed(2)}%{" "}
+                {metrics.error_rate.rate < 1 ? (
+                  <span className="text-green-600">✓ Good</span>
+                ) : metrics.error_rate.rate < 5 ? (
+                  <span className="text-yellow-600">⚠ Warning</span>
+                ) : (
+                  <span className="text-red-600">✗ Critical</span>
+                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className="text-muted-foreground mb-1">P95 Latency</div>
+              <div className="font-medium">
+                {metrics.latency.p95.toFixed(0)}ms{" "}
+                {metrics.latency.p95 < 1000 ? (
+                  <span className="text-green-600">✓ Good</span>
+                ) : metrics.latency.p95 < 5000 ? (
+                  <span className="text-yellow-600">⚠ Warning</span>
+                ) : (
+                  <span className="text-red-600">✗ Critical</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground mb-1">Active Issues</div>
+              <div className="font-medium">
+                {metrics.active_issues.total} total (
+                {metrics.active_issues.high} high, {metrics.active_issues.medium}{" "}
+                medium)
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Key Metrics Row */}
@@ -597,68 +592,64 @@ export default function DashboardPage() {
 
       {/* Feedback Details Card */}
       {metrics?.feedback && metrics.feedback.total > 0 && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              User Feedback Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-              <div>
-                <div className="text-muted-foreground">Total Feedback</div>
-                <div className="font-medium">{metrics.feedback.total}</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Like/Dislike Ratio</div>
-                <div className="font-medium">
-                  {metrics.feedback.dislikes > 0
-                    ? (metrics.feedback.likes / metrics.feedback.dislikes).toFixed(2)
-                    : metrics.feedback.likes > 0
-                    ? "∞"
-                    : "0"}
-                  :1
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Average Rating</div>
-                <div className="font-medium">
-                  {metrics.feedback.avg_rating > 0
-                    ? `${metrics.feedback.avg_rating.toFixed(1)}/5`
-                    : "N/A"}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">With Comments</div>
-                <div className="font-medium">
-                  {metrics.feedback.with_comments} (
-                  {metrics.feedback.total > 0
-                    ? ((metrics.feedback.with_comments / metrics.feedback.total) * 100).toFixed(1)
-                    : 0}
-                  %)
-                </div>
+        <div className="p-6 border-1 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="h-4 w-4" />
+            <h2 className="text-sm font-medium">User Feedback Details</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div>
+              <div className="text-muted-foreground mb-1">Total Feedback</div>
+              <div className="font-medium">{metrics.feedback.total}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground mb-1">Like/Dislike Ratio</div>
+              <div className="font-medium">
+                {metrics.feedback.dislikes > 0
+                  ? (metrics.feedback.likes / metrics.feedback.dislikes).toFixed(2)
+                  : metrics.feedback.likes > 0
+                  ? "∞"
+                  : "0"}
+                :1
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t">
-              <div className="text-sm text-muted-foreground mb-2">Feedback by Outcome</div>
-              <div className="grid grid-cols-4 gap-2 text-xs">
-                <div>
-                  <span className="text-green-600">Success:</span> {metrics.feedback.by_outcome.success}
-                </div>
-                <div>
-                  <span className="text-red-600">Failure:</span> {metrics.feedback.by_outcome.failure}
-                </div>
-                <div>
-                  <span className="text-yellow-600">Partial:</span> {metrics.feedback.by_outcome.partial}
-                </div>
-                <div>
-                  <span className="text-gray-600">Unknown:</span> {metrics.feedback.by_outcome.unknown}
-                </div>
+            <div>
+              <div className="text-muted-foreground mb-1">Average Rating</div>
+              <div className="font-medium">
+                {metrics.feedback.avg_rating > 0
+                  ? `${metrics.feedback.avg_rating.toFixed(1)}/5`
+                  : "N/A"}
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className="text-muted-foreground mb-1">With Comments</div>
+              <div className="font-medium">
+                {metrics.feedback.with_comments} (
+                {metrics.feedback.total > 0
+                  ? ((metrics.feedback.with_comments / metrics.feedback.total) * 100).toFixed(1)
+                  : 0}
+                %)
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t">
+            <div className="text-sm text-muted-foreground mb-2">Feedback by Outcome</div>
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              <div>
+                <span className="text-green-600">Success:</span> {metrics.feedback.by_outcome.success}
+              </div>
+              <div>
+                <span className="text-red-600">Failure:</span> {metrics.feedback.by_outcome.failure}
+              </div>
+              <div>
+                <span className="text-yellow-600">Partial:</span> {metrics.feedback.by_outcome.partial}
+              </div>
+              <div>
+                <span className="text-gray-600">Unknown:</span> {metrics.feedback.by_outcome.unknown}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Charts Row 1: Latency + Error Rate */}
