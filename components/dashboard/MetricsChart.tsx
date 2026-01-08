@@ -151,13 +151,18 @@ export default function MetricsChart({
               style={{ fontSize: "12px" }}
             />
             <YAxis
-              tickFormatter={(value) => `${value}ms`}
+              tickFormatter={(value: any) => `${value}ms`}
               style={{ fontSize: "12px" }}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value: number) => `${value.toFixed(0)}ms`}
+                  formatter={(value: any, name: any, item: any, index: number, payload: any) => {
+                    if (typeof value === 'number') {
+                      return `${value.toFixed(0)}ms`;
+                    }
+                    return value;
+                  }}
                   labelFormatter={formatTimestamp}
                 />
               }
@@ -209,13 +214,18 @@ export default function MetricsChart({
               style={{ fontSize: "12px" }}
             />
             <YAxis
-              tickFormatter={(value) => `${value}%`}
+              tickFormatter={(value: any) => `${value}%`}
               style={{ fontSize: "12px" }}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value: number) => `${value.toFixed(2)}%`}
+                  formatter={(value: any, name: any, item: any, index: number, payload: any) => {
+                    if (typeof value === 'number') {
+                      return `${value.toFixed(2)}%`;
+                    }
+                    return value;
+                  }}
                   labelFormatter={formatTimestamp}
                 />
               }
@@ -247,13 +257,18 @@ export default function MetricsChart({
               style={{ fontSize: "12px" }}
             />
             <YAxis
-              tickFormatter={(value) => `$${value.toFixed(2)}`}
+              tickFormatter={(value: any) => `$${value.toFixed(2)}`}
               style={{ fontSize: "12px" }}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value: number) => `$${value.toFixed(2)}`}
+                  formatter={(value: any, name: any, item: any, index: number, payload: any) => {
+                    if (typeof value === 'number') {
+                      return `$${value.toFixed(2)}`;
+                    }
+                    return value;
+                  }}
                   labelFormatter={formatTimestamp}
                 />
               }
@@ -284,7 +299,7 @@ export default function MetricsChart({
               style={{ fontSize: "12px" }}
             />
             <YAxis
-              tickFormatter={(value) =>
+              tickFormatter={(value: any) =>
                 value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toString()
               }
               style={{ fontSize: "12px" }}
@@ -292,11 +307,14 @@ export default function MetricsChart({
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value: number) =>
-                    value >= 1000
-                      ? `${(value / 1000).toFixed(1)}k tokens`
-                      : `${value} tokens`
-                  }
+                  formatter={(value: any, name: any, item: any, index: number, payload: any) => {
+                    if (typeof value === 'number') {
+                      return value >= 1000
+                        ? `${(value / 1000).toFixed(1)}k tokens`
+                        : `${value} tokens`;
+                    }
+                    return value;
+                  }}
                   labelFormatter={formatTimestamp}
                 />
               }
@@ -342,17 +360,20 @@ export default function MetricsChart({
               style={{ fontSize: "12px" }}
             />
             <YAxis
-              tickFormatter={(value) => value.toString()}
+              tickFormatter={(value: any) => value.toString()}
               style={{ fontSize: "12px" }}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value: number, name: string) => {
-                    if (name?.includes("feedback_rate")) {
-                      return `${value.toFixed(2)}%`;
+                  formatter={(value: any, name: any, item: any, index: number, payload: any) => {
+                    if (typeof value === 'number') {
+                      if (name?.includes("feedback_rate")) {
+                        return `${value.toFixed(2)}%`;
+                      }
+                      return value.toString();
                     }
-                    return value.toString();
+                    return value;
                   }}
                   labelFormatter={formatTimestamp}
                 />
