@@ -77,8 +77,14 @@ curl https://your-api.vercel.app/health
 # Detailed health
 curl https://your-api.vercel.app/health/detailed
 
-# Test authentication
-curl -H "Authorization: Bearer YOUR_KEY" \
+# Test API key authentication (use ingest endpoint)
+curl -X POST https://your-api.vercel.app/api/v1/events/ingest \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '[]'
+
+# Test session token authentication (use account endpoint)
+curl -H "Authorization: Bearer YOUR_SESSION_TOKEN" \
   https://your-api.vercel.app/api/v1/auth/account
 ```
 
@@ -136,7 +142,14 @@ curl -H "Authorization: Bearer TOKEN" \
 
 2. **Test Token**:
    ```bash
-   curl -H "Authorization: Bearer YOUR_TOKEN" \
+   # Test API key (use ingest endpoint)
+   curl -X POST https://your-api.vercel.app/api/v1/events/ingest \
+     -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '[]'
+   
+   # Test session token (use account endpoint)
+   curl -H "Authorization: Bearer YOUR_SESSION_TOKEN" \
      https://your-api.vercel.app/api/v1/auth/account
    ```
 

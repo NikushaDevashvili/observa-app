@@ -79,14 +79,18 @@ export OBSERVA_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 ### Verify Your API Key
 
-Test that your API key works:
+Test that your API key works by sending a test event:
 
 ```bash
-curl -X GET https://observa-api.vercel.app/api/v1/auth/account \
-  -H "Authorization: Bearer YOUR_API_KEY"
+curl -X POST https://observa-api.vercel.app/api/v1/events/ingest \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '[]'
 ```
 
-You should see your account information.
+A successful response (200 status) confirms your API key is valid. You can also verify it works by checking your dashboard after sending real events.
+
+> **Note**: The `/api/v1/auth/account` endpoint requires a session token (obtained via login), not an API key. To verify your API key, use the events ingest endpoint or check your dashboard after sending events.
 
 ---
 
