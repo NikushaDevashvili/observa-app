@@ -261,7 +261,7 @@ Get active alerts (high/medium severity).
 
 ## Authentication Endpoints
 
-### POST /api/v1/onboarding/signup
+### POST /api/v1/auth/signup
 
 Create a new account.
 
@@ -271,10 +271,13 @@ Create a new account.
 ```json
 {
   "email": "your@email.com",
+  "password": "your-secure-password",
   "companyName": "Your Company",
   "plan": "free"
 }
 ```
+
+> **Note**: The `password` field is required (minimum 8 characters).
 
 **Response**:
 ```json

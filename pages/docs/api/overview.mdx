@@ -50,7 +50,7 @@ Session tokens are obtained via login endpoint.
 
 ### Authentication Endpoints
 
-- `POST /api/v1/onboarding/signup` - Create account
+- `POST /api/v1/auth/signup` - Create account
 - `POST /api/v1/auth/login` - Login
 - `GET /api/v1/auth/me` - Get current user
 - `GET /api/v1/auth/account` - Get account info

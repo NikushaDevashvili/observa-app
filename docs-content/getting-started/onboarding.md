@@ -21,17 +21,20 @@ This guide walks you through:
 
 ### Option A: Via API (For Developers)
 
-Use the onboarding endpoint to create an account programmatically:
+Use the signup endpoint to create an account programmatically:
 
 ```bash
-curl -X POST https://observa-api.vercel.app/api/v1/onboarding/signup \
+curl -X POST https://observa-api.vercel.app/api/v1/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
     "email": "your@email.com",
+    "password": "your-secure-password",
     "companyName": "Your Company Name",
     "plan": "free"
   }'
 ```
+
+> **Note**: The signup endpoint requires a `password` field. Choose a secure password (at least 8 characters).
 
 **Response:**
 ```json
