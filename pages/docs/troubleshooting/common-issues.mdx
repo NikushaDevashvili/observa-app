@@ -12,13 +12,17 @@ npm install observa-sdk
 npm list observa-sdk  # Verify
 ```
 
-### "Invalid API Key"
+### "Invalid API Key" or "UNAUTHORIZED - Invalid or missing API key"
 
 **Solutions**:
 1. Verify API key format (should start with `eyJ`)
-2. Check for extra spaces
+2. Check for extra spaces in the Authorization header
 3. Ensure key matches environment (dev vs prod)
-4. Regenerate key from dashboard
+4. Verify the token hasn't expired (check `exp` claim in JWT)
+5. **If using a token from signup**: Ensure the backend's `JWT_SECRET` matches the secret used to sign the token
+6. **If token was created on a different backend instance**: API keys are instance-specific due to JWT secret
+7. Regenerate key from dashboard or re-signup to get a new token
+8. Check backend logs for specific validation error details
 
 ### "Events Not Sending"
 
@@ -35,9 +39,13 @@ npm list observa-sdk  # Verify
 ### "401 Unauthorized"
 
 **Solutions**:
-1. Check Authorization header format: `Bearer <token>`
+1. Check Authorization header format: `Bearer <token>` (note the space)
 2. Verify token is valid and not expired
-3. Ensure token matches environment
+3. Ensure token matches environment (dev vs prod)
+4. **For API keys**: Check that backend `JWT_SECRET` matches the secret used to create the token
+5. **Common issue**: Token created with one backend instance won't work with another (different JWT secrets)
+6. Decode JWT to verify it contains expected claims (tenantId, projectId, etc.)
+7. Check backend server logs for detailed error message
 
 ### "429 Rate Limit Exceeded"
 

@@ -13,8 +13,14 @@ Complete reference for all Observa API error codes.
 - Invalid API key or session token
 - Expired token
 - Wrong token format
+- **JWT signature validation failed** (backend `JWT_SECRET` doesn't match token's signing secret)
+- **Token created on different backend instance** (each instance has different JWT_SECRET)
 
-**Solution**: Verify token and ensure `Bearer` prefix is included
+**Solution**: 
+- Verify token and ensure `Bearer` prefix is included (with space: `Bearer <token>`)
+- If using an API key from signup, ensure it was created on the same backend instance you're calling
+- Check backend logs for specific validation error
+- Regenerate API key if needed
 
 ---
 
