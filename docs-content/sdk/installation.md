@@ -21,11 +21,11 @@ OBSERVA_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ### 3. Initialize the SDK
 
 ```typescript
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 
-const observa = new ObservaSDK({
+const observa = init({
   apiKey: process.env.OBSERVA_API_KEY!,
-  apiUrl: "https://observa-api.vercel.app",
+  apiUrl: "https://api.observa.ai",
   environment: "prod",
 });
 ```
@@ -78,9 +78,9 @@ OBSERVA_ENVIRONMENT=prod
 
 ```typescript
 import OpenAI from "openai";
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 
-const observa = new ObservaSDK({
+const observa = init({
   apiKey: process.env.OBSERVA_API_KEY!,
 });
 
@@ -121,9 +121,9 @@ async function openaiWithObserva(messages, options) {
 
 ```typescript
 import express from "express";
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 
-const observa = new ObservaSDK({
+const observa = init({
   apiKey: process.env.OBSERVA_API_KEY!,
 });
 

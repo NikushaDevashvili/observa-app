@@ -130,7 +130,7 @@ docker run -p 3000:3000 observa-api
 ### Test SDK Installation
 
 ```typescript
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 console.log("SDK installed successfully!");
 ```
 

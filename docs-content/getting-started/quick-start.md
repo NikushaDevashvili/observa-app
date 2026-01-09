@@ -34,9 +34,9 @@ npm install observa-sdk
 ## Step 3: Initialize SDK
 
 ```typescript
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 
-const observa = new ObservaSDK({
+const observa = init({
   apiKey: process.env.OBSERVA_API_KEY!,
 });
 ```

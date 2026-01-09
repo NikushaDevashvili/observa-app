@@ -117,14 +117,12 @@ npm list observa-sdk
 Create a file `observa-setup.ts`:
 
 ```typescript
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 
-const observa = new ObservaSDK({
+const observa = init({
   apiKey: process.env.OBSERVA_API_KEY!,
-  apiUrl: "https://observa-api.vercel.app",
+  apiUrl: "https://api.observa.ai",
   environment: "prod",
-  agentName: "my-ai-app",
-  version: "1.0.0",
 });
 
 export default observa;
@@ -136,7 +134,7 @@ Create a `.env` file:
 
 ```env
 OBSERVA_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-OBSERVA_API_URL=https://observa-api.vercel.app
+OBSERVA_API_URL=https://api.observa.ai
 ```
 
 **⚠️ Security**: Never commit `.env` files to version control.

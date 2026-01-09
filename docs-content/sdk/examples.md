@@ -5,12 +5,10 @@ Complete working examples for integrating Observa SDK into your application.
 ## Basic Example
 
 ```typescript
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 
-const observa = new ObservaSDK({
+const observa = init({
   apiKey: process.env.OBSERVA_API_KEY!,
-  agentName: "my-ai-app",
-  version: "1.0.0",
 });
 
 // Start trace
@@ -51,10 +49,10 @@ try {
 
 ```typescript
 import OpenAI from "openai";
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const observa = new ObservaSDK({ apiKey: process.env.OBSERVA_API_KEY! });
+const observa = init({ apiKey: process.env.OBSERVA_API_KEY! });
 
 async function chatWithObserva(userMessage: string, userId: string) {
   const traceId = observa.startTrace({
@@ -94,23 +92,63 @@ async function chatWithObserva(userMessage: string, userId: string) {
 }
 ```
 
-## RAG with Retrieval Tracking
+## RAG with Full Tracking (Embeddings, Vector DB, Retrieval, LLM)
 
 ```typescript
 async function ragWithObserva(query: string, userId: string) {
   const traceId = observa.startTrace({ userId, name: "RAG Query" });
 
   try {
-    // Track retrieval
-    const retrievalStart = Date.now();
-    const context = await vectorDB.query(query, { k: 3 });
-    observa.trackRetrieval({
-      contextIds: context.map((doc) => doc.id),
-      k: 3,
-      latencyMs: Date.now() - retrievalStart,
+    // 1. Track embedding generation
+    const embeddingStart = Date.now();
+    const embeddingResponse = await openai.embeddings.create({
+      model: "text-embedding-ada-002",
+      input: query,
+    });
+    const embedding = embeddingResponse.data[0].embedding;
+    
+    observa.trackEmbedding({
+      model: "text-embedding-ada-002",
+      dimensionCount: 1536,
+      inputTokens: 10,
+      outputTokens: 1536,
+      latencyMs: Date.now() - embeddingStart,
+      cost: 0.0001,
+      inputText: query,
     });
 
-    // Track LLM call with context
+    // 2. Track vector database search
+    const vectorDbStart = Date.now();
+    const vectorResults = await vectorDB.query(embedding, { k: 3 });
+    
+    observa.trackVectorDbOperation({
+      operationType: "vector_search",
+      indexName: "documents",
+      vectorDimensions: 1536,
+      vectorMetric: "cosine",
+      resultsCount: vectorResults.length,
+      scores: vectorResults.map((r) => r.score),
+      latencyMs: Date.now() - vectorDbStart,
+      cost: 0.0005,
+      providerName: "pinecone",
+    });
+
+    // 3. Track retrieval with context
+    const retrievalStart = Date.now();
+    const context = vectorResults.map((r) => r.text);
+    
+    observa.trackRetrieval({
+      contextIds: vectorResults.map((r) => r.id),
+      k: 3,
+      similarityScores: vectorResults.map((r) => r.score),
+      latencyMs: Date.now() - retrievalStart,
+      embeddingModel: "text-embedding-ada-002",
+      embeddingDimensions: 1536,
+      vectorMetric: "cosine",
+      retrievalContext: context.join("\n\n"),
+    });
+
+    // 4. Track LLM call with context
     const llmStart = Date.now();
     const response = await openai.chat.completions.create({
       model: "gpt-4",
@@ -124,8 +162,14 @@ async function ragWithObserva(query: string, userId: string) {
       model: "gpt-4",
       input: query,
       output: response.choices[0].message.content || "",
-      tokensTotal: response.usage.total_tokens,
+      inputTokens: response.usage.prompt_tokens,
+      outputTokens: response.usage.completion_tokens,
+      totalTokens: response.usage.total_tokens,
       latencyMs: Date.now() - llmStart,
+      operationName: "chat",
+      providerName: "openai",
+      inputCost: 0.00245,
+      outputCost: 0.01024,
     });
 
     await observa.endTrace();
@@ -134,6 +178,7 @@ async function ragWithObserva(query: string, userId: string) {
     observa.trackError({
       errorType: "rag_error",
       errorMessage: error instanceof Error ? error.message : "Unknown error",
+      errorCategory: "application_error",
     });
     await observa.endTrace();
     throw error;
@@ -191,9 +236,9 @@ async function agentWithTools(userQuery: string) {
 
 ```typescript
 import express from "express";
-import ObservaSDK from "observa-sdk";
+import { init } from "observa-sdk";
 
-const observa = new ObservaSDK({
+const observa = init({
   apiKey: process.env.OBSERVA_API_KEY!,
 });
 
