@@ -1,0 +1,79 @@
+416f6ed - Nick Devashvili, 8 seconds ago : Remove remaining LobeHub charts references from package.json and next.config.js
+ffdb473 - Nick Devashvili, 9 minutes ago : Revert LobeHub charts migration - restore Recharts implementation
+96aa3c9 - Nick Devashvili, 21 minutes ago : Migrate charts to LobeHub charts library
+02e918c - Nick Devashvili, 30 minutes ago : Update dashboard cards to match traces page style - simplified border-1 design
+f7d1ae4 - Nick Devashvili, 22 hours ago : Harden attribute value access for OTEL and embedding views
+fb7235b - Nick Devashvili, 22 hours ago : Harden OTEL attributes typing to avoid undefined in grouped view
+6f9a6ca - Nick Devashvili, 22 hours ago : Fix TypeScript error: use type assertion for doubleValue/intValue access
+dc7a65f - Nick Devashvili, 22 hours ago : Fix TypeScript error: add null checks for attributes in groupOtelAttributes and extractCostAttributes
+da37f02 - Nick Devashvili, 22 hours ago : Fix TypeScript error: use indexed access type instead of prototype for TraceSpan attributes
+0597361 - Nick Devashvili, 23 hours ago : feat: Implement all critical SOTA frontend updates
+ead24a7 - Nick Devashvili, 2 days ago : docs: add comprehensive feedback tracking documentation to learning center
+fec91e6 - Nick Devashvili, 2 days ago : feat: Add feedback-specific styling to SpanBadge component
+e3251c9 - Nick Devashvili, 2 days ago : fix: Add Tooltip to comment indicator in events list
+096baf0 - Nick Devashvili, 2 days ago : fix: Replace title prop with Tooltip component for MessageCircle icon
+52ed1ea - Nick Devashvili, 2 days ago : feat: Add icons and distinct styling for feedback spans in trace view
+6f6d3fb - Nick Devashvili, 2 days ago : feat: Add feedback metrics display to dashboard
+5c91e49 - Nick Devashvili, 3 days ago : fix: Add null check and loading state handling in OnboardingProgress component
+6c174a7 - Nick Devashvili, 3 days ago : fix: Move heightClasses declaration before use in OnboardingProgress component
+b2b1e6d - Nick Devashvili, 3 days ago : fix: Improve retry logic in onboarding checklist to prevent infinite loops
+8340501 - Nick Devashvili, 3 days ago : fix: Add empty states and loading indicators to onboarding components
+749e3f7 - Nick Devashvili, 3 days ago : fix: Improve error handling and response structure handling in onboarding components
+cde7cc1 - Nick Devashvili, 3 days ago : feat: Add onboarding UI components matching dashboard visual language
+d270f2d - Nick Devashvili, 3 days ago : Display descriptive error types in Traces Status column
+a845412 - Nick Devashvili, 3 days ago : Fix Traces page: Show HTTP errors as issues, remove empty columns
+89aa40c - Nick Devashvili, 3 days ago : Fix Issues page: Use 7-day time range instead of 24h default
+53df49f - Nick Devashvili, 4 days ago : Fix TypeScript error: Add null check for traceId.substring()
+7410073 - Nick Devashvili, 4 days ago : Fix TypeScript errors: Add null checks for useParams() in dynamic routes
+9d5ea1b - Nick Devashvili, 4 days ago : Implement enhanced dashboard with charts, filters, and improved UX
+acbe398 - Nick Devashvili, 4 days ago : fix: Remove conflicting app/docs directory for Nextra Pages Router
+ee1832f - Nick Devashvili, 4 days ago : docs: Set up Nextra documentation with beautiful Vercel template
+37866b4 - Nick Devashvili, 4 days ago : feat(traces): model dropdown from live trace models
+e39c5ad - Nick Devashvili, 4 days ago : feat(traces): add exports + show phase1-2 metrics
+b37e50d - Nick Devashvili, 5 days ago : Update error badge styling to use bg-red-600
+84dd2df - Nick Devashvili, 5 days ago : Update SpanCardBadges component
+44ae2a0 - Nick Devashvili, 5 days ago : fix: remove defaultValue from TabSelector and add debug log for errorInfo
+edc4af2 - Nick Devashvili, 5 days ago : fix: include errorSummary in initial selectedTrace state
+0edea25 - Nick Devashvili, 5 days ago : Remove time filter - show all data
+142de53 - Nick Devashvili, 5 days ago : Fix dashboard default time range to 7 days
+56e0d50 - Nick Devashvili, 5 days ago : debug: add errorSummary to console log for debugging
+f6e137c - Nick Devashvili, 5 days ago : fix: resolve TypeScript compilation errors in error visibility features
+4ce8718 - Nick Devashvili, 5 days ago : feat: enhance error visibility in trace tree view
+68b7e15 - Nick Devashvili, 6 days ago : feat: Integrate SOTA dashboard API endpoints
+fbc89bf - Nick Devashvili, 6 days ago : Remove md:ml-64 margin from SidebarInset main element
+ed0ed3c - Nick Devashvili, 6 days ago : fix: Reduce padding to 8px on left and right for trace viewer
+f799369 - Nick Devashvili, 6 days ago : fix: Clean up indentation in theme.css
+727d21f - Nick Devashvili, 6 days ago : fix: Remove extra closing brace in theme.css
+1a10799 - Nick Devashvili, 6 days ago : fix: Convert agent-prism theme from media queries to class-based dark mode
+ce46be5 - Nick Devashvili, 6 days ago : fix: Add agent-prism theme colors to Tailwind config
+197209c - Nick Devashvili, 6 days ago : fix: Remove doubleValue and simplify complex attribute rendering
+7396c8b - Nick Devashvili, 6 days ago : feat: Add colored tags/badges for attribute keys in Attributes tab
+c44d516 - Nick Devashvili, 6 days ago : fix: Add error boundary and improve trace viewer error handling
+5b49cb2 - Nick Devashvili, 6 days ago : feat: Integrate agent-prism for enhanced trace visualization
+b73957e - Nick Devashvili, 6 days ago : Fix TypeScript error: add original_span_id to Span interface
+5f344eb - Nick Devashvili, 6 days ago : Fix child span click handlers: improve ID matching and ensure all spans have proper IDs
+a9b16bb - Nick Devashvili, 6 days ago : Fix child span details display: use allSpans/spansById for lookup and prevent tree collapse on click
+10db4e1 - Nick Devashvili, 7 days ago : Add sessions page with full functionality
+4520e2e - Nick Devashvili, 7 days ago : Implement waterfall/timeline trace detail view (Langfuse-style)
+0dced63 - Nick Devashvili, 7 days ago : Fix: Remove Tailwind v4 outline-ring/50 syntax for v3 compatibility
+49c00ef - Nick Devashvili, 7 days ago : Fix UI to match dashboardexp exactly
+01c2510 - Nick Devashvili, 7 days ago : feat: refactor UI to modern design system and add Issues page
+86bbe79 - Nick Devashvili, 9 days ago : Fix TypeError: total_cost.toFixed is not a function
+60fef28 - Nick Devashvili, 9 days ago : Add detailed logging and improve error handling for conversations
+9259385 - Nick Devashvili, 9 days ago : Auto-detect production API URL and improve error handling for conversations
+5fe3988 - Nick Devashvili, 9 days ago : Fix conversations page errors and improve error handling
+be70706 - Nick Devashvili, 9 days ago : feat: Add settings page showing API key, tenant ID, projects, and account information
+2484258 - Nick Devashvili, 9 days ago : feat: Add conversation tracking UI and API routes
+9c5f4be - Nick Devashvili, 9 days ago : feat: Enhance analysis model display in metadata section with colored badge
+704716d - Nick Devashvili, 9 days ago : feat: Display analysis model name prominently in trace details
+ed4db06 - Nick Devashvili, 9 days ago : fix: Fix TypeScript error - use isNaN() instead of !== NaN comparison
+ca9930b - Nick Devashvili, 9 days ago : feat: Update IssueCard calls to show detailed analysis with reasoning and percentages
+5476fb5 - Nick Devashvili, 9 days ago : feat: Show detailed analysis results with percentages, confidence scores, and reasoning
+d9f79b1 - Nick Devashvili, 9 days ago : feat: Add all missing trace fields display - spanId, TTFB, status, finishReason, responseId, systemFingerprint, metadata, headers
+19be66c - Nick Devashvili, 9 days ago : feat: Display ALL trace fields in dashboard - every detail from schema
+6b76e49 - Nick Devashvili, 9 days ago : feat: Display all trace data including query, context, response, latency, tokens
+a130268 - Nick Devashvili, 9 days ago : feat: Add complete dashboard with traces list and detail views
+f2af693 - Nick Devashvili, 9 days ago : feat: Implement secure API proxy routes to hide API URL from browser
+7320495 - Nick Devashvili, 9 days ago : feat: Add authentication, Sentry monitoring, and dashboard foundation
+0b9de42 - Nick Devashvili, 10 days ago : Fix duplicate property names in SuccessPage styles object
+3007ea6 - Nick Devashvili, 11 days ago : first commit

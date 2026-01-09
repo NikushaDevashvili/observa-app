@@ -145,3 +145,4 @@ export function getSpanTypeDisplayName(
   const filter = DEFAULT_SPAN_TYPE_FILTERS.find((f) => f.value === type);
   return filter?.label || type.toUpperCase().replace(/_/g, " ");
 }
+
