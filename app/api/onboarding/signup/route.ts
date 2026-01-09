@@ -11,7 +11,8 @@ export async function POST(request: NextRequest) {
     // Call your real API server-side (URL is private)
     const apiUrl = process.env.API_URL || 'http://localhost:3000';
     
-    const response = await fetch(`${apiUrl}/api/v1/onboarding/signup`, {
+    // Use auth/signup endpoint (onboarding/signup doesn't exist on backend)
+    const response = await fetch(`${apiUrl}/api/v1/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
