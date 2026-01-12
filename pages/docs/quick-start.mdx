@@ -1,89 +1,100 @@
-# Quick Start
+# Get Started with Tracing
 
-Get Observa up and running in your application in under 5 minutes.
+Start tracking your LLM calls in minutes. This guide shows you how to set up Observa and track your first trace.
 
 ## Prerequisites
 
-- Node.js 16+ or any JavaScript runtime
-- An Observa account (sign up at [observa-app.vercel.app](https://observa-app.vercel.app))
+- Node.js 16+ installed
+- An Observa account ([sign up here](https://observa-app.vercel.app))
+- Your LLM provider API key (OpenAI, Anthropic, etc.)
 
 ## Step 1: Install the SDK
-
-Install the Observa SDK using npm:
 
 ```bash
 npm install observa-sdk
 ```
 
-Or using yarn:
-
-```bash
-yarn add observa-sdk
-```
-
-Or using pnpm:
-
-```bash
-pnpm add observa-sdk
-```
-
 ## Step 2: Get Your API Key
 
-1. Sign up for an account at [observa-app.vercel.app](https://observa-app.vercel.app)
-2. Navigate to Settings
-3. Copy your API Key
+1. Sign up at [observa-app.vercel.app](https://observa-app.vercel.app)
+2. Complete the onboarding
+3. Copy your API key from the dashboard
 
 ## Step 3: Initialize the SDK
 
-Import and initialize the Observa SDK in your application:
+Create a new file (e.g., `index.js`) and initialize Observa:
 
 ```javascript
 import { init } from 'observa-sdk';
 
 const observa = init({
-  apiKey: 'your-api-key-here',
-  apiUrl: 'https://observa-api.vercel.app', // or your custom API URL
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: 'https://observa-api.vercel.app',
 });
 ```
 
-## Step 4: Track Your First LLM Call
+Set your API key as an environment variable:
 
-Wrap your LLM calls with `observa.track()`:
+```bash
+export OBSERVA_API_KEY="your-api-key-here"
+```
+
+Or create a `.env` file:
+
+```env
+OBSERVA_API_KEY=your-api-key-here
+OPENAI_API_KEY=sk-proj-***  # Your LLM provider key
+```
+
+## Step 4: Track Your First Call
+
+Wrap your LLM call with `observa.track()`:
 
 ```javascript
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 const response = await observa.track(
   {
     query: "What is the capital of France?",
-    context: "User is asking a geography question",
-    conversationId: "conv-123",
-    messageIndex: 1,
   },
   async () => {
-    // Your LLM call here
-    const result = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [{ role: 'user', content: 'What is the capital of France?' }],
-      }),
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'user', content: 'What is the capital of France?' }
+      ],
     });
-    return await result.json();
   }
 );
+
+console.log(response.choices[0].message.content);
 ```
 
-## Step 5: View Your Data
+Run your code:
+
+```bash
+node index.js
+```
+
+## Step 5: View Your Trace
 
 1. Open the [Observa Dashboard](https://observa-app.vercel.app/dashboard)
-2. Navigate to **Traces** to see your tracked LLM calls
-3. Navigate to **Sessions** to view conversation sessions
+2. Go to **Traces**
+3. You should see your tracked call
 
-## Next Steps
+Click on a trace to see:
+- Request and response details
+- Performance metrics (latency, tokens)
+- Cost information
+- Error details (if any)
 
-- Read the [Installation guide](./installation) for detailed setup instructions
-- Check out the [SDK Reference](./sdk/initialization) for all available options
-- Explore [Guides](./guides/tracking-llm-calls) for common use cases
+## What's Next?
+
+- **[Installation](./installation)**: Detailed setup instructions
+- **[Cookbooks](./cookbooks/openai-integration)**: Integration examples
+- **[SDK Reference](./sdk/initialization)**: Complete API documentation
+- **[Concepts](./concepts/overview)**: Learn how Observa works

@@ -1,39 +1,77 @@
 # Observa Documentation
 
-Welcome to Observa - the complete observability platform for LLM applications.
-
-## What is Observa?
-
-Observa is an observability and monitoring platform designed specifically for LLM (Large Language Model) applications. Track your LLM calls, monitor performance, analyze costs, and debug issues all in one place.
-
-## Key Features
-
-- **🔍 LLM Call Tracking**: Automatically track and monitor all your LLM interactions
-- **📊 Real-time Dashboard**: Visualize traces, sessions, and conversations
-- **💰 Cost Analysis**: Monitor and optimize your LLM spending
-- **🚨 Issue Detection**: Get alerted to problems in your LLM applications
-- **👥 User Analytics**: Understand how users interact with your LLM features
-- **🔗 Session Management**: Track conversations and user sessions
-
-## Quick Navigation
-
-- **[Quick Start](./quick-start)**: Get up and running in 5 minutes
-- **[Installation](./installation)**: Install and set up the Observa SDK
-- **[Onboarding](./onboarding)**: Step-by-step onboarding guide
-- **[SDK Reference](./sdk/initialization)**: Complete SDK documentation
-- **[Guides](./guides/tracking-llm-calls)**: Practical implementation guides
-
-## Architecture
-
-Observa consists of three main components:
-
-1. **observa-sdk**: npm package for tracking LLM calls in your application
-2. **observa-api**: Backend API service that processes and stores your data
-3. **observa-app**: Web dashboard for visualizing and analyzing your data
+Observa is an observability platform for LLM applications. Track your LLM calls, monitor performance, analyze costs, and debug issues.
 
 ## Get Started
 
-Ready to start? Head over to our [Quick Start guide](./quick-start) to get Observa up and running in your application in just a few minutes.
+**[Get Started with Tracing](./quick-start)** - Track your first LLM call in minutes
+
+## What is Observa?
+
+Observa provides observability for LLM applications. It automatically tracks your LLM calls, captures performance metrics, monitors costs, and helps you debug issues.
+
+### Key Features
+
+- **Automatic Tracking**: Wrap your LLM calls with `observa.track()` to capture everything
+- **Real-time Dashboard**: View traces, sessions, and analytics
+- **Cost Monitoring**: Track spending and optimize usage
+- **Error Detection**: Get alerted to problems automatically
+- **User Analytics**: Understand how users interact with your LLM features
+
+## How It Works
+
+1. **Install the SDK**: `npm install observa-sdk`
+2. **Initialize**: Set up the SDK with your API key
+3. **Track Calls**: Wrap your LLM calls with `observa.track()`
+4. **View Data**: See traces in the dashboard
+
+## Quick Links
+
+- **[Get Started](./quick-start)**: Start tracking in minutes
+- **[Installation](./installation)**: Detailed setup guide
+- **[Cookbooks](./cookbooks/overview)**: Integration examples
+- **[SDK Reference](./sdk/initialization)**: Complete API docs
+- **[Dashboard Guide](./dashboard/overview)**: Using the dashboard
+
+## Documentation Sections
+
+### Getting Started
+- [Get Started with Tracing](./quick-start): Quick setup guide
+- [Installation](./installation): Detailed installation instructions
+- [Onboarding](./onboarding): Step-by-step onboarding
+
+### Concepts
+- [Overview](./concepts/overview): Core concepts
+- [Traces](./concepts/traces): Understanding traces
+- [Sessions](./concepts/sessions): Session management
+- [Conversations](./concepts/conversations): Multi-turn conversations
+
+### SDK Reference
+- [Initialization](./sdk/initialization): SDK setup
+- [Tracking](./sdk/tracking): Tracking API
+- [Sessions](./sdk/sessions): Session API
+- [Configuration](./sdk/configuration): Configuration options
+
+### Cookbooks
+- [OpenAI Integration](./cookbooks/openai-integration): OpenAI examples
+- [Next.js Integration](./cookbooks/nextjs-integration): Next.js setup
+- [Express.js Integration](./cookbooks/express-integration): Express setup
+- [Multi-Turn Conversations](./cookbooks/multi-turn-conversations): Conversation patterns
+- [RAG Integration](./cookbooks/rag-integration): RAG workflows
+- [Function Calling](./cookbooks/function-calling): Tool usage
+
+### Guides
+- [Tracking LLM Calls](./guides/tracking-llm-calls): Practical examples
+- [Session Management](./guides/session-management): Session patterns
+- [Custom Events](./guides/custom-events): Custom tracking
+- [Error Handling](./guides/error-handling): Error management
+
+### Dashboard
+- [Overview](./dashboard/overview): Dashboard guide
+- [Viewing Traces](./dashboard/traces): Trace analysis
+- [Managing Sessions](./dashboard/sessions): Session management
+- [Issues & Alerts](./dashboard/issues): Problem monitoring
+- [Cost Analysis](./dashboard/costs): Spending analytics
 
 ## Support
 
