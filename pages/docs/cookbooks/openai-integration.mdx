@@ -1,0 +1,329 @@
+# Cookbook: OpenAI Integration
+
+Step-by-step guide to integrating Observa with OpenAI's API in JavaScript/TypeScript applications.
+
+## Prerequisites
+
+- Node.js 16+ or any JavaScript runtime
+- OpenAI API key
+- Observa API key (get from [Settings](https://observa-app.vercel.app/dashboard/settings))
+
+## Set Up Environment
+
+Install dependencies and set up environment variables:
+
+```bash
+npm install observa-sdk openai
+```
+
+```javascript
+// .env
+OPENAI_API_KEY=sk-proj-***
+OBSERVA_API_KEY=your-observa-api-key
+OBSERVA_API_URL=https://observa-api.vercel.app
+```
+
+## Example 1: Basic Chat Completion
+
+Simple example of tracking a chat completion:
+
+```javascript
+import { init } from 'observa-sdk';
+import OpenAI from 'openai';
+
+// Initialize Observa SDK
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Track OpenAI call
+const response = await observa.track(
+  {
+    query: "What is the capital of France?",
+    conversationId: "conv-123",
+    messageIndex: 1,
+  },
+  async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'user', content: 'What is the capital of France?' }
+      ],
+    });
+  }
+);
+
+console.log(response.choices[0].message.content);
+```
+
+## Example 2: Chat Completion with Streaming
+
+Track streaming responses:
+
+```javascript
+const stream = await observa.track(
+  {
+    query: "Tell me a joke",
+    conversationId: "conv-123",
+    messageIndex: 1,
+    metadata: {
+      model: "gpt-4",
+      stream: true,
+    },
+  },
+  async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Tell me a joke' }],
+      stream: true,
+    });
+  }
+);
+
+let fullResponse = '';
+for await (const chunk of stream) {
+  const content = chunk.choices[0]?.delta?.content || '';
+  fullResponse += content;
+  process.stdout.write(content);
+}
+```
+
+## Example 3: Chat Completion with Context (RAG)
+
+Track RAG workflows with retrieved context:
+
+```javascript
+// Simulate retrieving context
+const retrievedContext = "Paris is the capital and most populous city of France...";
+
+const response = await observa.track(
+  {
+    query: "What is the capital of France?",
+    context: retrievedContext,
+    conversationId: "conv-123",
+    messageIndex: 1,
+    metadata: {
+      retrievalMethod: "vector_search",
+      contextLength: retrievedContext.length,
+    },
+  },
+  async () => {
+    const prompt = `Context: ${retrievedContext}\n\nQuestion: What is the capital of France?`;
+    
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: prompt }],
+    });
+  }
+);
+
+console.log(response.choices[0].message.content);
+```
+
+## Example 4: Multi-Turn Conversation
+
+Track a conversation with multiple messages:
+
+```javascript
+const conversationId = `conv-${Date.now()}`;
+let messageIndex = 0;
+
+async function sendMessage(message) {
+  messageIndex++;
+  
+  const response = await observa.track(
+    {
+      query: message,
+      conversationId: conversationId,
+      messageIndex: messageIndex,
+    },
+    async () => {
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: message }],
+      });
+    }
+  );
+  
+  return response.choices[0].message.content;
+}
+
+// First message
+const response1 = await sendMessage("Hello, my name is Alice");
+console.log(response1);
+
+// Follow-up message
+const response2 = await sendMessage("What's my name?");
+console.log(response2);
+```
+
+## Example 5: Function Calling
+
+Track function calling workflows:
+
+```javascript
+// Define a custom function
+async function getWeather(location) {
+  // Simulate weather API
+  if (location === "Berlin") {
+    return "20°C, sunny";
+  }
+  return "Weather unknown";
+}
+
+const functions = [
+  {
+    type: "function",
+    function: {
+      name: "getWeather",
+      description: "Get the current weather in a given location",
+      parameters: {
+        type: "object",
+        properties: {
+          location: {
+            type: "string",
+            description: "The city, e.g. San Francisco",
+          },
+        },
+        required: ["location"],
+      },
+    },
+  },
+];
+
+const response = await observa.track(
+  {
+    query: "What's the weather like in Berlin today?",
+    conversationId: "conv-123",
+    messageIndex: 1,
+    metadata: {
+      functions: functions.map(f => f.function.name),
+    },
+  },
+  async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'user', content: "What's the weather like in Berlin today?" }
+      ],
+      tools: functions,
+      tool_choice: 'auto',
+    });
+  }
+);
+
+// Handle function call
+const toolCalls = response.choices[0].message.tool_calls;
+if (toolCalls && toolCalls[0].function.name === "getWeather") {
+  const args = JSON.parse(toolCalls[0].function.arguments);
+  const weather = await getWeather(args.location);
+  console.log(weather);
+}
+```
+
+## Example 6: Group Multiple Generations
+
+Track multiple related LLM calls in a single trace:
+
+```javascript
+const conversationId = `conv-${Date.now()}`;
+
+// First generation
+const capitalResponse = await observa.track(
+  {
+    query: "What is the capital of Germany?",
+    conversationId: conversationId,
+    messageIndex: 1,
+  },
+  async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'user', content: 'What is the capital of Germany?' }
+      ],
+    });
+  }
+);
+
+const capital = capitalResponse.choices[0].message.content;
+
+// Second generation (related)
+const poemResponse = await observa.track(
+  {
+    query: `Create a poem about ${capital}`,
+    context: `The capital is ${capital}`,
+    conversationId: conversationId,
+    messageIndex: 2,
+  },
+  async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'user', content: `Create a poem about ${capital}` }
+      ],
+    });
+  }
+);
+
+const poem = poemResponse.choices[0].message.content;
+console.log(poem);
+```
+
+## Example 7: With Custom Metadata
+
+Add custom metadata for better tracking:
+
+```javascript
+const response = await observa.track(
+  {
+    query: "Generate a product description",
+    conversationId: "conv-123",
+    messageIndex: 1,
+    userId: "user-456",
+    metadata: {
+      feature: "product_description_generator",
+      productId: "prod-789",
+      version: "1.0.0",
+      environment: process.env.NODE_ENV,
+    },
+  },
+  async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'user', content: 'Generate a product description' }
+      ],
+    });
+  }
+);
+```
+
+## Best Practices
+
+1. **Use Conversation IDs**: Group related messages with the same conversation ID
+2. **Include Context**: Add retrieved context for RAG workflows
+3. **Add Metadata**: Include custom fields for filtering and analysis
+4. **Track User IDs**: Link traces to users for better analytics
+5. **Handle Errors**: Errors are automatically tracked, but handle them gracefully
+
+## View Your Traces
+
+After running these examples:
+
+1. Go to [Dashboard](https://observa-app.vercel.app/dashboard)
+2. Navigate to **Traces**
+3. See your tracked OpenAI calls
+4. Click on a trace for detailed information
+
+## Next Steps
+
+- Read the [SDK Reference](../sdk/tracking) for complete API documentation
+- Check [Multi-Turn Conversations](./multi-turn-conversations) for advanced patterns
+- See [Function Calling](./function-calling) for tool usage examples
+- Explore [Next.js Integration](./nextjs-integration) for framework-specific setup

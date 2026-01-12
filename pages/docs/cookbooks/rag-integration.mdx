@@ -1,0 +1,332 @@
+# Cookbook: RAG Integration
+
+Step-by-step guide to tracking Retrieval-Augmented Generation (RAG) workflows with Observa.
+
+## Overview
+
+RAG workflows combine retrieval from a knowledge base with LLM generation. This cookbook shows how to track both the retrieval and generation steps.
+
+## Basic RAG Pattern
+
+### Simple RAG Implementation
+
+```javascript
+import { init } from 'observa-sdk';
+import OpenAI from 'openai';
+
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Simulate retrieval function
+async function retrieveContext(query) {
+  // Your retrieval logic (vector search, database query, etc.)
+  return "Paris is the capital and most populous city of France...";
+}
+
+async function ragQuery(userQuestion) {
+  // Step 1: Retrieve context
+  const retrievedContext = await retrieveContext(userQuestion);
+  
+  // Step 2: Generate response with context
+  const response = await observa.track(
+    {
+      query: userQuestion,
+      context: retrievedContext,
+      conversationId: `conv-${Date.now()}`,
+      messageIndex: 1,
+      metadata: {
+        retrievalMethod: "vector_search",
+        contextLength: retrievedContext.length,
+      },
+    },
+    async () => {
+      const prompt = `Context: ${retrievedContext}\n\nQuestion: ${userQuestion}`;
+      
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+      });
+    }
+  );
+  
+  return response.choices[0].message.content;
+}
+
+// Usage
+const answer = await ragQuery("What is the capital of France?");
+console.log(answer);
+```
+
+## Tracking Retrieval Separately
+
+Track retrieval and generation as separate steps:
+
+```javascript
+async function ragQueryWithTracking(userQuestion) {
+  const conversationId = `conv-${Date.now()}`;
+  
+  // Track retrieval
+  const retrievalStart = Date.now();
+  const retrievedContext = await observa.track(
+    {
+      query: userQuestion,
+      conversationId: conversationId,
+      messageIndex: 0,
+      metadata: {
+        step: "retrieval",
+        retrievalMethod: "vector_search",
+      },
+    },
+    async () => {
+      // Your retrieval logic
+      return await retrieveContext(userQuestion);
+    }
+  );
+  const retrievalDuration = Date.now() - retrievalStart;
+  
+  // Track generation
+  const response = await observa.track(
+    {
+      query: userQuestion,
+      context: retrievedContext,
+      conversationId: conversationId,
+      messageIndex: 1,
+      metadata: {
+        step: "generation",
+        retrievalDuration: retrievalDuration,
+        contextLength: retrievedContext.length,
+      },
+    },
+    async () => {
+      const prompt = `Context: ${retrievedContext}\n\nQuestion: ${userQuestion}`;
+      
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+      });
+    }
+  );
+  
+  return response.choices[0].message.content;
+}
+```
+
+## Vector Database Integration
+
+Track vector search operations:
+
+```javascript
+// Example with Pinecone (or similar)
+import { Pinecone } from '@pinecone-database/pinecone';
+
+const pinecone = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY,
+});
+
+async function vectorSearch(query, topK = 5) {
+  const index = pinecone.index('your-index');
+  
+  // Generate query embedding
+  const embeddingResponse = await openai.embeddings.create({
+    model: 'text-embedding-ada-002',
+    input: query,
+  });
+  
+  const queryEmbedding = embeddingResponse.data[0].embedding;
+  
+  // Search
+  const searchResults = await index.query({
+    vector: queryEmbedding,
+    topK: topK,
+    includeMetadata: true,
+  });
+  
+  return searchResults.matches.map(match => match.metadata.text).join('\n');
+}
+
+async function ragQueryWithVectorSearch(userQuestion) {
+  const conversationId = `conv-${Date.now()}`;
+  
+  // Track retrieval
+  const retrievedContext = await observa.track(
+    {
+      query: userQuestion,
+      conversationId: conversationId,
+      messageIndex: 0,
+      metadata: {
+        step: "vector_retrieval",
+        topK: 5,
+      },
+    },
+    async () => {
+      return await vectorSearch(userQuestion);
+    }
+  );
+  
+  // Track generation
+  const response = await observa.track(
+    {
+      query: userQuestion,
+      context: retrievedContext,
+      conversationId: conversationId,
+      messageIndex: 1,
+      metadata: {
+        step: "generation",
+        contextLength: retrievedContext.length,
+      },
+    },
+    async () => {
+      const prompt = `Context: ${retrievedContext}\n\nQuestion: ${userQuestion}`;
+      
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+      });
+    }
+  );
+  
+  return response.choices[0].message.content;
+}
+```
+
+## Multi-Step RAG
+
+Track complex RAG workflows with multiple retrieval steps:
+
+```javascript
+async function multiStepRAG(userQuestion) {
+  const conversationId = `conv-${Date.now()}`;
+  
+  // Step 1: Initial retrieval
+  const initialContext = await observa.track(
+    {
+      query: userQuestion,
+      conversationId: conversationId,
+      messageIndex: 0,
+      metadata: { step: "initial_retrieval" },
+    },
+    async () => {
+      return await retrieveContext(userQuestion);
+    }
+  );
+  
+  // Step 2: Refinement (optional)
+  const refinedContext = await observa.track(
+    {
+      query: userQuestion,
+      context: initialContext,
+      conversationId: conversationId,
+      messageIndex: 1,
+      metadata: { step: "context_refinement" },
+    },
+    async () => {
+      // Refine context if needed
+      return initialContext; // Simplified
+    }
+  );
+  
+  // Step 3: Generation
+  const response = await observa.track(
+    {
+      query: userQuestion,
+      context: refinedContext,
+      conversationId: conversationId,
+      messageIndex: 2,
+      metadata: { step: "generation" },
+    },
+    async () => {
+      const prompt = `Context: ${refinedContext}\n\nQuestion: ${userQuestion}`;
+      
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+      });
+    }
+  );
+  
+  return response.choices[0].message.content;
+}
+```
+
+## Next.js RAG API Route
+
+Create a RAG endpoint in Next.js:
+
+```typescript
+// app/api/rag/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { observa } from '@/lib/observa';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+async function retrieveContext(query: string) {
+  // Your retrieval logic
+  return "Retrieved context...";
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { question, conversationId } = await request.json();
+    
+    // Retrieve context
+    const context = await retrieveContext(question);
+    
+    // Generate response
+    const response = await observa.track(
+      {
+        query: question,
+        context: context,
+        conversationId: conversationId || `conv-${Date.now()}`,
+        messageIndex: 1,
+        metadata: {
+          retrievalMethod: "vector_search",
+          contextLength: context.length,
+        },
+      },
+      async () => {
+        const prompt = `Context: ${context}\n\nQuestion: ${question}`;
+        
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [{ role: 'user', content: prompt }],
+        });
+      }
+    );
+    
+    return NextResponse.json({
+      answer: response.choices[0].message.content,
+      conversationId: conversationId,
+    });
+  } catch (error) {
+    console.error('RAG error:', error);
+    return NextResponse.json(
+      { error: 'Failed to process request' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Best Practices
+
+1. **Track Both Steps**: Track retrieval and generation separately
+2. **Include Context**: Always include retrieved context in tracking
+3. **Metadata**: Add retrieval method, context length, and other metadata
+4. **Performance**: Track retrieval duration for optimization
+5. **Conversation IDs**: Use consistent IDs for related operations
+
+## Next Steps
+
+- Check [OpenAI Integration](./openai-integration) for more examples
+- Read [Multi-Turn Conversations](./multi-turn-conversations) for chat patterns
+- See [Next.js Integration](./nextjs-integration) for framework setup
+- Review [SDK Reference](../sdk/tracking) for API details

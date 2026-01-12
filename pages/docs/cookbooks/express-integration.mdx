@@ -1,0 +1,341 @@
+# Cookbook: Express.js Integration
+
+Step-by-step guide to integrating Observa with Express.js applications.
+
+## Prerequisites
+
+- Node.js 16+
+- Express.js installed
+- Observa API key (get from [Settings](https://observa-app.vercel.app/dashboard/settings))
+
+## Set Up Environment
+
+Install dependencies:
+
+```bash
+npm install observa-sdk express openai
+```
+
+Set up environment variables:
+
+```bash
+# .env
+OBSERVA_API_KEY=your-observa-api-key
+OBSERVA_API_URL=https://observa-api.vercel.app
+OPENAI_API_KEY=sk-proj-***  # or your LLM provider key
+PORT=3000
+```
+
+## Basic Setup
+
+### 1. Initialize Observa
+
+Create `lib/observa.js`:
+
+```javascript
+const { init } = require('observa-sdk');
+
+module.exports = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL || 'https://observa-api.vercel.app',
+});
+```
+
+### 2. Basic Express Server
+
+Create `server.js`:
+
+```javascript
+require('dotenv').config();
+const express = require('express');
+const { observa } = require('./lib/observa');
+const OpenAI = require('openai');
+
+const app = express();
+app.use(express.json());
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, conversationId, messageIndex } = req.body;
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conversationId || `conv-${Date.now()}`,
+        messageIndex: messageIndex || 1,
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [{ role: 'user', content: message }],
+        });
+      }
+    );
+    
+    res.json({
+      message: response.choices[0].message.content,
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+## Advanced Patterns
+
+### Middleware for Request Tracking
+
+Create middleware to track all requests:
+
+```javascript
+const { observa } = require('./lib/observa');
+
+function trackRequest(req, res, next) {
+  const startTime = Date.now();
+  
+  res.on('finish', () => {
+    observa.track({
+      event: 'http_request',
+      metadata: {
+        method: req.method,
+        path: req.path,
+        statusCode: res.statusCode,
+        duration: Date.now() - startTime,
+      },
+    }).catch(console.error);
+  });
+  
+  next();
+}
+
+app.use(trackRequest);
+```
+
+### Conversation Management
+
+Create a conversation handler:
+
+```javascript
+class ConversationManager {
+  constructor() {
+    this.conversations = new Map();
+  }
+  
+  getConversationId(userId) {
+    if (!this.conversations.has(userId)) {
+      this.conversations.set(userId, `conv-${Date.now()}`);
+    }
+    return this.conversations.get(userId);
+  }
+  
+  getMessageIndex(conversationId) {
+    const index = this.messageIndexes.get(conversationId) || 0;
+    this.messageIndexes.set(conversationId, index + 1);
+    return index + 1;
+  }
+}
+
+const conversationManager = new ConversationManager();
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, userId } = req.body;
+    const conversationId = conversationManager.getConversationId(userId);
+    const messageIndex = conversationManager.getMessageIndex(conversationId);
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conversationId,
+        messageIndex: messageIndex,
+        userId: userId,
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [{ role: 'user', content: message }],
+        });
+      }
+    );
+    
+    res.json({
+      message: response.choices[0].message.content,
+      conversationId: conversationId,
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+```
+
+### Error Handling Middleware
+
+Add error tracking:
+
+```javascript
+function errorHandler(err, req, res, next) {
+  // Track error
+  observa.track({
+    event: 'error',
+    metadata: {
+      error: err.message,
+      stack: err.stack,
+      path: req.path,
+      method: req.method,
+    },
+  }).catch(console.error);
+  
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error',
+  });
+}
+
+app.use(errorHandler);
+```
+
+### Rate Limiting with Tracking
+
+Track rate-limited requests:
+
+```javascript
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+
+limiter.on('limitReached', (req) => {
+  observa.track({
+    event: 'rate_limit',
+    metadata: {
+      ip: req.ip,
+      path: req.path,
+    },
+  }).catch(console.error);
+});
+
+app.use('/api/', limiter);
+```
+
+## Complete Example
+
+Full Express.js application with Observa:
+
+```javascript
+require('dotenv').config();
+const express = require('express');
+const { observa } = require('./lib/observa');
+const OpenAI = require('openai');
+
+const app = express();
+app.use(express.json());
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Chat endpoint
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, conversationId, messageIndex, userId } = req.body;
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conversationId || `conv-${Date.now()}`,
+        messageIndex: messageIndex || 1,
+        userId: userId,
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [{ role: 'user', content: message }],
+        });
+      }
+    );
+    
+    res.json({
+      message: response.choices[0].message.content,
+      conversationId: conversationId,
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+## Best Practices
+
+1. **Initialize Once**: Create a single Observa instance and reuse it
+2. **Async Tracking**: Don't block requests on tracking
+3. **Error Handling**: Always handle errors gracefully
+4. **Conversation Management**: Use consistent conversation IDs
+5. **Environment Variables**: Never hardcode API keys
+6. **Middleware**: Use middleware for common tracking patterns
+
+## Production Deployment
+
+### Docker
+
+```dockerfile
+FROM node:18
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
+```
+
+### Environment Variables
+
+Set environment variables in your hosting platform:
+
+- `OBSERVA_API_KEY`
+- `OBSERVA_API_URL` (optional)
+- `OPENAI_API_KEY` (or your LLM provider key)
+- `PORT` (optional, defaults to 3000)
+
+## Next Steps
+
+- Check [OpenAI Integration](./openai-integration) for more examples
+- Read [Multi-Turn Conversations](./multi-turn-conversations) for chat patterns
+- See [SDK Reference](../sdk/initialization) for configuration options
+- Review [Error Handling](../guides/error-handling) for best practices

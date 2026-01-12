@@ -1,0 +1,352 @@
+# Cookbook: Next.js Integration
+
+Step-by-step guide to integrating Observa with Next.js applications (App Router and Pages Router).
+
+## Prerequisites
+
+- Next.js 13+ (App Router) or Next.js 12+ (Pages Router)
+- Observa API key (get from [Settings](https://observa-app.vercel.app/dashboard/settings))
+
+## Set Up Environment
+
+Install the SDK:
+
+```bash
+npm install observa-sdk
+```
+
+Set up environment variables:
+
+```bash
+# .env.local
+OBSERVA_API_KEY=your-observa-api-key
+OBSERVA_API_URL=https://observa-api.vercel.app
+OPENAI_API_KEY=sk-proj-***  # or your LLM provider key
+```
+
+## App Router Setup
+
+### 1. Create Observa Client
+
+Create `lib/observa.ts`:
+
+```typescript
+import { init } from 'observa-sdk';
+
+export const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY!,
+  apiUrl: process.env.OBSERVA_API_URL || 'https://observa-api.vercel.app',
+});
+```
+
+### 2. API Route Example
+
+Create `app/api/chat/route.ts`:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { observa } from '@/lib/observa';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const { message, conversationId, messageIndex } = await request.json();
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conversationId || `conv-${Date.now()}`,
+        messageIndex: messageIndex || 1,
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [{ role: 'user', content: message }],
+        });
+      }
+    );
+    
+    return NextResponse.json({
+      message: response.choices[0].message.content,
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    return NextResponse.json(
+      { error: 'Failed to process request' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### 3. Server Component Example
+
+Create `app/chat/page.tsx`:
+
+```typescript
+import { observa } from '@/lib/observa';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export default async function ChatPage() {
+  const response = await observa.track(
+    {
+      query: "Hello from Next.js",
+      conversationId: "server-component",
+      messageIndex: 1,
+    },
+    async () => {
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello from Next.js' }],
+      });
+    }
+  );
+  
+  return (
+    <div>
+      <h1>Chat Response</h1>
+      <p>{response.choices[0].message.content}</p>
+    </div>
+  );
+}
+```
+
+### 4. Client Component Example
+
+Create `app/components/ChatClient.tsx`:
+
+```typescript
+'use client';
+
+import { useState } from 'react';
+
+export default function ChatClient() {
+  const [message, setMessage] = useState('');
+  const [response, setResponse] = useState('');
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: message,
+        conversationId: `conv-${Date.now()}`,
+        messageIndex: 1,
+      }),
+    });
+    
+    const data = await res.json();
+    setResponse(data.message);
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Type your message..."
+      />
+      <button type="submit">Send</button>
+      {response && <p>{response}</p>}
+    </form>
+  );
+}
+```
+
+## Pages Router Setup
+
+### 1. Create Observa Client
+
+Create `lib/observa.ts` (same as App Router):
+
+```typescript
+import { init } from 'observa-sdk';
+
+export const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY!,
+  apiUrl: process.env.OBSERVA_API_URL || 'https://observa-api.vercel.app',
+});
+```
+
+### 2. API Route Example
+
+Create `pages/api/chat.ts`:
+
+```typescript
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { observa } from '@/lib/observa';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
+  try {
+    const { message, conversationId, messageIndex } = req.body;
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conversationId || `conv-${Date.now()}`,
+        messageIndex: messageIndex || 1,
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [{ role: 'user', content: message }],
+        });
+      }
+    );
+    
+    res.status(200).json({
+      message: response.choices[0].message.content,
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+}
+```
+
+## Server Actions (App Router)
+
+Create `app/actions/chat.ts`:
+
+```typescript
+'use server';
+
+import { observa } from '@/lib/observa';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export async function sendMessage(
+  message: string,
+  conversationId: string
+) {
+  const response = await observa.track(
+    {
+      query: message,
+      conversationId: conversationId,
+      messageIndex: 1,
+    },
+    async () => {
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: message }],
+      });
+    }
+  );
+  
+  return response.choices[0].message.content;
+}
+```
+
+Use in a component:
+
+```typescript
+'use client';
+
+import { sendMessage } from '@/app/actions/chat';
+import { useState } from 'react';
+
+export default function ChatForm() {
+  const [message, setMessage] = useState('');
+  
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const response = await sendMessage(message, `conv-${Date.now()}`);
+    console.log(response);
+  }
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+      />
+      <button type="submit">Send</button>
+    </form>
+  );
+}
+```
+
+## Middleware Example
+
+Create `middleware.ts` for request tracking:
+
+```typescript
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { observa } from '@/lib/observa';
+
+export function middleware(request: NextRequest) {
+  // Track API requests
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    observa.track({
+      event: 'api_request',
+      metadata: {
+        path: request.nextUrl.pathname,
+        method: request.method,
+      },
+    }).catch(console.error);
+  }
+  
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: '/api/:path*',
+};
+```
+
+## Best Practices
+
+1. **Use Environment Variables**: Never hardcode API keys
+2. **Server-Side Only**: Initialize Observa on the server (API routes, server components, server actions)
+3. **Error Handling**: Always wrap tracking in try-catch
+4. **Async Tracking**: Don't block requests on tracking
+5. **Conversation IDs**: Use consistent IDs for multi-turn conversations
+
+## Production Deployment
+
+### Vercel
+
+Set environment variables in Vercel dashboard:
+
+1. Go to Project Settings → Environment Variables
+2. Add `OBSERVA_API_KEY`
+3. Add `OBSERVA_API_URL` (if custom)
+4. Add your LLM provider API keys
+5. Redeploy
+
+### Other Platforms
+
+Set environment variables in your hosting platform's configuration.
+
+## Next Steps
+
+- Check [OpenAI Integration](./openai-integration) for more examples
+- Read [Multi-Turn Conversations](./multi-turn-conversations) for chat patterns
+- See [RAG Integration](./rag-integration) for retrieval examples
+- Review [SDK Reference](../sdk/initialization) for configuration options

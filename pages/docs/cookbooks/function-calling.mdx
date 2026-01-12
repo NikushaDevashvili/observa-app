@@ -1,0 +1,431 @@
+# Cookbook: Function Calling
+
+Step-by-step guide to tracking function calling workflows with Observa.
+
+## Overview
+
+Function calling (tools) allows LLMs to call external functions. This cookbook shows how to track these workflows with Observa.
+
+## OpenAI Function Calling
+
+### Basic Function Calling
+
+```javascript
+import { init } from 'observa-sdk';
+import OpenAI from 'openai';
+
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Define a custom function
+async function getWeather(location) {
+  if (location === "Berlin") {
+    return "20°C, sunny";
+  }
+  return "Weather unknown";
+}
+
+const functions = [
+  {
+    type: "function",
+    function: {
+      name: "getWeather",
+      description: "Get the current weather in a given location",
+      parameters: {
+        type: "object",
+        properties: {
+          location: {
+            type: "string",
+            description: "The city, e.g. San Francisco",
+          },
+        },
+        required: ["location"],
+      },
+    },
+  },
+];
+
+const response = await observa.track(
+  {
+    query: "What's the weather like in Berlin today?",
+    conversationId: `conv-${Date.now()}`,
+    messageIndex: 1,
+    metadata: {
+      functions: functions.map(f => f.function.name),
+    },
+  },
+  async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'user', content: "What's the weather like in Berlin today?" }
+      ],
+      tools: functions,
+      tool_choice: 'auto',
+    });
+  }
+);
+
+// Handle function call
+const toolCalls = response.choices[0].message.tool_calls;
+if (toolCalls && toolCalls[0].function.name === "getWeather") {
+  const args = JSON.parse(toolCalls[0].function.arguments);
+  const weather = await getWeather(args.location);
+  console.log(weather);
+}
+```
+
+## Complete Function Calling Flow
+
+Track the entire function calling workflow:
+
+```javascript
+async function handleFunctionCalling(userQuery) {
+  const conversationId = `conv-${Date.now()}`;
+  
+  // Step 1: LLM request with functions
+  const llmResponse = await observa.track(
+    {
+      query: userQuery,
+      conversationId: conversationId,
+      messageIndex: 1,
+      metadata: {
+        step: "llm_request",
+        functions: functions.map(f => f.function.name),
+      },
+    },
+    async () => {
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: userQuery }],
+        tools: functions,
+        tool_choice: 'auto',
+      });
+    }
+  );
+  
+  const toolCalls = llmResponse.choices[0].message.tool_calls;
+  
+  if (toolCalls) {
+    // Step 2: Execute function
+    const functionResults = [];
+    
+    for (const toolCall of toolCalls) {
+      const functionName = toolCall.function.name;
+      const functionArgs = JSON.parse(toolCall.function.arguments);
+      
+      const functionResult = await observa.track(
+        {
+          query: `${functionName}(${JSON.stringify(functionArgs)})`,
+          conversationId: conversationId,
+          messageIndex: 2,
+          metadata: {
+            step: "function_execution",
+            functionName: functionName,
+            functionArgs: functionArgs,
+          },
+        },
+        async () => {
+          if (functionName === "getWeather") {
+            return await getWeather(functionArgs.location);
+          }
+          return "Unknown function";
+        }
+      );
+      
+      functionResults.push({
+        tool_call_id: toolCall.id,
+        role: "tool",
+        name: functionName,
+        content: functionResult,
+      });
+    }
+    
+    // Step 3: LLM response with function results
+    const finalResponse = await observa.track(
+      {
+        query: userQuery,
+        context: JSON.stringify(functionResults),
+        conversationId: conversationId,
+        messageIndex: 3,
+        metadata: {
+          step: "llm_final_response",
+          functionResults: functionResults.length,
+        },
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [
+            { role: 'user', content: userQuery },
+            llmResponse.choices[0].message,
+            ...functionResults,
+          ],
+          tools: functions,
+        });
+      }
+    );
+    
+    return finalResponse.choices[0].message.content;
+  }
+  
+  return llmResponse.choices[0].message.content;
+}
+```
+
+## Multiple Functions
+
+Handle multiple function calls:
+
+```javascript
+async function getWeather(location) {
+  return `Weather in ${location}: 20°C, sunny`;
+}
+
+async function getTime(timezone) {
+  return `Current time in ${timezone}: 14:30`;
+}
+
+const functions = [
+  {
+    type: "function",
+    function: {
+      name: "getWeather",
+      description: "Get the current weather",
+      parameters: {
+        type: "object",
+        properties: {
+          location: { type: "string" },
+        },
+        required: ["location"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "getTime",
+      description: "Get the current time",
+      parameters: {
+        type: "object",
+        properties: {
+          timezone: { type: "string" },
+        },
+        required: ["timezone"],
+      },
+    },
+  },
+];
+
+const response = await observa.track(
+  {
+    query: "What's the weather in Berlin and what time is it?",
+    conversationId: `conv-${Date.now()}`,
+    messageIndex: 1,
+    metadata: {
+      functions: functions.map(f => f.function.name),
+    },
+  },
+  async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'user', content: "What's the weather in Berlin and what time is it?" }
+      ],
+      tools: functions,
+      tool_choice: 'auto',
+    });
+  }
+);
+
+// Handle multiple function calls
+const toolCalls = response.choices[0].message.tool_calls;
+const functionResults = [];
+
+for (const toolCall of toolCalls) {
+  const functionName = toolCall.function.name;
+  const functionArgs = JSON.parse(toolCall.function.arguments);
+  
+  let result;
+  if (functionName === "getWeather") {
+    result = await getWeather(functionArgs.location);
+  } else if (functionName === "getTime") {
+    result = await getTime(functionArgs.timezone);
+  }
+  
+  functionResults.push({
+    tool_call_id: toolCall.id,
+    role: "tool",
+    name: functionName,
+    content: result,
+  });
+}
+
+console.log(functionResults);
+```
+
+## Anthropic Tool Use
+
+Track Claude's tool use:
+
+```javascript
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+const tools = [
+  {
+    name: "get_weather",
+    description: "Get the current weather",
+    input_schema: {
+      type: "object",
+      properties: {
+        location: { type: "string" },
+      },
+      required: ["location"],
+    },
+  },
+];
+
+const response = await observa.track(
+  {
+    query: "What's the weather in Berlin?",
+    conversationId: `conv-${Date.now()}`,
+    messageIndex: 1,
+    metadata: {
+      tools: tools.map(t => t.name),
+    },
+  },
+  async () => {
+    return await anthropic.messages.create({
+      model: 'claude-3-opus-20240229',
+      max_tokens: 1024,
+      tools: tools,
+      messages: [
+        { role: 'user', content: "What's the weather in Berlin?" }
+      ],
+    });
+  }
+);
+
+// Handle tool use
+if (response.stop_reason === 'tool_use') {
+  const toolUse = response.content.find(item => item.type === 'tool_use');
+  if (toolUse && toolUse.name === 'get_weather') {
+    const location = toolUse.input.location;
+    const weather = await getWeather(location);
+    console.log(weather);
+  }
+}
+```
+
+## Next.js API Route
+
+Create a function calling endpoint:
+
+```typescript
+// app/api/tools/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { observa } from '@/lib/observa';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const functions = [
+  {
+    type: "function",
+    function: {
+      name: "getWeather",
+      description: "Get the current weather",
+      parameters: {
+        type: "object",
+        properties: {
+          location: { type: "string" },
+        },
+        required: ["location"],
+      },
+    },
+  },
+];
+
+async function getWeather(location: string) {
+  return `Weather in ${location}: 20°C, sunny`;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { message, conversationId } = await request.json();
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conversationId || `conv-${Date.now()}`,
+        messageIndex: 1,
+        metadata: {
+          functions: functions.map(f => f.function.name),
+        },
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [{ role: 'user', content: message }],
+          tools: functions,
+          tool_choice: 'auto',
+        });
+      }
+    );
+    
+    // Handle function calls
+    const toolCalls = response.choices[0].message.tool_calls;
+    if (toolCalls) {
+      // Execute functions and return results
+      const results = toolCalls.map(tc => ({
+        tool_call_id: tc.id,
+        role: "tool" as const,
+        name: tc.function.name,
+        content: "Function executed",
+      }));
+      
+      return NextResponse.json({
+        toolCalls: toolCalls,
+        results: results,
+      });
+    }
+    
+    return NextResponse.json({
+      message: response.choices[0].message.content,
+    });
+  } catch (error) {
+    console.error('Function calling error:', error);
+    return NextResponse.json(
+      { error: 'Failed to process request' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Best Practices
+
+1. **Track Function Names**: Include function names in metadata
+2. **Track Arguments**: Log function arguments for debugging
+3. **Track Results**: Include function results in context
+4. **Error Handling**: Handle function execution errors
+5. **Multi-Step**: Track each step of the function calling flow
+
+## Next Steps
+
+- Check [OpenAI Integration](./openai-integration) for more examples
+- Read [Anthropic Integration](./anthropic-integration) for Claude examples
+- See [Multi-Turn Conversations](./multi-turn-conversations) for chat patterns
+- Review [SDK Reference](../sdk/tracking) for API details

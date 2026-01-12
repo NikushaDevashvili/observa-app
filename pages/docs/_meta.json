@@ -23,6 +23,20 @@
       "configuration": "Configuration"
     }
   },
+  "cookbooks": {
+    "title": "Cookbooks",
+    "type": "page",
+    "pages": {
+      "overview": "Overview",
+      "openai-integration": "OpenAI Integration",
+      "anthropic-integration": "Anthropic Integration",
+      "nextjs-integration": "Next.js Integration",
+      "express-integration": "Express.js Integration",
+      "multi-turn-conversations": "Multi-Turn Conversations",
+      "rag-integration": "RAG Integration",
+      "function-calling": "Function Calling"
+    }
+  },
   "guides": {
     "title": "Guides",
     "type": "page",

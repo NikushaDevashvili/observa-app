@@ -1,0 +1,370 @@
+# Cookbook: Multi-Turn Conversations
+
+Step-by-step guide to tracking multi-turn conversations with Observa.
+
+## Overview
+
+Multi-turn conversations require tracking multiple related messages in a sequence. This cookbook shows how to manage conversation state and track each message correctly.
+
+## Basic Pattern
+
+### Simple Conversation Flow
+
+```javascript
+import { init } from 'observa-sdk';
+import OpenAI from 'openai';
+
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Create a conversation
+const conversationId = `conv-${Date.now()}`;
+let messageIndex = 0;
+
+async function sendMessage(userMessage) {
+  messageIndex++;
+  
+  const response = await observa.track(
+    {
+      query: userMessage,
+      conversationId: conversationId,
+      messageIndex: messageIndex,
+    },
+    async () => {
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: userMessage }],
+      });
+    }
+  );
+  
+  return response.choices[0].message.content;
+}
+
+// First message
+const response1 = await sendMessage("Hello, my name is Alice");
+console.log(response1);
+
+// Follow-up message
+const response2 = await sendMessage("What's my name?");
+console.log(response2);
+```
+
+## Conversation with History
+
+Track conversation history properly:
+
+```javascript
+class Conversation {
+  constructor(userId) {
+    this.conversationId = `conv-${Date.now()}`;
+    this.userId = userId;
+    this.messageIndex = 0;
+    this.history = [];
+  }
+  
+  async sendMessage(message) {
+    this.messageIndex++;
+    
+    // Add user message to history
+    this.history.push({ role: 'user', content: message });
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: this.conversationId,
+        messageIndex: this.messageIndex,
+        userId: this.userId,
+        context: this.history.slice(0, -1).map(m => m.content).join('\n'),
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: this.history,
+        });
+      }
+    );
+    
+    const assistantMessage = response.choices[0].message.content;
+    
+    // Add assistant response to history
+    this.history.push({ role: 'assistant', content: assistantMessage });
+    
+    return assistantMessage;
+  }
+}
+
+// Usage
+const conversation = new Conversation('user-123');
+await conversation.sendMessage("Hello, my name is Alice");
+await conversation.sendMessage("What's my name?");
+```
+
+## Conversation Manager
+
+Create a reusable conversation manager:
+
+```javascript
+class ConversationManager {
+  constructor() {
+    this.conversations = new Map();
+  }
+  
+  getConversation(userId, conversationId = null) {
+    const key = conversationId || `default-${userId}`;
+    
+    if (!this.conversations.has(key)) {
+      this.conversations.set(key, {
+        conversationId: conversationId || `conv-${Date.now()}`,
+        userId: userId,
+        messageIndex: 0,
+        history: [],
+      });
+    }
+    
+    return this.conversations.get(key);
+  }
+  
+  async sendMessage(userId, message, conversationId = null) {
+    const conv = this.getConversation(userId, conversationId);
+    conv.messageIndex++;
+    
+    conv.history.push({ role: 'user', content: message });
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conv.conversationId,
+        messageIndex: conv.messageIndex,
+        userId: conv.userId,
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: conv.history,
+        });
+      }
+    );
+    
+    const assistantMessage = response.choices[0].message.content;
+    conv.history.push({ role: 'assistant', content: assistantMessage });
+    
+    return {
+      message: assistantMessage,
+      conversationId: conv.conversationId,
+      messageIndex: conv.messageIndex,
+    };
+  }
+}
+
+// Usage
+const manager = new ConversationManager();
+await manager.sendMessage('user-123', 'Hello');
+await manager.sendMessage('user-123', 'How are you?');
+```
+
+## Next.js API Route
+
+Handle conversations in Next.js:
+
+```typescript
+// app/api/chat/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { observa } from '@/lib/observa';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// In-memory storage (use Redis/database in production)
+const conversations = new Map();
+
+export async function POST(request: NextRequest) {
+  try {
+    const { message, conversationId, userId } = await request.json();
+    
+    // Get or create conversation
+    const conv = conversations.get(conversationId) || {
+      conversationId: conversationId || `conv-${Date.now()}`,
+      userId: userId,
+      messageIndex: 0,
+      history: [],
+    };
+    
+    conv.messageIndex++;
+    conv.history.push({ role: 'user', content: message });
+    conversations.set(conv.conversationId, conv);
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conv.conversationId,
+        messageIndex: conv.messageIndex,
+        userId: conv.userId,
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: conv.history,
+        });
+      }
+    );
+    
+    const assistantMessage = response.choices[0].message.content;
+    conv.history.push({ role: 'assistant', content: assistantMessage });
+    
+    return NextResponse.json({
+      message: assistantMessage,
+      conversationId: conv.conversationId,
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    return NextResponse.json(
+      { error: 'Failed to process request' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Express.js Route
+
+Handle conversations in Express:
+
+```javascript
+const conversations = new Map();
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, conversationId, userId } = req.body;
+    
+    // Get or create conversation
+    const conv = conversations.get(conversationId) || {
+      conversationId: conversationId || `conv-${Date.now()}`,
+      userId: userId,
+      messageIndex: 0,
+      history: [],
+    };
+    
+    conv.messageIndex++;
+    conv.history.push({ role: 'user', content: message });
+    conversations.set(conv.conversationId, conv);
+    
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conv.conversationId,
+        messageIndex: conv.messageIndex,
+        userId: conv.userId,
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: conv.history,
+        });
+      }
+    );
+    
+    const assistantMessage = response.choices[0].message.content;
+    conv.history.push({ role: 'assistant', content: assistantMessage });
+    
+    res.json({
+      message: assistantMessage,
+      conversationId: conv.conversationId,
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+```
+
+## Best Practices
+
+1. **Consistent Conversation IDs**: Use the same ID for all messages in a conversation
+2. **Increment Message Index**: Track message order correctly
+3. **Maintain History**: Keep conversation history for context
+4. **User Tracking**: Include user IDs for analytics
+5. **Session Management**: Link conversations to user sessions
+6. **Persistence**: Store conversations in database/Redis for production
+
+## Production Considerations
+
+### Database Storage
+
+Store conversations in a database:
+
+```javascript
+// Example with MongoDB
+const mongoose = require('mongoose');
+
+const conversationSchema = new mongoose.Schema({
+  conversationId: String,
+  userId: String,
+  history: Array,
+  messageIndex: Number,
+  createdAt: Date,
+  updatedAt: Date,
+});
+
+const Conversation = mongoose.model('Conversation', conversationSchema);
+
+async function getConversation(conversationId, userId) {
+  let conv = await Conversation.findOne({ conversationId });
+  
+  if (!conv) {
+    conv = new Conversation({
+      conversationId: conversationId || `conv-${Date.now()}`,
+      userId: userId,
+      history: [],
+      messageIndex: 0,
+    });
+  }
+  
+  return conv;
+}
+```
+
+### Redis Storage
+
+Use Redis for fast access:
+
+```javascript
+const redis = require('redis');
+const client = redis.createClient();
+
+async function getConversation(conversationId, userId) {
+  const key = `conv:${conversationId}`;
+  const data = await client.get(key);
+  
+  if (data) {
+    return JSON.parse(data);
+  }
+  
+  return {
+    conversationId: conversationId || `conv-${Date.now()}`,
+    userId: userId,
+    history: [],
+    messageIndex: 0,
+  };
+}
+
+async function saveConversation(conversation) {
+  const key = `conv:${conversation.conversationId}`;
+  await client.set(key, JSON.stringify(conversation));
+}
+```
+
+## Next Steps
+
+- Check [Session Management](../guides/session-management) for session patterns
+- Read [OpenAI Integration](./openai-integration) for more examples
+- See [Next.js Integration](./nextjs-integration) for framework setup
+- Review [SDK Reference](../sdk/tracking) for API details
