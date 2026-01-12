@@ -1,0 +1,182 @@
+# Cookbook: Vercel AI SDK Integration
+
+Step-by-step guide to integrating Observa with Vercel AI SDK - a unified SDK that works with multiple providers (OpenAI, Anthropic, Google, etc.).
+
+## Prerequisites
+
+- Node.js 16+ or any JavaScript runtime
+- Vercel AI SDK installed (`npm install ai`)
+- Observa API key (get from [Settings](https://observa-app.vercel.app/dashboard/settings))
+
+## Set Up Environment
+
+Install dependencies and set up environment variables:
+
+```bash
+npm install observa-sdk ai
+```
+
+```javascript
+// .env
+OBSERVA_API_KEY=your-observa-api-key
+OBSERVA_API_URL=https://observa-api.vercel.app
+OPENAI_API_KEY=sk-proj-***  # or your LLM provider key
+```
+
+## Example 1: Basic Text Generation (Auto-Capture - Recommended)
+
+Use `observeVercelAI()` for automatic tracking - the easiest way:
+
+```javascript
+import { init } from 'observa-sdk';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+// Initialize Observa SDK
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+
+// Wrap Vercel AI SDK functions - automatic tracking!
+const ai = observa.observeVercelAI({ generateText }, {
+  name: 'my-app',
+  userId: 'user-123',
+});
+
+// Use wrapped functions - automatically tracked!
+const result = await ai.generateText({
+  model: openai('gpt-4'),
+  prompt: 'What is the capital of France?',
+});
+
+console.log(result.text);
+```
+
+## Example 2: Streaming (Auto-Capture)
+
+Streaming works automatically with `observeVercelAI()`:
+
+```javascript
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+// Wrap once (same as Example 1)
+const ai = observa.observeVercelAI({ generateText, streamText }, {
+  name: 'my-app',
+});
+
+// Streaming automatically tracked!
+const result = await ai.streamText({
+  model: openai('gpt-4'),
+  prompt: 'Tell me a joke',
+});
+
+for await (const chunk of result.textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+## Example 3: With Anthropic (Claude)
+
+Works with any provider supported by Vercel AI SDK:
+
+```javascript
+import { generateText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const ai = observa.observeVercelAI({ generateText }, {
+  name: 'claude-app',
+});
+
+// Use wrapped functions - automatically tracked!
+const result = await ai.generateText({
+  model: anthropic('claude-3-opus-20240229'),
+  prompt: 'Explain quantum computing',
+});
+
+console.log(result.text);
+```
+
+## Example 4: With Messages (Chat Format)
+
+Vercel AI SDK supports both prompt and messages:
+
+```javascript
+const ai = observa.observeVercelAI({ generateText }, {
+  name: 'chat-app',
+});
+
+// Use wrapped functions - automatically tracked!
+const result = await ai.generateText({
+  model: openai('gpt-4'),
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'What is the capital of France?' }
+  ],
+});
+
+console.log(result.text);
+```
+
+## Example 5: PII Redaction
+
+Use the `redact` option to sanitize sensitive data:
+
+```javascript
+const ai = observa.observeVercelAI({ generateText }, {
+  name: 'secure-app',
+  redact: (data) => {
+    // Remove sensitive data before sending to Observa
+    if (data?.prompt) {
+      return {
+        ...data,
+        prompt: '[REDACTED]'
+      };
+    }
+    if (data?.messages) {
+      return {
+        ...data,
+        messages: data.messages.map(msg => ({
+          ...msg,
+          content: '[REDACTED]'
+        }))
+      };
+    }
+    return data;
+  },
+});
+```
+
+## Best Practices
+
+1. **Use Auto-Capture**: `observeVercelAI()` is the recommended approach - it automatically captures 90%+ of your LLM interactions
+2. **Wrap Once**: Wrap your Vercel AI SDK functions once and reuse throughout your application
+3. **Streaming Support**: Streaming works automatically - no extra code needed
+4. **PII Redaction**: Use the `redact` option to sanitize sensitive data before sending to Observa
+5. **Error Handling**: Wrap LLM calls in try-catch blocks
+
+## Supported Providers
+
+Vercel AI SDK works with multiple providers. Observa automatically detects the provider from the model string:
+
+- **OpenAI**: `openai/gpt-4`, `openai/gpt-3.5-turbo`
+- **Anthropic**: `anthropic/claude-3-opus-20240229`
+- **Google**: `google/gemini-pro`
+- And more...
+
+## View Your Traces
+
+After running these examples:
+
+1. Go to [Dashboard](https://observa-app.vercel.app/dashboard)
+2. Navigate to **Traces**
+3. Filter by provider to see Vercel AI SDK calls
+4. Click on a trace for detailed information
+
+## Next Steps
+
+- **[OpenAI Integration](./openai-integration)**: Direct OpenAI SDK integration
+- **[Anthropic Integration](./anthropic-integration)**: Direct Anthropic SDK integration
+- **[Next.js Integration](./nextjs-integration)**: Next.js specific setup
+- **[SDK Reference](../sdk/initialization)**: Complete API documentation
