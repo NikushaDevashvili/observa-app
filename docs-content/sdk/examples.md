@@ -45,7 +45,57 @@ try {
 }
 ```
 
-## OpenAI Integration
+## OpenAI Integration (Auto-Capture - Recommended)
+
+The easiest way to track OpenAI calls is using the `observeOpenAI()` wrapper - it automatically captures 90%+ of your LLM interactions:
+
+```typescript
+import OpenAI from "openai";
+import { init } from "observa-sdk";
+
+const observa = init({ apiKey: process.env.OBSERVA_API_KEY! });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Wrap once - all calls automatically tracked!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: "my-app",
+  userId: "user-123",
+  redact: (data) => {
+    // Optional: Scrub sensitive data before sending to Observa
+    if (data?.messages) {
+      return { ...data, messages: "[REDACTED]" };
+    }
+    return data;
+  },
+});
+
+// Use wrapped client - automatically tracked!
+async function chatWithObserva(userMessage: string) {
+  const response = await wrappedOpenAI.chat.completions.create({
+    model: "gpt-4",
+    messages: [{ role: "user", content: userMessage }],
+  });
+
+  return response.choices[0].message.content;
+}
+
+// Streaming also works automatically
+async function chatWithStreaming(userMessage: string) {
+  const stream = await wrappedOpenAI.chat.completions.create({
+    model: "gpt-4",
+    messages: [{ role: "user", content: userMessage }],
+    stream: true,
+  });
+
+  for await (const chunk of stream) {
+    process.stdout.write(chunk.choices[0]?.delta?.content || "");
+  }
+}
+```
+
+## Manual Tracking (Advanced)
+
+For more control or other providers (Gemini, LangChain, etc.), use manual tracking:
 
 ```typescript
 import OpenAI from "openai";
@@ -54,7 +104,7 @@ import { init } from "observa-sdk";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const observa = init({ apiKey: process.env.OBSERVA_API_KEY! });
 
-async function chatWithObserva(userMessage: string, userId: string) {
+async function chatWithManualTracking(userMessage: string, userId: string) {
   const traceId = observa.startTrace({
     userId,
     name: "Chat Completion",
@@ -73,10 +123,12 @@ async function chatWithObserva(userMessage: string, userId: string) {
       model: response.model,
       input: userMessage,
       output: response.choices[0].message.content || "",
-      tokensPrompt: response.usage.prompt_tokens,
-      tokensCompletion: response.usage.completion_tokens,
-      tokensTotal: response.usage.total_tokens,
+      inputTokens: response.usage.prompt_tokens,
+      outputTokens: response.usage.completion_tokens,
+      totalTokens: response.usage.total_tokens,
       latencyMs: latency,
+      operationName: "chat",
+      providerName: "openai",
     });
 
     await observa.endTrace();
@@ -90,6 +142,30 @@ async function chatWithObserva(userMessage: string, userId: string) {
     throw error;
   }
 }
+```
+
+## Anthropic Integration (Auto-Capture)
+
+Similar to OpenAI, use `observeAnthropic()` for automatic tracking:
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+import { init } from "observa-sdk";
+
+const observa = init({ apiKey: process.env.OBSERVA_API_KEY! });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// Wrap once - all calls automatically tracked!
+const wrappedAnthropic = observa.observeAnthropic(anthropic, {
+  name: "my-app",
+  userId: "user-123",
+});
+
+const response = await wrappedAnthropic.messages.create({
+  model: "claude-3-haiku-20240307",
+  max_tokens: 1024,
+  messages: [{ role: "user", content: "Hello!" }],
+});
 ```
 
 ## RAG with Full Tracking (Embeddings, Vector DB, Retrieval, LLM)
@@ -388,11 +464,14 @@ app.post("/api/feedback", async (req, res) => {
 ## Related Documentation
 
 - [SDK Installation](./installation.md)
+- [SDK Testing Guide](./testing.md) - Complete testing instructions
 - [SDK Migration Guide](./migration.md)
 - [Event Reference](./events-reference.md)
 - [API Documentation](../api/endpoints.md)
 
 ---
+
+**Want to test the SDK?** See the [Testing Guide](./testing.md) for step-by-step instructions.
 
 **More examples?** Check the [SDK Implementation Example](../../SDK_IMPLEMENTATION_EXAMPLE.md) for advanced patterns.
 

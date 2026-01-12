@@ -16,6 +16,7 @@
       "installation": "SDK Installation",
       "migration": "Migration Guide",
       "examples": "Examples",
+      "testing": "Testing Guide",
       "events-reference": "Events Reference"
     }
   },

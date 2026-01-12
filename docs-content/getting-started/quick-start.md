@@ -44,6 +44,30 @@ const observa = init({
 
 ## Step 4: Send Your First Trace
 
+### Option A: Auto-Capture (Recommended - Easiest)
+
+```typescript
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: "my-first-app",
+  userId: "user-123",
+});
+
+// Use wrapped client - automatically tracked!
+const response = await wrappedOpenAI.chat.completions.create({
+  model: "gpt-3.5-turbo",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+### Option B: Manual Tracking
+
 ```typescript
 // Start trace
 const traceId = observa.startTrace({
@@ -56,8 +80,12 @@ observa.trackLLMCall({
   model: "gpt-4",
   input: "Hello!",
   output: "Hi there!",
-  tokensTotal: 30,
+  inputTokens: 10,
+  outputTokens: 20,
+  totalTokens: 30,
   latencyMs: 1200,
+  providerName: "openai",
+  operationName: "chat",
 });
 
 // End trace (sends events)
