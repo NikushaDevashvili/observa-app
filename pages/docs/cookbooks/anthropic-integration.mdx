@@ -23,9 +23,9 @@ OBSERVA_API_KEY=your-observa-api-key
 OBSERVA_API_URL=https://observa-api.vercel.app
 ```
 
-## Example 1: Basic Message Completion
+## Example 1: Basic Message Completion (Auto-Capture - Recommended)
 
-Simple example of tracking a Claude API call:
+Use `observeAnthropic()` for automatic tracking - the easiest way:
 
 ```javascript
 import { init } from 'observa-sdk';
@@ -42,58 +42,47 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Track Claude call
-const response = await observa.track(
-  {
-    query: "What is the capital of France?",
-    conversationId: "conv-123",
-    messageIndex: 1,
-  },
-  async () => {
-    return await anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
-      max_tokens: 1024,
-      messages: [
-        { role: 'user', content: 'What is the capital of France?' }
-      ],
-    });
-  }
-);
+// Wrap with Observa - automatic tracking!
+const wrappedAnthropic = observa.observeAnthropic(anthropic, {
+  name: 'my-app',
+  userId: 'user-123',
+});
+
+// Use wrapped client - automatically tracked!
+const response = await wrappedAnthropic.messages.create({
+  model: 'claude-3-opus-20240229',
+  max_tokens: 1024,
+  messages: [
+    { role: 'user', content: 'What is the capital of France?' }
+  ],
+});
 
 console.log(response.content[0].text);
 ```
 
-## Example 2: Streaming Responses
+## Example 2: Streaming (Auto-Capture)
 
-Track streaming responses from Claude:
+Streaming works automatically with `observeAnthropic()` - no extra code needed!
 
 ```javascript
-const stream = await observa.track(
-  {
-    query: "Explain quantum computing",
-    conversationId: "conv-123",
-    messageIndex: 1,
-    metadata: {
-      model: "claude-3-opus-20240229",
-      stream: true,
-    },
-  },
-  async () => {
-    return await anthropic.messages.stream({
-      model: 'claude-3-opus-20240229',
-      max_tokens: 1024,
-      messages: [
-        { role: 'user', content: 'Explain quantum computing' }
-      ],
-    });
-  }
-);
+// Wrap client once (same as Example 1)
+const wrappedAnthropic = observa.observeAnthropic(anthropic, {
+  name: 'my-app',
+});
 
-let fullResponse = '';
+// Streaming automatically tracked!
+const stream = await wrappedAnthropic.messages.create({
+  model: 'claude-3-opus-20240229',
+  max_tokens: 1024,
+  messages: [
+    { role: 'user', content: 'Explain quantum computing' }
+  ],
+  stream: true,
+});
+
 for await (const chunk of stream) {
   if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
     const text = chunk.delta.text;
-    fullResponse += text;
     process.stdout.write(text);
   }
 }
@@ -101,32 +90,25 @@ for await (const chunk of stream) {
 
 ## Example 3: Multi-Turn Conversation
 
-Track a conversation with Claude:
+Track conversations with automatic capture:
 
 ```javascript
-const conversationId = `conv-${Date.now()}`;
-let messageIndex = 0;
+const wrappedAnthropic = observa.observeAnthropic(anthropic, {
+  name: 'chat-app',
+  userId: 'user-123',
+});
+
 const conversationHistory = [];
 
 async function sendMessage(message) {
-  messageIndex++;
   conversationHistory.push({ role: 'user', content: message });
   
-  const response = await observa.track(
-    {
-      query: message,
-      conversationId: conversationId,
-      messageIndex: messageIndex,
-      context: conversationHistory.slice(0, -1).map(m => m.content).join('\n'),
-    },
-    async () => {
-      return await anthropic.messages.create({
-        model: 'claude-3-opus-20240229',
-        max_tokens: 1024,
-        messages: conversationHistory,
-      });
-    }
-  );
+  // Use wrapped client - automatically tracked!
+  const response = await wrappedAnthropic.messages.create({
+    model: 'claude-3-opus-20240229',
+    max_tokens: 1024,
+    messages: conversationHistory,
+  });
   
   const assistantMessage = response.content[0].text;
   conversationHistory.push({ role: 'assistant', content: assistantMessage });
@@ -145,36 +127,29 @@ console.log(response2);
 
 ## Example 4: With System Prompt
 
-Track calls with system prompts:
+System prompts work automatically:
 
 ```javascript
-const response = await observa.track(
-  {
-    query: "Write a haiku about programming",
-    conversationId: "conv-123",
-    messageIndex: 1,
-    metadata: {
-      hasSystemPrompt: true,
-    },
-  },
-  async () => {
-    return await anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
-      max_tokens: 1024,
-      system: "You are a helpful assistant that writes poetry.",
-      messages: [
-        { role: 'user', content: 'Write a haiku about programming' }
-      ],
-    });
-  }
-);
+const wrappedAnthropic = observa.observeAnthropic(anthropic, {
+  name: 'poetry-app',
+});
+
+// Use wrapped client - automatically tracked!
+const response = await wrappedAnthropic.messages.create({
+  model: 'claude-3-opus-20240229',
+  max_tokens: 1024,
+  system: "You are a helpful assistant that writes poetry.",
+  messages: [
+    { role: 'user', content: 'Write a haiku about programming' }
+  ],
+});
 
 console.log(response.content[0].text);
 ```
 
 ## Example 5: Tool Use (Function Calling)
 
-Track Claude's tool use feature:
+Tool use is automatically tracked:
 
 ```javascript
 const tools = [
@@ -201,26 +176,19 @@ async function getWeather(location) {
   return "Weather unknown";
 }
 
-const response = await observa.track(
-  {
-    query: "What's the weather in Berlin?",
-    conversationId: "conv-123",
-    messageIndex: 1,
-    metadata: {
-      tools: tools.map(t => t.name),
-    },
-  },
-  async () => {
-    return await anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
-      max_tokens: 1024,
-      tools: tools,
-      messages: [
-        { role: 'user', content: "What's the weather in Berlin?" }
-      ],
-    });
-  }
-);
+const wrappedAnthropic = observa.observeAnthropic(anthropic, {
+  name: 'tool-app',
+});
+
+// Use wrapped client - automatically tracked!
+const response = await wrappedAnthropic.messages.create({
+  model: 'claude-3-opus-20240229',
+  max_tokens: 1024,
+  tools: tools,
+  messages: [
+    { role: 'user', content: "What's the weather in Berlin?" }
+  ],
+});
 
 // Handle tool use
 if (response.stop_reason === 'tool_use') {
@@ -233,43 +201,36 @@ if (response.stop_reason === 'tool_use') {
 }
 ```
 
-## Example 6: With Custom Metadata
+## PII Redaction
 
-Add custom metadata for tracking:
+Use the `redact` option to sanitize sensitive data:
 
 ```javascript
-const response = await observa.track(
-  {
-    query: "Generate a marketing email",
-    conversationId: "conv-123",
-    messageIndex: 1,
-    userId: "user-456",
-    metadata: {
-      feature: "email_generator",
-      campaignId: "campaign-789",
-      model: "claude-3-opus-20240229",
-      version: "1.0.0",
-    },
+const wrappedAnthropic = observa.observeAnthropic(anthropic, {
+  name: 'secure-app',
+  redact: (data) => {
+    // Remove sensitive data before sending to Observa
+    if (data?.messages) {
+      return {
+        ...data,
+        messages: data.messages.map(msg => ({
+          ...msg,
+          content: '[REDACTED]'
+        }))
+      };
+    }
+    return data;
   },
-  async () => {
-    return await anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
-      max_tokens: 2048,
-      messages: [
-        { role: 'user', content: 'Generate a marketing email' }
-      ],
-    });
-  }
-);
+});
 ```
 
 ## Best Practices
 
-1. **Use Conversation IDs**: Group related messages together
-2. **Track Token Usage**: Monitor Claude's token usage
-3. **Handle Tool Use**: Properly handle tool use responses
-4. **Include Context**: Add conversation history for multi-turn conversations
-5. **Set Appropriate Max Tokens**: Configure max_tokens based on your needs
+1. **Use Auto-Capture**: `observeAnthropic()` is the recommended approach - it automatically captures 90%+ of your LLM interactions
+2. **Wrap Once**: Wrap your Anthropic client once and reuse it throughout your application
+3. **Streaming Support**: Streaming works automatically - no extra code needed
+4. **PII Redaction**: Use the `redact` option to sanitize sensitive data before sending to Observa
+5. **Error Handling**: Wrap LLM calls in try-catch blocks
 
 ## View Your Traces
 
@@ -282,7 +243,7 @@ After running these examples:
 
 ## Next Steps
 
-- Read the [SDK Reference](../sdk/tracking) for complete API documentation
-- Check [Multi-Turn Conversations](./multi-turn-conversations) for advanced patterns
-- See [Function Calling](./function-calling) for tool usage examples
-- Explore [OpenAI Integration](./openai-integration) for comparison
+- **[OpenAI Integration](./openai-integration)**: Compare with OpenAI examples
+- **[Multi-Turn Conversations](./multi-turn-conversations)**: Advanced conversation patterns
+- **[Function Calling](./function-calling)**: Tool usage examples
+- **[SDK Reference](../sdk/initialization)**: Complete API documentation
