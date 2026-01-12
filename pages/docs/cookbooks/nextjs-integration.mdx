@@ -48,27 +48,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { observa } from '@/lib/observa';
 import OpenAI from 'openai';
 
+// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: 'nextjs-api-route',
+  userId: 'user-123',
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const { message, conversationId, messageIndex } = await request.json();
+    const { message } = await request.json();
     
-    const response = await observa.track(
-      {
-        query: message,
-        conversationId: conversationId || `conv-${Date.now()}`,
-        messageIndex: messageIndex || 1,
-      },
-      async () => {
-        return await openai.chat.completions.create({
-          model: 'gpt-4',
-          messages: [{ role: 'user', content: message }],
-        });
-      }
-    );
+    // Use wrapped client - automatically tracked!
+    const response = await wrappedOpenAI.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: message }],
+    });
     
     return NextResponse.json({
       message: response.choices[0].message.content,
@@ -91,24 +90,22 @@ Create `app/chat/page.tsx`:
 import { observa } from '@/lib/observa';
 import OpenAI from 'openai';
 
+// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: 'nextjs-server-component',
+});
+
 export default async function ChatPage() {
-  const response = await observa.track(
-    {
-      query: "Hello from Next.js",
-      conversationId: "server-component",
-      messageIndex: 1,
-    },
-    async () => {
-      return await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [{ role: 'user', content: 'Hello from Next.js' }],
-      });
-    }
-  );
+  // Use wrapped client - automatically tracked!
+  const response = await wrappedOpenAI.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello from Next.js' }],
+  });
   
   return (
     <div>
@@ -140,8 +137,6 @@ export default function ChatClient() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: message,
-        conversationId: `conv-${Date.now()}`,
-        messageIndex: 1,
       }),
     });
     
@@ -187,8 +182,14 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { observa } from '@/lib/observa';
 import OpenAI from 'openai';
 
+// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: 'nextjs-pages-router',
 });
 
 export default async function handler(
@@ -200,21 +201,13 @@ export default async function handler(
   }
   
   try {
-    const { message, conversationId, messageIndex } = req.body;
+    const { message } = req.body;
     
-    const response = await observa.track(
-      {
-        query: message,
-        conversationId: conversationId || `conv-${Date.now()}`,
-        messageIndex: messageIndex || 1,
-      },
-      async () => {
-        return await openai.chat.completions.create({
-          model: 'gpt-4',
-          messages: [{ role: 'user', content: message }],
-        });
-      }
-    );
+    // Use wrapped client - automatically tracked!
+    const response = await wrappedOpenAI.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: message }],
+    });
     
     res.status(200).json({
       message: response.choices[0].message.content,
@@ -236,27 +229,22 @@ Create `app/actions/chat.ts`:
 import { observa } from '@/lib/observa';
 import OpenAI from 'openai';
 
+// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function sendMessage(
-  message: string,
-  conversationId: string
-) {
-  const response = await observa.track(
-    {
-      query: message,
-      conversationId: conversationId,
-      messageIndex: 1,
-    },
-    async () => {
-      return await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [{ role: 'user', content: message }],
-      });
-    }
-  );
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: 'nextjs-server-action',
+});
+
+export async function sendMessage(message: string) {
+  // Use wrapped client - automatically tracked!
+  const response = await wrappedOpenAI.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: message }],
+  });
   
   return response.choices[0].message.content;
 }
