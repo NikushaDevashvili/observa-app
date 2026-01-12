@@ -322,11 +322,12 @@ export const config = {
 
 ## Best Practices
 
-1. **Use Environment Variables**: Never hardcode API keys
-2. **Server-Side Only**: Initialize Observa on the server (API routes, server components, server actions)
-3. **Error Handling**: Always wrap tracking in try-catch
-4. **Async Tracking**: Don't block requests on tracking
-5. **Conversation IDs**: Use consistent IDs for multi-turn conversations
+1. **Use Auto-Capture**: Use `observeOpenAI()` or `observeAnthropic()` for automatic tracking (recommended)
+2. **Use Environment Variables**: Never hardcode API keys
+3. **Server-Side Only**: Initialize Observa on the server (API routes, server components, server actions)
+4. **Error Handling**: Always wrap LLM calls in try-catch
+5. **Streaming Support**: Auto-capture handles streaming automatically - no extra code needed
+6. **PII Redaction**: Use the `redact` option to sanitize sensitive data before sending to Observa
 
 ## Production Deployment
 
