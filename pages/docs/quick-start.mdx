@@ -48,28 +48,35 @@ OPENAI_API_KEY=sk-proj-***  # Your LLM provider key
 
 ## Step 4: Track Your First Call
 
-Wrap your LLM call with `observa.track()`:
+Use auto-capture with `observeOpenAI()` - the easiest way to track LLM calls:
 
 ```javascript
 import OpenAI from 'openai';
+import { init } from 'observa-sdk';
 
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: 'https://observa-api.vercel.app',
+});
+
+// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const response = await observa.track(
-  {
-    query: "What is the capital of France?",
-  },
-  async () => {
-    return await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        { role: 'user', content: 'What is the capital of France?' }
-      ],
-    });
-  }
-);
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: 'my-first-app',
+  userId: 'user-123',
+});
+
+// Use wrapped client - automatically tracked!
+const response = await wrappedOpenAI.chat.completions.create({
+  model: 'gpt-4',
+  messages: [
+    { role: 'user', content: 'What is the capital of France?' }
+  ],
+});
 
 console.log(response.choices[0].message.content);
 ```
