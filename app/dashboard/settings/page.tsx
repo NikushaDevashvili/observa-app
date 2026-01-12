@@ -68,6 +68,492 @@ interface NewApiKey {
   important?: string;
 }
 
+// Create API Key Modal Component
+function CreateApiKeyModal({
+  account,
+  projects,
+  onClose,
+  onCreate,
+  creating,
+}: {
+  account: AccountInfo;
+  projects: AccountInfo["projects"];
+  onClose: () => void;
+  onCreate: (data: {
+    name: string;
+    keyPrefix: "sk_" | "pk_";
+    projectId?: string;
+    scopes?: { ingest: boolean; query?: boolean };
+  }) => void;
+  creating: boolean;
+}) {
+  const [name, setName] = useState("");
+  const [keyPrefix, setKeyPrefix] = useState<"sk_" | "pk_">("sk_");
+  const [projectId, setProjectId] = useState<string>("");
+  const [ingest, setIngest] = useState(true);
+  const [query, setQuery] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onCreate({
+      name,
+      keyPrefix,
+      projectId: projectId || undefined,
+      scopes: { ingest, query },
+    });
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "2rem",
+          borderRadius: "0.5rem",
+          maxWidth: "500px",
+          width: "90%",
+          maxHeight: "90vh",
+          overflow: "auto",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2
+          style={{
+            fontSize: "1.5rem",
+            fontWeight: "bold",
+            marginBottom: "1.5rem",
+          }}
+        >
+          Create API Key
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "1rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                marginBottom: "0.5rem",
+              }}
+            >
+              Name *
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              style={{
+                width: "100%",
+                padding: "0.5rem",
+                border: "1px solid #e5e7eb",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+              }}
+              placeholder="e.g., Production Key"
+            />
+          </div>
+
+          <div style={{ marginBottom: "1rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                marginBottom: "0.5rem",
+              }}
+            >
+              Key Type *
+            </label>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <input
+                  type="radio"
+                  checked={keyPrefix === "sk_"}
+                  onChange={() => setKeyPrefix("sk_")}
+                />
+                <span>Server Key (sk_)</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <input
+                  type="radio"
+                  checked={keyPrefix === "pk_"}
+                  onChange={() => setKeyPrefix("pk_")}
+                />
+                <span>Publishable Key (pk_)</span>
+              </label>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: "1rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                marginBottom: "0.5rem",
+              }}
+            >
+              Project (Optional)
+            </label>
+            <select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "0.5rem",
+                border: "1px solid #e5e7eb",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+              }}
+            >
+              <option value="">Tenant-level (all projects)</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name} ({project.environment})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: "1rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                marginBottom: "0.5rem",
+              }}
+            >
+              Scopes
+            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <input
+                  type="checkbox"
+                  checked={ingest}
+                  onChange={(e) => setIngest(e.target.checked)}
+                />
+                <span>Ingest (send events)</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <input
+                  type="checkbox"
+                  checked={query}
+                  onChange={(e) => setQuery(e.target.checked)}
+                />
+                <span>Query (read data)</span>
+              </label>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: "#e5e7eb",
+                color: "#111827",
+                border: "none",
+                borderRadius: "0.375rem",
+                cursor: "pointer",
+                fontSize: "0.875rem",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={creating || !name}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: creating ? "#9ca3af" : "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: "0.375rem",
+                cursor: creating ? "not-allowed" : "pointer",
+                fontSize: "0.875rem",
+              }}
+            >
+              {creating ? "Creating..." : "Create"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// New API Key Display Component
+function NewApiKeyDisplay({
+  apiKey,
+  account,
+  onClose,
+  onCopy,
+  copied,
+}: {
+  apiKey: NewApiKey;
+  account: AccountInfo;
+  onClose: () => void;
+  onCopy: (text: string, label: string) => void;
+  copied: string | null;
+}) {
+  if (!apiKey.apiKey || !apiKey.keyRecord) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "2rem",
+          borderRadius: "0.5rem",
+          maxWidth: "600px",
+          width: "90%",
+          maxHeight: "90vh",
+          overflow: "auto",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            padding: "1rem",
+            backgroundColor: "#fef3c7",
+            borderRadius: "0.375rem",
+            marginBottom: "1.5rem",
+            border: "1px solid #fbbf24",
+          }}
+        >
+          <strong style={{ color: "#92400e" }}>⚠️ Important:</strong>
+          <p style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "#92400e" }}>
+            This API key will only be shown once. Make sure to copy it now and
+            store it securely.
+          </p>
+        </div>
+
+        <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1rem" }}>
+          API Key Created
+        </h2>
+
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "0.875rem",
+              fontWeight: 600,
+              marginBottom: "0.5rem",
+            }}
+          >
+            API Key
+          </label>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <code
+              style={{
+                flex: 1,
+                padding: "0.75rem",
+                backgroundColor: "#f9fafb",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                fontFamily: "monospace",
+                wordBreak: "break-all",
+                border: "1px solid #e5e7eb",
+              }}
+            >
+              {apiKey.apiKey}
+            </code>
+            <button
+              onClick={() => onCopy(apiKey.apiKey!, "newApiKey")}
+              style={{
+                padding: "0.75rem 1rem",
+                backgroundColor: copied === "newApiKey" ? "#10b981" : "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: "0.375rem",
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+            >
+              {copied === "newApiKey" ? "✓ Copied!" : "Copy"}
+            </button>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "1rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                marginBottom: "0.5rem",
+              }}
+            >
+              Tenant ID
+            </label>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <code
+                style={{
+                  flex: 1,
+                  padding: "0.5rem",
+                  backgroundColor: "#f9fafb",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.75rem",
+                  fontFamily: "monospace",
+                  border: "1px solid #e5e7eb",
+                }}
+              >
+                {apiKey.keyRecord.tenantId}
+              </code>
+              <button
+                onClick={() => onCopy(apiKey.keyRecord!.tenantId, "newTenantId")}
+                style={{
+                  padding: "0.5rem",
+                  backgroundColor: copied === "newTenantId" ? "#10b981" : "#e5e7eb",
+                  color: copied === "newTenantId" ? "#fff" : "#111827",
+                  border: "none",
+                  borderRadius: "0.25rem",
+                  cursor: "pointer",
+                }}
+              >
+                {copied === "newTenantId" ? "✓" : "Copy"}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                marginBottom: "0.5rem",
+              }}
+            >
+              Project ID {apiKey.keyRecord.projectId ? "" : "(Tenant-level)"}
+            </label>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <code
+                style={{
+                  flex: 1,
+                  padding: "0.5rem",
+                  backgroundColor: "#f9fafb",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.75rem",
+                  fontFamily: "monospace",
+                  border: "1px solid #e5e7eb",
+                  color: apiKey.keyRecord.projectId ? "#111827" : "#6b7280",
+                }}
+              >
+                {apiKey.keyRecord.projectId || "N/A"}
+              </code>
+              {apiKey.keyRecord.projectId && (
+                <button
+                  onClick={() =>
+                    onCopy(apiKey.keyRecord!.projectId!, "newProjectId")
+                  }
+                  style={{
+                    padding: "0.5rem",
+                    backgroundColor: copied === "newProjectId" ? "#10b981" : "#e5e7eb",
+                    color: copied === "newProjectId" ? "#fff" : "#111827",
+                    border: "none",
+                    borderRadius: "0.25rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  {copied === "newProjectId" ? "✓" : "Copy"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: "1rem",
+            backgroundColor: "#eff6ff",
+            borderRadius: "0.375rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <strong style={{ fontSize: "0.875rem" }}>SDK Usage:</strong>
+          <code
+            style={{
+              display: "block",
+              padding: "0.75rem",
+              backgroundColor: "#fff",
+              borderRadius: "0.25rem",
+              marginTop: "0.5rem",
+              fontSize: "0.75rem",
+              fontFamily: "monospace",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {`const observa = init({
+  apiKey: '${apiKey.apiKey}',
+  tenantId: '${apiKey.keyRecord.tenantId}',
+  ${apiKey.keyRecord.projectId ? `projectId: '${apiKey.keyRecord.projectId}',` : ""}
+  apiUrl: '${account.observaApiUrl}',
+});`}
+          </code>
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: "100%",
+            padding: "0.75rem",
+            backgroundColor: "#2563eb",
+            color: "#fff",
+            border: "none",
+            borderRadius: "0.375rem",
+            cursor: "pointer",
+            fontSize: "0.875rem",
+            fontWeight: 500,
+          }}
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 export default function SettingsPage() {
   const router = useRouter();
   const [account, setAccount] = useState<AccountInfo | null>(null);
@@ -1172,6 +1658,40 @@ export default function SettingsPage() {
         >
           Quick Start
         </h2>
+        <div style={{ marginBottom: "1rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+            <button
+              onClick={() => setKeyTab("jwt")}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: keyTab === "jwt" ? "#2563eb" : "#e5e7eb",
+                color: keyTab === "jwt" ? "#fff" : "#111827",
+                border: "none",
+                borderRadius: "0.375rem",
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+            >
+              JWT Key
+            </button>
+            <button
+              onClick={() => setKeyTab("legacy")}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: keyTab === "legacy" ? "#2563eb" : "#e5e7eb",
+                color: keyTab === "legacy" ? "#fff" : "#111827",
+                border: "none",
+                borderRadius: "0.375rem",
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+            >
+              Legacy Key (sk_/pk_)
+            </button>
+          </div>
+        </div>
         <div
           style={{
             fontSize: "0.875rem",
@@ -1208,10 +1728,19 @@ export default function SettingsPage() {
               whiteSpace: "pre-wrap",
             }}
           >
-            {`import { init } from 'observa-sdk';
+            {keyTab === "jwt"
+              ? `import { init } from 'observa-sdk';
 
 const observa = init({
-  apiKey: '${account.apiKey || "YOUR_API_KEY"}',
+  apiKey: '${account.apiKey || "YOUR_JWT_API_KEY"}',
+  apiUrl: '${account.observaApiUrl}',
+});`
+              : `import { init } from 'observa-sdk';
+
+const observa = init({
+  apiKey: 'sk_...', // Your API key from above
+  tenantId: '${account.tenant.id}', // Required for legacy keys
+  projectId: '${account.defaultProject?.id || "YOUR_PROJECT_ID"}', // Optional
   apiUrl: '${account.observaApiUrl}',
 });`}
           </code>
@@ -1244,4 +1773,3 @@ const observa = init({
     </div>
   );
 }
-
