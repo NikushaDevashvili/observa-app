@@ -275,7 +275,7 @@ export default function ChatForm() {
   
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const response = await sendMessage(message, `conv-${Date.now()}`);
+    const response = await sendMessage(message);
     console.log(response);
   }
   
@@ -291,33 +291,24 @@ export default function ChatForm() {
 }
 ```
 
-## Middleware Example
+## Streaming Support
 
-Create `middleware.ts` for request tracking:
+Streaming works automatically with `observeOpenAI()` - no extra code needed!
 
 ```typescript
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { observa } from '@/lib/observa';
+// In your API route or server component
+const stream = await wrappedOpenAI.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: message }],
+  stream: true,
+});
 
-export function middleware(request: NextRequest) {
-  // Track API requests
-  if (request.nextUrl.pathname.startsWith('/api/')) {
-    observa.track({
-      event: 'api_request',
-      metadata: {
-        path: request.nextUrl.pathname,
-        method: request.method,
-      },
-    }).catch(console.error);
-  }
-  
-  return NextResponse.next();
+// Stream to client - automatically tracked!
+for await (const chunk of stream) {
+  // Process chunks
+  const content = chunk.choices[0]?.delta?.content || '';
+  // Send to client...
 }
-
-export const config = {
-  matcher: '/api/:path*',
-};
 ```
 
 ## Best Practices
