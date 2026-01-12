@@ -1,109 +1,92 @@
-# Onboarding
+# Onboarding Guide
 
-Complete onboarding guide to get you started with Observa.
+Complete step-by-step guide to get started with Observa.
 
-## Account Setup
+## Prerequisites
 
-### 1. Sign Up
+- Node.js 16+ installed
+- An Observa account ([sign up here](https://observa-app.vercel.app))
+- Your LLM provider API key (OpenAI, Anthropic, etc.)
 
-1. Visit [observa-app.vercel.app](https://observa-app.vercel.app)
-2. Click **Sign Up**
-3. Enter your email and create a password
-4. Verify your email address
+## Step 1: Sign Up
 
-### 2. Complete Initial Setup
+1. Go to [observa-app.vercel.app](https://observa-app.vercel.app)
+2. Click "Sign Up"
+3. Enter your email and company name
+4. Complete the signup process
+5. Copy your API key from the dashboard
 
-After signing up, you'll be taken through the onboarding flow:
-
-1. **Account Creation**: Your account is automatically created
-2. **API Key Generation**: Your API key is generated and displayed
-3. **Project Setup**: Your default project is created
-4. **Environment Selection**: Choose your environment (development/production)
-
-### 3. Save Your Credentials
-
-Make sure to save:
-- **API Key**: Copy this immediately (you can view it later in Settings)
-- **Tenant ID**: Your tenant identifier
-- **Project ID**: Your project identifier
-
-## First Integration
-
-### Step 1: Install SDK
+## Step 2: Install the SDK
 
 ```bash
 npm install observa-sdk
 ```
 
-### Step 2: Initialize SDK
+## Step 3: Initialize SDK
+
+Create a new file (e.g., `observa-setup.js`):
 
 ```javascript
 import { init } from 'observa-sdk';
 
-const observa = init({
-  apiKey: 'your-api-key-from-signup',
+export const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
   apiUrl: 'https://observa-api.vercel.app',
 });
 ```
 
-### Step 3: Track Your First Event
+Set your API key as an environment variable:
 
-```javascript
-await observa.track(
-  {
-    query: "Hello, Observa!",
-    conversationId: "first-conversation",
-    messageIndex: 1,
-  },
-  async () => {
-    // Your LLM call
-    return { response: "Hello! I'm ready to track your LLM calls." };
-  }
-);
+```bash
+export OBSERVA_API_KEY="your-api-key-here"
 ```
 
-### Step 4: Verify in Dashboard
+Or create a `.env` file:
+
+```env
+OBSERVA_API_KEY=your-api-key-here
+OPENAI_API_KEY=sk-proj-***  # Your LLM provider key
+```
+
+## Step 4: Track Your First Event (Auto-Capture)
+
+Use auto-capture with `observeOpenAI()` - the easiest way:
+
+```javascript
+import { observa } from './observa-setup';
+import OpenAI from 'openai';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: 'my-first-app',
+  userId: 'user-123',
+});
+
+// Use wrapped client - automatically tracked!
+const response = await wrappedOpenAI.chat.completions.create({
+  model: 'gpt-4',
+  messages: [
+    { role: 'user', content: 'Hello, Observa!' }
+  ],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+## Step 5: Verify in Dashboard
 
 1. Go to [Dashboard](https://observa-app.vercel.app/dashboard)
 2. Navigate to **Traces**
 3. You should see your first tracked event
 
-## Configuration Checklist
-
-- [ ] SDK installed
-- [ ] API key configured
-- [ ] SDK initialized in your application
-- [ ] First event tracked successfully
-- [ ] Events visible in dashboard
-
 ## Next Steps
 
-### Explore the Dashboard
-
-- **Overview**: See metrics and analytics
-- **Traces**: View all tracked LLM calls
-- **Sessions**: Manage conversation sessions
-- **Issues**: Monitor and resolve problems
-- **Costs**: Track spending and usage
-- **Settings**: Configure your account
-
-### Learn More
-
-- **[Quick Start](./quick-start)**: Basic usage examples
-- **[SDK Reference](./sdk/initialization)**: Complete SDK documentation
-- **[Guides](./guides/tracking-llm-calls)**: Common use cases and patterns
-- **[Concepts](./concepts/overview)**: Understand Observa's core concepts
-
-## Best Practices
-
-1. **Environment Variables**: Always use environment variables for API keys
-2. **Error Handling**: Wrap tracking calls in try-catch blocks
-3. **Session Management**: Use conversation IDs to group related messages
-4. **Metadata**: Add relevant context to your tracking calls
-5. **Testing**: Test in development before deploying to production
-
-## Getting Help
-
-- **Documentation**: Browse our docs for detailed guides
-- **GitHub Discussions**: Ask questions in [GitHub Discussions](https://github.com/NikushaDevashvili/observa-api/discussions)
-- **Support**: Email us at support@observa.ai
+- **[Quick Start](./quick-start)**: Quick setup guide
+- **[Installation](./installation)**: Detailed installation instructions
+- **[Cookbooks](./cookbooks/openai-integration)**: Integration examples
+- **[SDK Reference](./sdk/initialization)**: Complete API documentation
