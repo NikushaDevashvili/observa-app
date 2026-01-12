@@ -1,0 +1,103 @@
+# Sessions SDK
+
+Manage sessions using the Observa SDK.
+
+## Starting a Session
+
+```javascript
+const sessionId = observa.startSession({
+  userId: 'user-123',
+  metadata: {
+    source: 'web',
+    version: '1.0',
+  },
+});
+```
+
+## Ending a Session
+
+```javascript
+observa.endSession(sessionId);
+```
+
+## Tracking with Sessions
+
+```javascript
+const sessionId = observa.startSession({ userId: 'user-123' });
+
+await observa.track(
+  {
+    query: "Hello",
+    sessionId: sessionId,
+    conversationId: "conv-123",
+    messageIndex: 1,
+  },
+  async () => {
+    return await callLLM("Hello");
+  }
+);
+
+observa.endSession(sessionId);
+```
+
+## Automatic Session Management
+
+Sessions are automatically created when you use conversation IDs:
+
+```javascript
+const conversationId = "conv-123";
+
+// First message creates session
+await observa.track(
+  { query: "Hello", conversationId: conversationId, messageIndex: 1 },
+  async () => { return await callLLM("Hello"); }
+);
+
+// Subsequent messages use same session
+await observa.track(
+  { query: "How are you?", conversationId: conversationId, messageIndex: 2 },
+  async () => { return await callLLM("How are you?"); }
+);
+```
+
+## Session Methods
+
+### `startSession(options)`
+
+Start a new session.
+
+**Options:**
+- `userId` (string): User identifier
+- `metadata` (object): Custom session metadata
+
+**Returns:** Session ID (string)
+
+### `endSession(sessionId)`
+
+End an active session.
+
+**Parameters:**
+- `sessionId` (string): Session identifier
+
+### `getSession(sessionId)`
+
+Get session information.
+
+**Parameters:**
+- `sessionId` (string): Session identifier
+
+**Returns:** Session object
+
+## Best Practices
+
+1. Use conversation IDs for automatic session management
+2. Start and end sessions explicitly for long-running interactions
+3. Include user IDs for better analytics
+4. Add metadata for filtering and analysis
+5. Clean up inactive sessions
+
+## Next Steps
+
+- Read the [Session Management Guide](../guides/session-management)
+- Learn about [Conversations](../concepts/conversations)
+- Check [Configuration](./configuration)

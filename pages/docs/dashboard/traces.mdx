@@ -1,0 +1,91 @@
+# Viewing Traces
+
+Learn how to view and analyze traces in the dashboard.
+
+## Accessing Traces
+
+Navigate to **Traces** in the dashboard sidebar to view all tracked LLM calls.
+
+## Trace List
+
+The traces page shows:
+
+- **Timestamp**: When the call was made
+- **Query**: User's input or prompt
+- **Model**: LLM model used
+- **Status**: Success or error
+- **Latency**: Response time
+- **Cost**: Estimated cost
+- **User**: User identifier
+
+## Trace Details
+
+Click on a trace to see detailed information:
+
+### Request Details
+- Full query text
+- Context (if provided)
+- Parameters (temperature, max_tokens, etc.)
+- Metadata
+
+### Response Details
+- Full response text
+- Model used
+- Token usage (input + output)
+- Latency breakdown
+
+### Performance Metrics
+- Total latency
+- Time to first token
+- Tokens per second
+- Cost breakdown
+
+### Related Data
+- Conversation history
+- Session information
+- Related traces
+- User context
+
+## Filtering Traces
+
+Filter traces by:
+
+- **Date Range**: Select time period
+- **Status**: Success, error, or all
+- **Model**: Filter by LLM model
+- **User**: Filter by user ID
+- **Conversation**: Filter by conversation ID
+- **Search**: Search by query text
+
+## Analyzing Traces
+
+Use trace data to:
+
+1. **Debug Issues**: Find and fix problems
+2. **Optimize Performance**: Identify slow calls
+3. **Reduce Costs**: Find expensive operations
+4. **Improve Quality**: Analyze response quality
+5. **Understand Usage**: See how users interact
+
+## Exporting Traces
+
+Export traces for analysis:
+
+1. Apply filters
+2. Click "Export" button
+3. Select format (CSV, JSON)
+4. Download your data
+
+## Best Practices
+
+1. **Filter Effectively**: Use filters to find specific traces
+2. **Review Errors**: Regularly check failed traces
+3. **Monitor Performance**: Track latency trends
+4. **Analyze Costs**: Review expensive operations
+5. **Use Search**: Find specific queries quickly
+
+## Next Steps
+
+- Learn about [Managing Sessions](./sessions)
+- Read about [Issues & Alerts](./issues)
+- Check [Cost Analysis](./costs)

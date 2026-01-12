@@ -1,0 +1,108 @@
+# Conversations
+
+Conversations represent multi-turn interactions between users and your LLM application.
+
+## What is a Conversation?
+
+A **conversation** is a sequence of related messages in a single interaction. Conversations help track:
+
+- Multi-turn dialogues
+- Context flow across messages
+- User intent over time
+- Conversation quality and effectiveness
+
+## Conversation Structure
+
+Each conversation contains:
+
+- **Conversation ID**: Unique identifier
+- **Messages**: All messages in the conversation
+- **Context**: Shared context across messages
+- **Metadata**: Custom conversation data
+- **Analytics**: Performance and quality metrics
+
+## Creating Conversations
+
+Conversations are created by using the same `conversationId` across multiple messages:
+
+```javascript
+const conversationId = `conv-${Date.now()}`;
+
+// Message 1
+await observa.track(
+  {
+    query: "What is Python?",
+    conversationId: conversationId,
+    messageIndex: 1,
+  },
+  async () => {
+    return await callLLM("What is Python?");
+  }
+);
+
+// Message 2 (same conversation)
+await observa.track(
+  {
+    query: "How do I install it?",
+    conversationId: conversationId,
+    messageIndex: 2,
+  },
+  async () => {
+    return await callLLM("How do I install Python?");
+  }
+);
+```
+
+## Conversation Flow
+
+Track the flow of a conversation:
+
+```javascript
+let conversationId = null;
+let messageIndex = 0;
+
+function startConversation() {
+  conversationId = `conv-${Date.now()}`;
+  messageIndex = 0;
+}
+
+async function sendMessage(userMessage) {
+  messageIndex++;
+  
+  await observa.track(
+    {
+      query: userMessage,
+      conversationId: conversationId,
+      messageIndex: messageIndex,
+      context: getConversationContext(), // Previous messages
+    },
+    async () => {
+      return await callLLM(userMessage, getConversationContext());
+    }
+  );
+}
+```
+
+## Viewing Conversations
+
+View conversations in the dashboard:
+
+1. Navigate to **Sessions** or **Conversations**
+2. See conversation threads
+3. View message history
+4. Analyze conversation quality
+5. Track user satisfaction
+
+## Best Practices
+
+1. **Use Consistent IDs**: Keep the same conversation ID for a thread
+2. **Increment Message Index**: Track message order
+3. **Include Context**: Pass previous messages as context
+4. **Track Quality**: Monitor conversation success metrics
+5. **Handle Timeouts**: Manage long-running conversations
+
+## Next Steps
+
+- Learn about [Traces](./traces)
+- Read the [Session Management Guide](../guides/session-management)
+- Check the [Tracking Guide](../guides/tracking-llm-calls)

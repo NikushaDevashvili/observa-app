@@ -1,0 +1,108 @@
+# Sessions
+
+Sessions help you organize and track user interactions over time.
+
+## What is a Session?
+
+A **session** represents a user's interaction session with your LLM application. Sessions group related traces and conversations together, making it easier to:
+
+- Track user journeys
+- Analyze conversation patterns
+- Debug issues across multiple interactions
+- Understand user behavior
+
+## Session Structure
+
+Each session contains:
+
+- **Session ID**: Unique identifier
+- **User ID**: Associated user
+- **Start Time**: When the session began
+- **End Time**: When the session ended (or last activity)
+- **Traces**: All traces associated with the session
+- **Metadata**: Custom session data
+
+## Creating Sessions
+
+Sessions are automatically created when you use conversation IDs:
+
+```javascript
+const conversationId = `conv-${Date.now()}`;
+
+// First message in session
+await observa.track(
+  {
+    query: "Hello",
+    conversationId: conversationId,
+    messageIndex: 1,
+  },
+  async () => {
+    return await callLLM("Hello");
+  }
+);
+
+// Subsequent messages use same conversation ID
+await observa.track(
+  {
+    query: "Tell me more",
+    conversationId: conversationId,
+    messageIndex: 2,
+  },
+  async () => {
+    return await callLLM("Tell me more");
+  }
+);
+```
+
+## Session Management
+
+### Manual Session Creation
+
+You can explicitly manage sessions:
+
+```javascript
+const sessionId = observa.startSession({
+  userId: 'user-123',
+  metadata: {
+    source: 'web',
+    version: '1.0',
+  },
+});
+
+// Track events with session
+await observa.track(
+  { query: 'Hello', sessionId: sessionId },
+  async () => { /* ... */ }
+);
+
+// End session
+observa.endSession(sessionId);
+```
+
+### Automatic Session Tracking
+
+Sessions are automatically tracked when you use conversation IDs. All traces with the same conversation ID are grouped into a session.
+
+## Viewing Sessions
+
+View sessions in the dashboard:
+
+1. Navigate to **Sessions**
+2. See a list of all sessions
+3. Filter by user, date, or status
+4. Click on a session to see all traces
+5. Analyze conversation flow
+
+## Best Practices
+
+1. **Use Consistent IDs**: Use the same conversation ID for related messages
+2. **Include User IDs**: Link sessions to users for better analytics
+3. **Set Session Metadata**: Add relevant context to sessions
+4. **Monitor Active Sessions**: Track long-running sessions
+5. **Clean Up Old Sessions**: Archive or delete inactive sessions
+
+## Next Steps
+
+- Learn about [Conversations](./conversations)
+- Read the [Session Management Guide](../guides/session-management)
+- Check the [SDK Reference](../sdk/sessions)

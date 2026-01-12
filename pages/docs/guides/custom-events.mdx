@@ -1,0 +1,121 @@
+# Custom Events
+
+Track custom events beyond LLM calls.
+
+## Basic Custom Events
+
+Track custom events without wrapping LLM calls:
+
+```javascript
+await observa.track({
+  event: "user_action",
+  metadata: {
+    action: "button_click",
+    page: "dashboard",
+    timestamp: Date.now(),
+  },
+});
+```
+
+## User Actions
+
+Track user interactions:
+
+```javascript
+function trackButtonClick(buttonId, context) {
+  observa.track({
+    event: "button_click",
+    metadata: {
+      buttonId: buttonId,
+      context: context,
+      timestamp: Date.now(),
+    },
+  });
+}
+
+// Usage
+trackButtonClick("submit-form", { formId: "signup" });
+```
+
+## Business Events
+
+Track business logic events:
+
+```javascript
+await observa.track({
+  event: "order_placed",
+  userId: "user-123",
+  metadata: {
+    orderId: "order-456",
+    amount: 99.99,
+    currency: "USD",
+    items: ["item-1", "item-2"],
+  },
+});
+```
+
+## Feature Usage
+
+Track feature usage:
+
+```javascript
+await observa.track({
+  event: "feature_used",
+  userId: "user-123",
+  metadata: {
+    feature: "export_data",
+    version: "1.0",
+    timestamp: Date.now(),
+  },
+});
+```
+
+## Error Events
+
+Track custom error events:
+
+```javascript
+try {
+  // Your code
+} catch (error) {
+  await observa.track({
+    event: "custom_error",
+    metadata: {
+      errorType: error.name,
+      errorMessage: error.message,
+      stack: error.stack,
+      context: { page: "checkout" },
+    },
+  });
+  
+  throw error;
+}
+```
+
+## Performance Metrics
+
+Track performance metrics:
+
+```javascript
+const startTime = Date.now();
+
+// Your operation
+await performOperation();
+
+const duration = Date.now() - startTime;
+
+await observa.track({
+  event: "performance_metric",
+  metadata: {
+    operation: "data_processing",
+    duration: duration,
+    success: true,
+  },
+});
+```
+
+## Next Steps
+
+- Learn about [Tracking LLM Calls](./tracking-llm-calls)
+- Read about [Error Handling](./error-handling)
+- Check [Session Management](./session-management)

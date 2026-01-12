@@ -1,0 +1,49 @@
+{
+  "index": "Introduction",
+  "quick-start": "Quick Start",
+  "installation": "Installation",
+  "onboarding": "Onboarding",
+  "concepts": {
+    "title": "Concepts",
+    "type": "page",
+    "pages": {
+      "overview": "Overview",
+      "traces": "Traces",
+      "sessions": "Sessions",
+      "conversations": "Conversations"
+    }
+  },
+  "sdk": {
+    "title": "SDK Reference",
+    "type": "page",
+    "pages": {
+      "initialization": "Initialization",
+      "tracking": "Tracking",
+      "sessions": "Sessions",
+      "configuration": "Configuration"
+    }
+  },
+  "guides": {
+    "title": "Guides",
+    "type": "page",
+    "pages": {
+      "tracking-llm-calls": "Tracking LLM Calls",
+      "session-management": "Session Management",
+      "custom-events": "Custom Events",
+      "error-handling": "Error Handling"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "type": "page",
+    "pages": {
+      "overview": "Overview",
+      "traces": "Viewing Traces",
+      "sessions": "Managing Sessions",
+      "issues": "Issues & Alerts",
+      "costs": "Cost Analysis"
+    }
+  },
+  "troubleshooting": "Troubleshooting",
+  "faq": "FAQ"
+}

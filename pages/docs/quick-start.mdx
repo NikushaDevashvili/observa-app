@@ -1,0 +1,89 @@
+# Quick Start
+
+Get Observa up and running in your application in under 5 minutes.
+
+## Prerequisites
+
+- Node.js 16+ or any JavaScript runtime
+- An Observa account (sign up at [observa-app.vercel.app](https://observa-app.vercel.app))
+
+## Step 1: Install the SDK
+
+Install the Observa SDK using npm:
+
+```bash
+npm install observa-sdk
+```
+
+Or using yarn:
+
+```bash
+yarn add observa-sdk
+```
+
+Or using pnpm:
+
+```bash
+pnpm add observa-sdk
+```
+
+## Step 2: Get Your API Key
+
+1. Sign up for an account at [observa-app.vercel.app](https://observa-app.vercel.app)
+2. Navigate to Settings
+3. Copy your API Key
+
+## Step 3: Initialize the SDK
+
+Import and initialize the Observa SDK in your application:
+
+```javascript
+import { init } from 'observa-sdk';
+
+const observa = init({
+  apiKey: 'your-api-key-here',
+  apiUrl: 'https://observa-api.vercel.app', // or your custom API URL
+});
+```
+
+## Step 4: Track Your First LLM Call
+
+Wrap your LLM calls with `observa.track()`:
+
+```javascript
+const response = await observa.track(
+  {
+    query: "What is the capital of France?",
+    context: "User is asking a geography question",
+    conversationId: "conv-123",
+    messageIndex: 1,
+  },
+  async () => {
+    // Your LLM call here
+    const result = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'What is the capital of France?' }],
+      }),
+    });
+    return await result.json();
+  }
+);
+```
+
+## Step 5: View Your Data
+
+1. Open the [Observa Dashboard](https://observa-app.vercel.app/dashboard)
+2. Navigate to **Traces** to see your tracked LLM calls
+3. Navigate to **Sessions** to view conversation sessions
+
+## Next Steps
+
+- Read the [Installation guide](./installation) for detailed setup instructions
+- Check out the [SDK Reference](./sdk/initialization) for all available options
+- Explore [Guides](./guides/tracking-llm-calls) for common use cases

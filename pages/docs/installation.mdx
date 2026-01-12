@@ -1,0 +1,180 @@
+# Installation
+
+Detailed instructions for installing and configuring the Observa SDK in your project.
+
+## Package Installation
+
+### npm
+
+```bash
+npm install observa-sdk
+```
+
+### yarn
+
+```bash
+yarn add observa-sdk
+```
+
+### pnpm
+
+```bash
+pnpm add observa-sdk
+```
+
+## Environment Setup
+
+### 1. Get Your API Key
+
+1. Sign up at [observa-app.vercel.app](https://observa-app.vercel.app)
+2. Complete the onboarding process
+3. Go to **Settings** → **API Keys**
+4. Copy your API Key
+
+### 2. Configure Environment Variables
+
+Store your API key securely using environment variables:
+
+**.env** (for development):
+
+```env
+OBSERVA_API_KEY=your-api-key-here
+OBSERVA_API_URL=https://observa-api.vercel.app
+```
+
+**Production**: Set these as environment variables in your hosting platform (Vercel, AWS, etc.)
+
+## SDK Initialization
+
+### Basic Setup
+
+```javascript
+import { init } from 'observa-sdk';
+
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL || 'https://observa-api.vercel.app',
+});
+```
+
+### With Custom Configuration
+
+```javascript
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+  // Optional configuration
+  enabled: process.env.NODE_ENV === 'production', // Only track in production
+  batchSize: 10, // Batch multiple events
+  flushInterval: 5000, // Flush every 5 seconds
+});
+```
+
+## Framework-Specific Setup
+
+### Next.js
+
+Create a utility file `lib/observa.ts`:
+
+```typescript
+import { init } from 'observa-sdk';
+
+export const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY!,
+  apiUrl: process.env.OBSERVA_API_URL || 'https://observa-api.vercel.app',
+});
+```
+
+Use it in your API routes or server components:
+
+```typescript
+import { observa } from '@/lib/observa';
+
+export async function POST(request: Request) {
+  const response = await observa.track(
+    { query: 'User request' },
+    async () => {
+      // Your LLM call
+    }
+  );
+  return Response.json(response);
+}
+```
+
+### Express.js
+
+```javascript
+const express = require('express');
+const { init } = require('observa-sdk');
+
+const app = express();
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+
+app.post('/chat', async (req, res) => {
+  const response = await observa.track(
+    { query: req.body.message },
+    async () => {
+      // Your LLM call
+    }
+  );
+  res.json(response);
+});
+```
+
+### React (Client-side)
+
+```javascript
+import { useEffect } from 'react';
+import { init } from 'observa-sdk';
+
+const observa = init({
+  apiKey: process.env.NEXT_PUBLIC_OBSERVA_API_KEY,
+  apiUrl: process.env.NEXT_PUBLIC_OBSERVA_API_URL,
+});
+
+function ChatComponent() {
+  const handleSubmit = async (message) => {
+    const response = await observa.track(
+      { query: message },
+      async () => {
+        // Your LLM call
+      }
+    );
+  };
+  
+  // Component code...
+}
+```
+
+## Verification
+
+Test your installation by tracking a simple event:
+
+```javascript
+await observa.track(
+  { query: 'Test message' },
+  async () => {
+    return { message: 'Test response' };
+  }
+);
+```
+
+Then check the [Dashboard](https://observa-app.vercel.app/dashboard) to verify the event appears.
+
+## Troubleshooting
+
+If you encounter issues during installation:
+
+- Verify your API key is correct
+- Check network connectivity to the API URL
+- Ensure environment variables are properly set
+- See the [Troubleshooting guide](./troubleshooting) for common issues
+
+## Next Steps
+
+- Complete the [Onboarding](./onboarding) guide
+- Read the [SDK Reference](./sdk/initialization) for all configuration options
+- Check out [Quick Start](./quick-start) for immediate usage examples

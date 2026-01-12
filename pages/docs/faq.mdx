@@ -1,0 +1,139 @@
+# FAQ
+
+Frequently asked questions about Observa.
+
+## General
+
+### What is Observa?
+
+Observa is an observability and monitoring platform for LLM applications. Track calls, monitor performance, analyze costs, and debug issues.
+
+### How does Observa work?
+
+Observa consists of three components:
+1. **observa-sdk**: npm package that tracks LLM calls
+2. **observa-api**: Backend service that processes data
+3. **observa-app**: Web dashboard for visualization
+
+### Is Observa free?
+
+Check our pricing page or contact support for pricing information.
+
+## SDK
+
+### How do I install the SDK?
+
+```bash
+npm install observa-sdk
+```
+
+See the [Installation guide](./installation) for details.
+
+### How do I initialize the SDK?
+
+```javascript
+import { init } from 'observa-sdk';
+
+const observa = init({
+  apiKey: 'your-api-key',
+  apiUrl: 'https://observa-api.vercel.app',
+});
+```
+
+### Does tracking affect performance?
+
+Tracking adds minimal overhead. Use batching and async tracking to minimize impact.
+
+### Can I track without wrapping LLM calls?
+
+Yes, you can track events without wrapping calls. See [Custom Events](./guides/custom-events).
+
+## Data & Privacy
+
+### What data does Observa store?
+
+Observa stores:
+- Query and response text
+- Metadata (timestamps, user IDs, etc.)
+- Performance metrics
+- Error information
+
+### Is my data secure?
+
+Yes, we use industry-standard security practices. Data is encrypted in transit and at rest.
+
+### Can I delete my data?
+
+Yes, contact support to request data deletion.
+
+### Where is data stored?
+
+Data is stored securely in our cloud infrastructure. Contact support for details.
+
+## Dashboard
+
+### How do I access the dashboard?
+
+Visit [observa-app.vercel.app/dashboard](https://observa-app.vercel.app/dashboard).
+
+### Can I export my data?
+
+Yes, you can export data in CSV or JSON format from the dashboard.
+
+### How do I filter data?
+
+Use the filter options in the dashboard to filter by date, user, model, status, etc.
+
+## Troubleshooting
+
+### Events are not appearing in the dashboard
+
+Check:
+1. API key is correct
+2. SDK is initialized
+3. Network connectivity
+4. Dashboard filters
+5. See [Troubleshooting](./troubleshooting) for more
+
+### How do I enable debug mode?
+
+```javascript
+const observa = init({
+  apiKey: 'your-api-key',
+  apiUrl: 'https://observa-api.vercel.app',
+  debug: true,
+});
+```
+
+### What should I do if I see errors?
+
+1. Check the [Troubleshooting guide](./troubleshooting)
+2. Review error messages
+3. Check SDK configuration
+4. Contact support if needed
+
+## Support
+
+### How do I get help?
+
+- **Documentation**: Browse our docs
+- **GitHub Discussions**: [GitHub Discussions](https://github.com/NikushaDevashvili/observa-api/discussions)
+- **Email**: support@observa.ai
+
+### Can I request features?
+
+Yes! Open a GitHub issue or contact support.
+
+### How do I report bugs?
+
+Open a GitHub issue with:
+- Description of the issue
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details
+
+## Next Steps
+
+- Read the [Quick Start guide](./quick-start)
+- Check [Troubleshooting](./troubleshooting)
+- Review [Guides](./guides/tracking-llm-calls)

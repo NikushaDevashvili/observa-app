@@ -1,0 +1,238 @@
+# Tracking LLM Calls
+
+Learn how to track LLM calls in your application with practical examples.
+
+## Basic Tracking
+
+Wrap your LLM calls with `observa.track()`:
+
+```javascript
+const response = await observa.track(
+  {
+    query: "User's question",
+  },
+  async () => {
+    return await callLLM("User's question");
+  }
+);
+```
+
+## OpenAI Integration
+
+### Chat Completions
+
+```javascript
+const response = await observa.track(
+  {
+    query: userMessage,
+    conversationId: conversationId,
+    messageIndex: messageIndex,
+  },
+  async () => {
+    const result = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          { role: 'user', content: userMessage }
+        ],
+      }),
+    });
+    return await result.json();
+  }
+);
+
+return response.choices[0].message.content;
+```
+
+### With Context (RAG)
+
+```javascript
+const response = await observa.track(
+  {
+    query: userQuestion,
+    context: retrievedContext,
+    conversationId: conversationId,
+    messageIndex: messageIndex,
+  },
+  async () => {
+    const prompt = `Context: ${retrievedContext}\n\nQuestion: ${userQuestion}`;
+    
+    const result = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    return await result.json();
+  }
+);
+```
+
+## Anthropic Claude Integration
+
+```javascript
+const response = await observa.track(
+  {
+    query: userMessage,
+    conversationId: conversationId,
+    messageIndex: messageIndex,
+  },
+  async () => {
+    const result = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-opus-20240229',
+        max_tokens: 1024,
+        messages: [
+          { role: 'user', content: userMessage }
+        ],
+      }),
+    });
+    return await result.json();
+  }
+);
+```
+
+## Multi-Turn Conversations
+
+```javascript
+let conversationId = `conv-${Date.now()}`;
+let messageIndex = 0;
+
+async function handleMessage(userMessage) {
+  messageIndex++;
+  
+  const response = await observa.track(
+    {
+      query: userMessage,
+      conversationId: conversationId,
+      messageIndex: messageIndex,
+      context: conversationHistory.join('\n'),
+    },
+    async () => {
+      const messages = [
+        ...conversationHistory.map(msg => ({ role: msg.role, content: msg.content })),
+        { role: 'user', content: userMessage }
+      ];
+      
+      const result = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: messages,
+        }),
+      });
+      return await result.json();
+    }
+  );
+  
+  const assistantMessage = response.choices[0].message.content;
+  conversationHistory.push({ role: 'user', content: userMessage });
+  conversationHistory.push({ role: 'assistant', content: assistantMessage });
+  
+  return assistantMessage;
+}
+```
+
+## Error Handling
+
+```javascript
+try {
+  const response = await observa.track(
+    {
+      query: userMessage,
+      conversationId: conversationId,
+      messageIndex: messageIndex,
+    },
+    async () => {
+      return await callLLM(userMessage);
+    }
+  );
+  
+  return response;
+} catch (error) {
+  // Error is automatically tracked
+  console.error('LLM call failed:', error);
+  
+  // Handle error in your application
+  return { error: 'Failed to process request' };
+}
+```
+
+## Next.js API Route Example
+
+```typescript
+// app/api/chat/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { observa } from '@/lib/observa';
+
+export async function POST(request: NextRequest) {
+  const { message, conversationId, messageIndex } = await request.json();
+  
+  try {
+    const response = await observa.track(
+      {
+        query: message,
+        conversationId: conversationId || `conv-${Date.now()}`,
+        messageIndex: messageIndex || 1,
+      },
+      async () => {
+        const result = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4',
+            messages: [{ role: 'user', content: message }],
+          }),
+        });
+        return await result.json();
+      }
+    );
+    
+    return NextResponse.json({
+      message: response.choices[0].message.content,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to process request' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Best Practices
+
+1. **Always Include Query**: The query is essential for understanding usage
+2. **Use Conversation IDs**: Group related messages together
+3. **Track Context**: Include retrieved context for RAG applications
+4. **Handle Errors**: Errors are tracked automatically, but handle them gracefully
+5. **Add Metadata**: Include custom fields for filtering and analysis
+
+## Next Steps
+
+- Learn about [Session Management](./session-management)
+- Read about [Custom Events](./custom-events)
+- Check [Error Handling](./error-handling)

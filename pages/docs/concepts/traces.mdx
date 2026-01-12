@@ -1,0 +1,80 @@
+# Traces
+
+Traces are the foundation of observability in Observa. Learn how they work and how to use them effectively.
+
+## What is a Trace?
+
+A **trace** represents a single LLM call or operation. Every time you call `observa.track()`, a trace is created and sent to Observa.
+
+## Trace Structure
+
+Each trace contains:
+
+### Request Data
+- `query`: The user's input or prompt
+- `context`: Additional context or retrieved information
+- `parameters`: Model parameters (temperature, max_tokens, etc.)
+
+### Response Data
+- `response`: The LLM's completion
+- `model`: The model used
+- `tokens`: Token usage (input + output)
+- `latency`: Response time in milliseconds
+
+### Metadata
+- `timestamp`: When the call was made
+- `conversationId`: Links related messages
+- `userId`: User identifier
+- `sessionId`: Session identifier
+
+## Creating Traces
+
+Use `observa.track()` to create traces:
+
+```javascript
+await observa.track(
+  {
+    query: "What is machine learning?",
+    context: "User is learning about AI",
+    conversationId: "conv-123",
+    messageIndex: 1,
+  },
+  async () => {
+    // Your LLM call
+    return await callLLM("What is machine learning?");
+  }
+);
+```
+
+## Trace Types
+
+Observa tracks different types of operations:
+
+- **LLM Calls**: Direct model interactions
+- **Tool Executions**: Function calls and tool usage
+- **Retrieval**: Vector search and RAG operations
+- **Embeddings**: Embedding generation
+- **Custom Events**: Your own tracking events
+
+## Viewing Traces
+
+View traces in the dashboard:
+
+1. Navigate to **Traces** in the dashboard
+2. Filter by date, user, conversation, or model
+3. Click on a trace to see detailed information
+4. Analyze performance and costs
+
+## Best Practices
+
+1. **Add Context**: Include relevant context to help with debugging
+2. **Use Conversation IDs**: Group related messages together
+3. **Include Metadata**: Add user IDs, session info, and custom fields
+4. **Error Handling**: Traces help identify and debug errors
+5. **Performance**: Monitor latency and token usage
+
+## Next Steps
+
+- Learn about [Sessions](./sessions)
+- Read the [Tracking Guide](../guides/tracking-llm-calls)
+- Check the [SDK Reference](../sdk/tracking)

@@ -1,0 +1,104 @@
+# SDK Initialization
+
+Complete guide to initializing the Observa SDK in your application.
+
+## Basic Initialization
+
+```javascript
+import { init } from 'observa-sdk';
+
+const observa = init({
+  apiKey: 'your-api-key',
+  apiUrl: 'https://observa-api.vercel.app',
+});
+```
+
+## Configuration Options
+
+### Required Parameters
+
+- **`apiKey`** (string): Your Observa API key
+- **`apiUrl`** (string): The Observa API endpoint URL
+
+### Optional Parameters
+
+- **`enabled`** (boolean): Enable/disable tracking (default: `true`)
+- **`batchSize`** (number): Number of events to batch before sending (default: `10`)
+- **`flushInterval`** (number): Milliseconds between batch flushes (default: `5000`)
+- **`timeout`** (number): Request timeout in milliseconds (default: `10000`)
+- **`retries`** (number): Number of retry attempts on failure (default: `3`)
+- **`debug`** (boolean): Enable debug logging (default: `false`)
+
+## Complete Example
+
+```javascript
+import { init } from 'observa-sdk';
+
+const observa = init({
+  // Required
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL || 'https://observa-api.vercel.app',
+  
+  // Optional
+  enabled: process.env.NODE_ENV === 'production',
+  batchSize: 20,
+  flushInterval: 3000,
+  timeout: 15000,
+  retries: 3,
+  debug: process.env.NODE_ENV === 'development',
+});
+```
+
+## Environment-Based Configuration
+
+```javascript
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+  enabled: process.env.OBSERVA_ENABLED !== 'false',
+  debug: process.env.NODE_ENV === 'development',
+});
+```
+
+## TypeScript Support
+
+The SDK is written in TypeScript and includes type definitions:
+
+```typescript
+import { init, ObservaConfig } from 'observa-sdk';
+
+const config: ObservaConfig = {
+  apiKey: process.env.OBSERVA_API_KEY!,
+  apiUrl: process.env.OBSERVA_API_URL!,
+  enabled: true,
+};
+
+const observa = init(config);
+```
+
+## Global Instance Pattern
+
+Create a single instance and reuse it:
+
+```javascript
+// lib/observa.js
+import { init } from 'observa-sdk';
+
+export const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+```
+
+```javascript
+// In your application
+import { observa } from './lib/observa';
+
+await observa.track(/* ... */);
+```
+
+## Next Steps
+
+- Learn about [Tracking](./tracking)
+- Read about [Configuration](./configuration)
+- Check the [Guides](../guides/tracking-llm-calls)

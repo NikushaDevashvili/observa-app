@@ -1,0 +1,203 @@
+# Session Management
+
+Learn how to manage sessions and conversations effectively.
+
+## Basic Session Tracking
+
+Use conversation IDs to automatically group messages into sessions:
+
+```javascript
+const conversationId = `conv-${Date.now()}`;
+
+// First message
+await observa.track(
+  {
+    query: "Hello",
+    conversationId: conversationId,
+    messageIndex: 1,
+  },
+  async () => {
+    return await callLLM("Hello");
+  }
+);
+
+// Subsequent messages
+await observa.track(
+  {
+    query: "How are you?",
+    conversationId: conversationId,
+    messageIndex: 2,
+  },
+  async () => {
+    return await callLLM("How are you?");
+  }
+);
+```
+
+## Explicit Session Management
+
+Create and manage sessions explicitly:
+
+```javascript
+const sessionId = observa.startSession({
+  userId: 'user-123',
+  metadata: {
+    source: 'web',
+    device: 'desktop',
+  },
+});
+
+try {
+  // Track events with session
+  await observa.track(
+    {
+      query: "User message",
+      sessionId: sessionId,
+      conversationId: conversationId,
+    },
+    async () => {
+      return await callLLM("User message");
+    }
+  );
+} finally {
+  // Always end session
+  observa.endSession(sessionId);
+}
+```
+
+## User Session Management
+
+Link sessions to users:
+
+```javascript
+function createUserSession(userId) {
+  const sessionId = observa.startSession({
+    userId: userId,
+    metadata: {
+      startTime: new Date().toISOString(),
+      source: 'web',
+    },
+  });
+  
+  return sessionId;
+}
+
+// Use in your application
+const sessionId = createUserSession('user-123');
+
+// Track events
+await observa.track(
+  {
+    query: "User message",
+    sessionId: sessionId,
+    userId: 'user-123',
+  },
+  async () => {
+    return await callLLM("User message");
+  }
+);
+```
+
+## Conversation Management
+
+Manage multi-turn conversations:
+
+```javascript
+class ConversationManager {
+  constructor(userId) {
+    this.userId = userId;
+    this.conversationId = `conv-${Date.now()}`;
+    this.messageIndex = 0;
+    this.sessionId = observa.startSession({ userId });
+  }
+  
+  async sendMessage(message) {
+    this.messageIndex++;
+    
+    return await observa.track(
+      {
+        query: message,
+        userId: this.userId,
+        sessionId: this.sessionId,
+        conversationId: this.conversationId,
+        messageIndex: this.messageIndex,
+      },
+      async () => {
+        return await callLLM(message);
+      }
+    );
+  }
+  
+  endConversation() {
+    observa.endSession(this.sessionId);
+  }
+}
+
+// Usage
+const conversation = new ConversationManager('user-123');
+await conversation.sendMessage("Hello");
+await conversation.sendMessage("How are you?");
+conversation.endConversation();
+```
+
+## Session Timeout Handling
+
+Handle session timeouts:
+
+```javascript
+class SessionManager {
+  constructor(userId, timeoutMs = 30 * 60 * 1000) { // 30 minutes
+    this.userId = userId;
+    this.sessionId = observa.startSession({ userId });
+    this.timeoutMs = timeoutMs;
+    this.lastActivity = Date.now();
+    this.timeoutId = null;
+    this.resetTimeout();
+  }
+  
+  resetTimeout() {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
+    
+    this.timeoutId = setTimeout(() => {
+      this.endSession();
+    }, this.timeoutMs);
+  }
+  
+  async trackEvent(eventData, llmCall) {
+    this.lastActivity = Date.now();
+    this.resetTimeout();
+    
+    return await observa.track(
+      {
+        ...eventData,
+        sessionId: this.sessionId,
+        userId: this.userId,
+      },
+      llmCall
+    );
+  }
+  
+  endSession() {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
+    observa.endSession(this.sessionId);
+  }
+}
+```
+
+## Best Practices
+
+1. **Use Conversation IDs**: Automatically groups messages into sessions
+2. **Link to Users**: Include user IDs for better analytics
+3. **Set Timeouts**: End sessions after inactivity
+4. **Clean Up**: Always end sessions when done
+5. **Add Metadata**: Include relevant session context
+
+## Next Steps
+
+- Learn about [Tracking LLM Calls](./tracking-llm-calls)
+- Read about [Custom Events](./custom-events)
+- Check [Error Handling](./error-handling)

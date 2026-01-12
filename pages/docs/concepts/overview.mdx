@@ -1,0 +1,86 @@
+# Concepts Overview
+
+Understanding the core concepts of Observa will help you get the most out of the platform.
+
+## Core Concepts
+
+### Traces
+
+A **trace** represents a single LLM call or operation. Each trace contains:
+
+- Request details (query, context, parameters)
+- Response data (completion, tokens, latency)
+- Metadata (timestamps, user ID, session info)
+- Performance metrics (latency, token usage, cost)
+
+Traces are the fundamental unit of observability in Observa.
+
+### Sessions
+
+A **session** represents a user's interaction session, typically a conversation. Sessions group related traces together:
+
+- Multiple messages in a conversation
+- User interaction over time
+- Context and history preservation
+
+### Conversations
+
+A **conversation** is a sequence of related messages between a user and your LLM application. Conversations help track:
+
+- Multi-turn interactions
+- Context flow
+- User journey through your application
+
+### Events
+
+**Events** are custom markers or milestones you can track:
+
+- User actions
+- System events
+- Custom metrics
+- Business logic milestones
+
+## Data Flow
+
+```
+Your Application
+    ↓
+observa-sdk (tracks calls)
+    ↓
+observa-api (processes & stores)
+    ↓
+observa-app (visualizes & analyzes)
+```
+
+1. Your application makes LLM calls
+2. The SDK wraps and tracks these calls
+3. Data is sent to the API
+4. The dashboard displays and analyzes the data
+
+## Key Features
+
+### Tracking
+
+Automatically track all LLM interactions with minimal code changes. Wrap your existing LLM calls with `observa.track()`.
+
+### Analytics
+
+View comprehensive analytics on:
+- Usage patterns
+- Performance metrics
+- Cost analysis
+- Error rates
+
+### Monitoring
+
+Get alerted to:
+- Performance degradation
+- Errors and failures
+- Cost anomalies
+- Quality issues
+
+## Next Steps
+
+- Learn about [Traces](./traces)
+- Understand [Sessions](./sessions)
+- Explore [Conversations](./conversations)

@@ -1,0 +1,140 @@
+# Troubleshooting
+
+Common issues and their solutions.
+
+## SDK Issues
+
+### SDK Not Tracking Events
+
+**Problem**: Events are not appearing in the dashboard.
+
+**Solutions**:
+1. Verify API key is correct
+2. Check API URL is correct
+3. Ensure SDK is initialized properly
+4. Check network connectivity
+5. Enable debug mode: `debug: true`
+6. Verify events are being sent (check network tab)
+
+### Initialization Errors
+
+**Problem**: SDK fails to initialize.
+
+**Solutions**:
+1. Check API key format
+2. Verify API URL is accessible
+3. Check environment variables
+4. Review configuration options
+5. Check for typos in configuration
+
+## Tracking Issues
+
+### Events Not Appearing
+
+**Problem**: Tracked events don't show in dashboard.
+
+**Solutions**:
+1. Check batch size and flush interval
+2. Verify network connectivity
+3. Check for errors in console
+4. Ensure API key has correct permissions
+5. Check dashboard filters
+
+### Missing Data
+
+**Problem**: Some data is missing from traces.
+
+**Solutions**:
+1. Ensure all parameters are passed correctly
+2. Check for errors in LLM calls
+3. Verify response format
+4. Review tracking code
+5. Check for data truncation limits
+
+## Performance Issues
+
+### High Latency
+
+**Problem**: Tracking adds significant latency.
+
+**Solutions**:
+1. Increase batch size
+2. Increase flush interval
+3. Use asynchronous tracking
+4. Optimize network requests
+5. Consider using a queue
+
+### SDK Overhead
+
+**Problem**: SDK uses too many resources.
+
+**Solutions**:
+1. Disable debug mode in production
+2. Reduce batch size
+3. Increase flush interval
+4. Monitor resource usage
+5. Optimize configuration
+
+## Dashboard Issues
+
+### Data Not Loading
+
+**Problem**: Dashboard shows no data.
+
+**Solutions**:
+1. Check date range filters
+2. Verify API key
+3. Check network connectivity
+4. Refresh the page
+5. Clear browser cache
+
+### Incorrect Metrics
+
+**Problem**: Metrics don't match expectations.
+
+**Solutions**:
+1. Check data filters
+2. Verify timezone settings
+3. Review aggregation logic
+4. Check for data gaps
+5. Compare with raw data
+
+## API Issues
+
+### Authentication Errors
+
+**Problem**: API requests fail with authentication errors.
+
+**Solutions**:
+1. Verify API key is correct
+2. Check API key permissions
+3. Ensure API key is not expired
+4. Review authentication headers
+5. Check API URL
+
+### Rate Limiting
+
+**Problem**: API requests are rate limited.
+
+**Solutions**:
+1. Reduce request frequency
+2. Increase batch size
+3. Increase flush interval
+4. Implement retry logic
+5. Contact support for limits increase
+
+## Getting Help
+
+If you can't resolve an issue:
+
+1. **Check Documentation**: Review relevant guides
+2. **Search FAQ**: Look for similar issues
+3. **GitHub Discussions**: Ask in [GitHub Discussions](https://github.com/NikushaDevashvili/observa-api/discussions)
+4. **Email Support**: Contact support@observa.ai
+5. **Create Issue**: Open a GitHub issue with details
+
+## Next Steps
+
+- Read the [FAQ](./faq)
+- Check [SDK Reference](./sdk/initialization)
+- Review [Guides](./guides/tracking-llm-calls)

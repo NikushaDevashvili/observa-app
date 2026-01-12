@@ -1,0 +1,133 @@
+# Configuration
+
+Complete configuration reference for the Observa SDK.
+
+## Configuration Options
+
+### `apiKey` (required)
+
+Your Observa API key.
+
+```javascript
+apiKey: process.env.OBSERVA_API_KEY
+```
+
+### `apiUrl` (required)
+
+The Observa API endpoint URL.
+
+```javascript
+apiUrl: 'https://observa-api.vercel.app'
+```
+
+### `enabled` (optional)
+
+Enable or disable tracking. Useful for development/testing.
+
+```javascript
+enabled: process.env.NODE_ENV === 'production'
+```
+
+### `batchSize` (optional)
+
+Number of events to batch before sending. Default: `10`.
+
+```javascript
+batchSize: 20
+```
+
+### `flushInterval` (optional)
+
+Milliseconds between batch flushes. Default: `5000`.
+
+```javascript
+flushInterval: 3000 // Flush every 3 seconds
+```
+
+### `timeout` (optional)
+
+Request timeout in milliseconds. Default: `10000`.
+
+```javascript
+timeout: 15000
+```
+
+### `retries` (optional)
+
+Number of retry attempts on failure. Default: `3`.
+
+```javascript
+retries: 5
+```
+
+### `debug` (optional)
+
+Enable debug logging. Default: `false`.
+
+```javascript
+debug: process.env.NODE_ENV === 'development'
+```
+
+## Complete Configuration Example
+
+```javascript
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+  enabled: true,
+  batchSize: 20,
+  flushInterval: 3000,
+  timeout: 15000,
+  retries: 3,
+  debug: false,
+});
+```
+
+## Environment-Based Configuration
+
+```javascript
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+  enabled: process.env.OBSERVA_ENABLED !== 'false',
+  batchSize: parseInt(process.env.OBSERVA_BATCH_SIZE || '10'),
+  flushInterval: parseInt(process.env.OBSERVA_FLUSH_INTERVAL || '5000'),
+  timeout: parseInt(process.env.OBSERVA_TIMEOUT || '10000'),
+  retries: parseInt(process.env.OBSERVA_RETRIES || '3'),
+  debug: process.env.NODE_ENV === 'development',
+});
+```
+
+## Performance Tuning
+
+### High Volume Applications
+
+Increase batch size and flush interval:
+
+```javascript
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+  batchSize: 50,
+  flushInterval: 10000, // 10 seconds
+});
+```
+
+### Low Latency Requirements
+
+Decrease batch size and flush interval:
+
+```javascript
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY,
+  apiUrl: process.env.OBSERVA_API_URL,
+  batchSize: 1,
+  flushInterval: 1000, // 1 second
+});
+```
+
+## Next Steps
+
+- Learn about [Initialization](./initialization)
+- Read the [Tracking](./tracking) guide
+- Check [Best Practices](../guides/tracking-llm-calls)

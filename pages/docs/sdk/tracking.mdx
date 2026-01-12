@@ -1,0 +1,135 @@
+# Tracking
+
+Learn how to track LLM calls and events using the Observa SDK.
+
+## Basic Tracking
+
+Use `observa.track()` to track LLM calls:
+
+```javascript
+const response = await observa.track(
+  {
+    query: "User's question",
+  },
+  async () => {
+    // Your LLM call
+    return await callLLM("User's question");
+  }
+);
+```
+
+## Track Parameters
+
+### Required
+
+- **`query`** (string): The user's input or prompt
+
+### Optional
+
+- **`context`** (string): Additional context or retrieved information
+- **`response`** (string): LLM response (auto-captured if not provided)
+- **`conversationId`** (string): Links related messages
+- **`messageIndex`** (number): Message order in conversation
+- **`userId`** (string): User identifier
+- **`sessionId`** (string): Session identifier
+- **`metadata`** (object): Custom metadata
+
+## Complete Example
+
+```javascript
+await observa.track(
+  {
+    query: "What is the weather today?",
+    context: "User is in San Francisco",
+    conversationId: "conv-123",
+    messageIndex: 1,
+    userId: "user-456",
+    metadata: {
+      source: "web",
+      version: "1.0",
+      feature: "weather",
+    },
+  },
+  async () => {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          { role: 'user', content: 'What is the weather today?' }
+        ],
+      }),
+    });
+    return await response.json();
+  }
+);
+```
+
+## Tracking Without Wrapper
+
+You can track events without wrapping the LLM call:
+
+```javascript
+// Track after the call
+const response = await callLLM("User's question");
+
+await observa.track({
+  query: "User's question",
+  response: response.choices[0].message.content,
+  metadata: {
+    model: response.model,
+    tokens: response.usage.total_tokens,
+  },
+});
+```
+
+## Error Tracking
+
+Errors are automatically captured:
+
+```javascript
+try {
+  await observa.track(
+    { query: "User's question" },
+    async () => {
+      return await callLLM("User's question");
+    }
+  );
+} catch (error) {
+  // Error is automatically tracked
+  console.error('LLM call failed:', error);
+}
+```
+
+## Custom Events
+
+Track custom events:
+
+```javascript
+await observa.track({
+  event: "user_action",
+  metadata: {
+    action: "button_click",
+    page: "dashboard",
+    timestamp: Date.now(),
+  },
+});
+```
+
+## Best Practices
+
+1. **Always Include Query**: The query is essential for understanding usage
+2. **Use Conversation IDs**: Group related messages
+3. **Add Context**: Include relevant context for better debugging
+4. **Include Metadata**: Add custom fields for filtering and analysis
+5. **Handle Errors**: Errors are tracked automatically, but handle them in your code
+
+## Next Steps
+
+- Read the [Tracking Guide](../guides/tracking-llm-calls)
+- Learn about [Sessions](./sessions)
+- Check [Configuration](./configuration)

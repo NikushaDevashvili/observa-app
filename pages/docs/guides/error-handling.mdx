@@ -1,0 +1,162 @@
+# Error Handling
+
+Learn how to handle errors when tracking with Observa.
+
+## Automatic Error Tracking
+
+Errors are automatically tracked when using `observa.track()`:
+
+```javascript
+try {
+  await observa.track(
+    { query: "User message" },
+    async () => {
+      // If this throws, the error is automatically tracked
+      return await callLLM("User message");
+    }
+  );
+} catch (error) {
+  // Error is already tracked by Observa
+  console.error('LLM call failed:', error);
+}
+```
+
+## Explicit Error Tracking
+
+Track errors explicitly:
+
+```javascript
+try {
+  const response = await callLLM("User message");
+  
+  await observa.track({
+    query: "User message",
+    response: response,
+    metadata: {
+      success: true,
+    },
+  });
+} catch (error) {
+  await observa.track({
+    query: "User message",
+    metadata: {
+      success: false,
+      error: error.message,
+      errorType: error.name,
+    },
+  });
+  
+  throw error;
+}
+```
+
+## Error Context
+
+Add context to error tracking:
+
+```javascript
+try {
+  await observa.track(
+    {
+      query: userMessage,
+      conversationId: conversationId,
+      messageIndex: messageIndex,
+      metadata: {
+        userId: userId,
+        sessionId: sessionId,
+      },
+    },
+    async () => {
+      return await callLLM(userMessage);
+    }
+  );
+} catch (error) {
+  // Error is tracked with all context
+  console.error('Failed:', error);
+  
+  // Handle error in your application
+  return { error: 'Failed to process request' };
+}
+```
+
+## Retry Logic
+
+Implement retry logic with error tracking:
+
+```javascript
+async function trackWithRetry(query, llmCall, maxRetries = 3) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await observa.track(
+        {
+          query: query,
+          metadata: {
+            attempt: attempt,
+            maxRetries: maxRetries,
+          },
+        },
+        llmCall
+      );
+    } catch (error) {
+      lastError = error;
+      
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+  
+  // Track final failure
+  await observa.track({
+    query: query,
+    metadata: {
+      success: false,
+      error: lastError.message,
+      attempts: maxRetries,
+    },
+  });
+  
+  throw lastError;
+}
+```
+
+## Network Errors
+
+Handle network errors gracefully:
+
+```javascript
+async function trackWithNetworkHandling(query, llmCall) {
+  try {
+    return await observa.track(
+      { query: query },
+      llmCall
+    );
+  } catch (error) {
+    if (error.name === 'NetworkError' || error.code === 'ECONNREFUSED') {
+      // Network error - log but don't fail the request
+      console.warn('Observa tracking failed:', error);
+      // Continue with LLM call without tracking
+      return await llmCall();
+    }
+    
+    // Other errors - track and rethrow
+    throw error;
+  }
+}
+```
+
+## Best Practices
+
+1. **Let Observa Handle Errors**: Errors in tracked calls are automatically captured
+2. **Add Context**: Include metadata for better error analysis
+3. **Don't Block on Errors**: Don't let tracking errors break your application
+4. **Log Errors**: Log errors for debugging even if they're tracked
+5. **Handle Network Issues**: Gracefully handle network failures
+
+## Next Steps
+
+- Learn about [Tracking LLM Calls](./tracking-llm-calls)
+- Read about [Session Management](./session-management)
+- Check [Troubleshooting](../troubleshooting)
