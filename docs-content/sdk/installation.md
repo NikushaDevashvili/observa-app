@@ -30,23 +30,29 @@ const observa = init({
 });
 ```
 
-### 4. Send Your First Trace
+### 4. Send Your First Trace (Auto-Capture - Recommended)
 
 ```typescript
-const traceId = observa.startTrace({
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: "my-app",
   userId: "user-123",
 });
 
-observa.trackLLMCall({
+// Use wrapped client - automatically tracked!
+const response = await wrappedOpenAI.chat.completions.create({
   model: "gpt-4",
-  input: "Hello!",
-  output: "Hi there!",
-  tokensTotal: 30,
-  latencyMs: 1200,
+  messages: [{ role: "user", content: "Hello!" }],
 });
 
-await observa.endTrace();
+console.log(response.choices[0].message.content);
 ```
+
+> **See also**: [SDK Examples](./examples.md) for more examples including manual tracking.
 
 ---
 

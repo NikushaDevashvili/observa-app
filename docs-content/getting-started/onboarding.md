@@ -128,8 +128,7 @@ import { init } from "observa-sdk";
 
 const observa = init({
   apiKey: process.env.OBSERVA_API_KEY!,
-  apiUrl: "https://api.observa.ai",
-  environment: "prod",
+  apiUrl: "https://observa-api.vercel.app",
 });
 
 export default observa;
@@ -141,7 +140,7 @@ Create a `.env` file:
 
 ```env
 OBSERVA_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-OBSERVA_API_URL=https://api.observa.ai
+OBSERVA_API_URL=https://observa-api.vercel.app
 ```
 
 **⚠️ Security**: Never commit `.env` files to version control.
@@ -150,7 +149,30 @@ OBSERVA_API_URL=https://api.observa.ai
 
 ## Step 5: Send Your First Trace
 
-### Basic Example
+### Option A: Auto-Capture (Recommended - Easiest)
+
+```typescript
+import observa from "./observa-setup";
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Wrap with Observa - automatic tracking!
+const wrappedOpenAI = observa.observeOpenAI(openai, {
+  name: "my-app",
+  userId: "user-123",
+});
+
+// Use wrapped client - automatically tracked!
+const response = await wrappedOpenAI.chat.completions.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: "Hello, world!" }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+### Option B: Manual Tracking
 
 ```typescript
 import observa from "./observa-setup";
@@ -158,7 +180,6 @@ import observa from "./observa-setup";
 async function sendFirstTrace() {
   const traceId = observa.startTrace({
     userId: "user-123",
-    conversationId: "conv-456",
     name: "First Trace",
   });
 
@@ -169,10 +190,12 @@ async function sendFirstTrace() {
       model: "gpt-4",
       input: "Hello, world!",
       output: response,
-      tokensPrompt: 10,
-      tokensCompletion: 20,
-      tokensTotal: 30,
+      inputTokens: 10,
+      outputTokens: 20,
+      totalTokens: 30,
       latencyMs: 1200,
+      providerName: "openai",
+      operationName: "chat",
     });
 
     await observa.endTrace();
