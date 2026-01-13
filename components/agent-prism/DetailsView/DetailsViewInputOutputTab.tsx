@@ -11,6 +11,7 @@ import {
   DetailsViewContentViewer,
   type DetailsViewContentViewMode,
 } from "./DetailsViewContentViewer";
+import { Badge } from "../Badge";
 
 interface DetailsViewInputOutputTabProps {
   data: TraceSpan;
@@ -21,33 +22,64 @@ type IOSection = "Input" | "Output";
 export const DetailsViewInputOutputTab = ({
   data,
 }: DetailsViewInputOutputTabProps): ReactElement => {
-  const hasInput = Boolean(data.input);
-  const hasOutput = Boolean(data.output);
+  // Extract LLM call data from span (multiple possible locations)
+  const llmData = (data as any).llm_call || (data as any).details?.llm_call;
+  const llmEvent = (data as any).events?.find((e: any) => e.event_type === "llm_call");
+  const llmCall = llmData || llmEvent?.attributes?.llm_call;
 
-  if (!hasInput && !hasOutput) {
-    return (
-      <div className="border-agentprism-border rounded-md border p-4">
-        <p className="text-agentprism-muted-foreground text-sm">
-          No input or output data available for this span
-        </p>
-      </div>
-    );
+  // Extract input/output from multiple sources
+  let inputText: string | null = null;
+  let outputText: string | null = null;
+  let modelName: string | null = null;
+
+  // Try to get from llm_call data first (most reliable)
+  if (llmCall) {
+    inputText = llmCall.input || null;
+    outputText = llmCall.output || null;
+    modelName = llmCall.model || null;
   }
 
+  // Fallback to span-level input/output
+  if (!inputText && typeof (data as any).input === "string") {
+    inputText = (data as any).input;
+  }
+  if (!outputText && typeof (data as any).output === "string") {
+    outputText = (data as any).output;
+  }
+
+  // Extract model name from attributes if not found
+  if (!modelName && (data as any).attributes) {
+    const attrs = (data as any).attributes;
+    if (Array.isArray(attrs)) {
+      const modelAttr = attrs.find((a: any) => 
+        a.key === "llm_call.model" || 
+        a.key === "gen_ai.system.name" ||
+        a.key === "gen_ai.request.model"
+      );
+      if (modelAttr?.value?.stringValue) {
+        modelName = modelAttr.value.stringValue;
+      }
+    }
+  }
+
+  const hasInput = inputText !== null && inputText !== undefined && inputText !== "";
+  const hasOutput = outputText !== null && outputText !== undefined && outputText !== "";
+
+  // Parse JSON if possible
   let parsedInput: string | null = null;
   let parsedOutput: string | null = null;
 
-  if (typeof data.input === "string") {
+  if (inputText && typeof inputText === "string") {
     try {
-      parsedInput = JSON.parse(data.input);
+      parsedInput = JSON.parse(inputText);
     } catch {
       parsedInput = null;
     }
   }
 
-  if (typeof data.output === "string") {
+  if (outputText && typeof outputText === "string") {
     try {
-      parsedOutput = JSON.parse(data.output);
+      parsedOutput = JSON.parse(outputText);
     } catch {
       parsedOutput = null;
     }
@@ -55,18 +87,37 @@ export const DetailsViewInputOutputTab = ({
 
   return (
     <div className="space-y-4">
-      {typeof data.input === "string" && (
-        <IOSection
-          section="Input"
-          content={data.input}
-          parsedContent={parsedInput}
-        />
+      {/* Model Name Badge */}
+      {modelName && modelName !== "unknown" && (
+        <div className="border-agentprism-border rounded-md border p-3 bg-agentprism-muted/30">
+          <div className="flex items-center gap-2">
+            <span className="text-agentprism-muted-foreground text-xs font-medium">
+              Model:
+            </span>
+            <Badge
+              size="5"
+              label={modelName}
+              className="bg-agentprism-background text-agentprism-foreground border border-agentprism-border"
+            />
+          </div>
+        </div>
       )}
-      {typeof data.output === "string" && (
+
+      {/* Input Section - Always show, even if empty */}
+      <IOSection
+        section="Input"
+        content={inputText || ""}
+        parsedContent={parsedInput}
+        isEmpty={!hasInput}
+      />
+
+      {/* Output Section - Show if available */}
+      {(hasOutput || outputText === null) && (
         <IOSection
           section="Output"
-          content={data.output}
+          content={outputText || ""}
           parsedContent={parsedOutput}
+          isEmpty={!hasOutput}
         />
       )}
     </div>
@@ -77,12 +128,14 @@ interface IOSectionProps {
   section: IOSection;
   content: string;
   parsedContent: string | null;
+  isEmpty?: boolean;
 }
 
 const IOSection = ({
   section,
   content,
   parsedContent,
+  isEmpty = false,
 }: IOSectionProps): ReactElement => {
   const [tab, setTab] = useState<DetailsViewContentViewMode>(
     parsedContent ? "json" : "plain",
@@ -114,13 +167,21 @@ const IOSection = ({
         />
       }
     >
-      <DetailsViewContentViewer
-        content={content}
-        parsedContent={parsedContent}
-        mode={tab}
-        label={section}
-        id={section}
-      />
+      {isEmpty ? (
+        <div className="border-agentprism-border rounded-md border p-4 bg-agentprism-muted/20">
+          <p className="text-agentprism-muted-foreground text-sm italic">
+            No {section.toLowerCase()} data available for this span
+          </p>
+        </div>
+      ) : (
+        <DetailsViewContentViewer
+          content={content}
+          parsedContent={parsedContent}
+          mode={tab}
+          label={section}
+          id={section}
+        />
+      )}
     </CollapsibleSection>
   );
 };
