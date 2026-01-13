@@ -6,6 +6,7 @@ Step-by-step guide to integrating Observa with Vercel AI SDK - a unified SDK tha
 
 - Node.js 16+ or any JavaScript runtime
 - Vercel AI SDK installed (`npm install ai`)
+- Provider packages installed (e.g., `@ai-sdk/openai`, `@ai-sdk/anthropic`)
 - Observa API key (get from [Settings](https://observa-app.vercel.app/dashboard/settings))
 
 ## Set Up Environment
@@ -13,28 +14,45 @@ Step-by-step guide to integrating Observa with Vercel AI SDK - a unified SDK tha
 Install dependencies and set up environment variables:
 
 ```bash
+# Install core packages
 npm install observa-sdk ai
+
+# Install provider packages (choose based on your needs)
+npm install @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
+
+# For Next.js with React hooks
+npm install @ai-sdk/react zod
 ```
 
 ```javascript
-// .env
+// .env.local (for Next.js) or .env (for Node.js)
+# Observa Configuration
 OBSERVA_API_KEY=your-observa-api-key
 OBSERVA_API_URL=https://observa-api.vercel.app
-OPENAI_API_KEY=sk-proj-***  # or your LLM provider key
+
+# LLM Provider API Keys (choose based on your provider)
+OPENAI_API_KEY=sk-proj-***  # For OpenAI
+ANTHROPIC_API_KEY=sk-ant-***  # For Anthropic
+GOOGLE_API_KEY=***  # For Google
+
+# Optional: Vercel AI Gateway (if using AI Gateway)
+AI_GATEWAY_API_KEY=***  # Only if using Vercel AI Gateway
 ```
+
+**Note:** `OBSERVA_API_KEY` and `OBSERVA_API_URL` are for Observa tracking. Provider API keys (like `OPENAI_API_KEY`) are for the LLM providers themselves.
 
 ## Example 1: Basic Text Generation (Auto-Capture - Recommended)
 
 Use `observeVercelAI()` for automatic tracking - the easiest way:
 
-```javascript
+```typescript
 import { init } from 'observa-sdk';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
 // Initialize Observa SDK
 const observa = init({
-  apiKey: process.env.OBSERVA_API_KEY,
+  apiKey: process.env.OBSERVA_API_KEY!,
   apiUrl: process.env.OBSERVA_API_URL,
 });
 
@@ -53,16 +71,112 @@ const result = await ai.generateText({
 console.log(result.text);
 ```
 
-## Example 2: Streaming (Auto-Capture)
+## Example 2: Next.js Route Handler (Recommended for Next.js Apps)
+
+For Next.js App Router applications, use the route handler pattern with `UIMessage` and `convertToModelMessages()`:
+
+```typescript
+// app/api/chat/route.ts
+import { streamText, UIMessage, convertToModelMessages } from 'ai';
+import { init } from 'observa-sdk';
+import { openai } from '@ai-sdk/openai';
+
+// Initialize Observa SDK (outside the handler for better performance)
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY!,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+
+const ai = observa.observeVercelAI({ streamText }, {
+  name: 'my-nextjs-app',
+});
+
+export async function POST(req: Request) {
+  try {
+    const { messages }: { messages: UIMessage[] } = await req.json();
+
+    const result = await ai.streamText({
+      model: openai('gpt-4'),
+      messages: await convertToModelMessages(messages),
+    });
+
+    // Return streaming response for Next.js
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    // Errors are automatically tracked by Observa
+    console.error('Chat error:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+```
+
+## Example 3: Client-Side with useChat Hook
+
+Use the `useChat` hook in your React components:
+
+```typescript
+// app/page.tsx
+'use client';
+import { useChat } from '@ai-sdk/react';
+
+export default function Chat() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    api: '/api/chat',
+  });
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex-1 overflow-y-auto p-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`mb-4 ${
+              message.role === 'user' ? 'text-right' : 'text-left'
+            }`}
+          >
+            <div
+              className={`inline-block p-2 rounded ${
+                message.role === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200'
+              }`}
+            >
+              {message.content}
+            </div>
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleSubmit} className="p-4 border-t">
+        <input
+          value={input}
+          onChange={handleInputChange}
+          placeholder="Type your message..."
+          className="w-full p-2 border rounded"
+          disabled={isLoading}
+        />
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+## Example 4: Streaming (Auto-Capture)
 
 Streaming works automatically with `observeVercelAI()`:
 
-```javascript
+```typescript
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
 // Wrap once (same as Example 1)
-const ai = observa.observeVercelAI({ generateText, streamText }, {
+const ai = observa.observeVercelAI({ streamText }, {
   name: 'my-app',
 });
 
@@ -77,11 +191,11 @@ for await (const chunk of result.textStream) {
 }
 ```
 
-## Example 3: With Anthropic (Claude)
+## Example 5: With Anthropic (Claude)
 
 Works with any provider supported by Vercel AI SDK:
 
-```javascript
+```typescript
 import { generateText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 
@@ -98,11 +212,11 @@ const result = await ai.generateText({
 console.log(result.text);
 ```
 
-## Example 4: With Messages (Chat Format)
+## Example 6: With Messages (Chat Format)
 
 Vercel AI SDK supports both prompt and messages:
 
-```javascript
+```typescript
 const ai = observa.observeVercelAI({ generateText }, {
   name: 'chat-app',
 });
@@ -119,11 +233,51 @@ const result = await ai.generateText({
 console.log(result.text);
 ```
 
-## Example 5: PII Redaction
+## Example 7: Tools/Function Calling
 
-Use the `redact` option to sanitize sensitive data:
+Observa automatically tracks tool calls and their execution:
 
-```javascript
+```typescript
+import { z } from 'zod';
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const ai = observa.observeVercelAI({ streamText }, {
+  name: 'tools-app',
+});
+
+const result = await ai.streamText({
+  model: openai('gpt-4'),
+  messages: [
+    { role: 'user', content: 'What is the weather in San Francisco?' }
+  ],
+  tools: {
+    getWeather: {
+      description: 'Get the current weather for a location',
+      parameters: z.object({
+        location: z.string().describe('The city and state, e.g. San Francisco, CA'),
+      }),
+      execute: async ({ location }) => {
+        // Tool implementation - automatically tracked by Observa
+        // This will appear as a tool_call event in your traces
+        const weather = await fetch(`https://api.weather.com/${location}`);
+        return { temperature: 72, condition: 'sunny' };
+      },
+    },
+  },
+});
+
+// Tool calls are automatically tracked in Observa
+for await (const chunk of result.textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+## Example 8: PII Redaction
+
+Use the `redact` option to sanitize sensitive data before sending to Observa:
+
+```typescript
 const ai = observa.observeVercelAI({ generateText }, {
   name: 'secure-app',
   redact: (data) => {
@@ -148,22 +302,194 @@ const ai = observa.observeVercelAI({ generateText }, {
 });
 ```
 
+## Model Format Options
+
+Vercel AI SDK supports two model formats:
+
+### 1. Provider Function Format (Recommended)
+
+Use provider functions when you have provider packages installed:
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
+
+// Provider function format
+model: openai('gpt-4')
+model: anthropic('claude-3-opus-20240229')
+model: google('gemini-pro')
+```
+
+**Advantages:**
+- Type-safe
+- Better IDE autocomplete
+- Automatic provider detection
+
+### 2. String Format
+
+Use string format when using AI Gateway or when you don't have provider packages:
+
+```typescript
+// String format (for AI Gateway)
+model: 'openai/gpt-4'
+model: 'anthropic/claude-3-opus-20240229'
+model: 'google/gemini-pro'
+```
+
+**When to use:**
+- Using Vercel AI Gateway
+- Don't want to install provider packages
+- Need to switch providers dynamically
+
+## Error Handling
+
+Errors are automatically tracked by Observa. Wrap your calls in try-catch for better error handling:
+
+```typescript
+try {
+  const result = await ai.generateText({
+    model: openai('gpt-4'),
+    prompt: 'Hello!',
+  });
+  console.log(result.text);
+} catch (error) {
+  // Error is automatically tracked in Observa
+  // You'll see it in the Issues tab of your dashboard
+  console.error('LLM call failed:', error);
+  
+  // Handle the error appropriately
+  if (error instanceof Error) {
+    // Check error type and handle accordingly
+  }
+}
+```
+
+## Complete Next.js Example
+
+Here's a complete working Next.js App Router example:
+
+### 1. Environment Variables
+
+```bash
+# .env.local
+OBSERVA_API_KEY=your-observa-api-key
+OBSERVA_API_URL=https://observa-api.vercel.app
+OPENAI_API_KEY=sk-proj-***
+```
+
+### 2. Route Handler
+
+```typescript
+// app/api/chat/route.ts
+import { streamText, UIMessage, convertToModelMessages } from 'ai';
+import { init } from 'observa-sdk';
+import { openai } from '@ai-sdk/openai';
+
+const observa = init({
+  apiKey: process.env.OBSERVA_API_KEY!,
+  apiUrl: process.env.OBSERVA_API_URL,
+});
+
+const ai = observa.observeVercelAI({ streamText }, {
+  name: 'my-nextjs-chat-app',
+});
+
+export async function POST(req: Request) {
+  try {
+    const { messages }: { messages: UIMessage[] } = await req.json();
+
+    const result = await ai.streamText({
+      model: openai('gpt-4'),
+      messages: await convertToModelMessages(messages),
+    });
+
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    console.error('Chat error:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+```
+
+### 3. Frontend Component
+
+```typescript
+// app/page.tsx
+'use client';
+import { useChat } from '@ai-sdk/react';
+
+export default function Chat() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    api: '/api/chat',
+  });
+
+  return (
+    <div className="flex flex-col h-screen max-w-2xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${
+              message.role === 'user' ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            <div
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                message.role === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-800'
+              }`}
+            >
+              {message.content}
+            </div>
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleSubmit} className="p-4 border-t flex gap-2">
+        <input
+          value={input}
+          onChange={handleInputChange}
+          placeholder="Type your message..."
+          className="flex-1 p-2 border rounded-lg"
+          disabled={isLoading}
+        />
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+        >
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
 ## Best Practices
 
 1. **Use Auto-Capture**: `observeVercelAI()` is the recommended approach - it automatically captures 90%+ of your LLM interactions
 2. **Wrap Once**: Wrap your Vercel AI SDK functions once and reuse throughout your application
-3. **Streaming Support**: Streaming works automatically - no extra code needed
-4. **PII Redaction**: Use the `redact` option to sanitize sensitive data before sending to Observa
-5. **Error Handling**: Wrap LLM calls in try-catch blocks
+3. **Next.js Route Handlers**: Use `toUIMessageStreamResponse()` for Next.js route handlers
+4. **UIMessage Format**: Use `UIMessage` and `convertToModelMessages()` for Next.js apps
+5. **Streaming Support**: Streaming works automatically - no extra code needed
+6. **Tool Tracking**: Tool calls are automatically tracked - no additional setup required
+7. **PII Redaction**: Use the `redact` option to sanitize sensitive data before sending to Observa
+8. **Error Handling**: Wrap LLM calls in try-catch blocks - errors are automatically tracked
+9. **Provider Packages**: Install provider packages (`@ai-sdk/openai`, etc.) for better type safety
 
 ## Supported Providers
 
-Vercel AI SDK works with multiple providers. Observa automatically detects the provider from the model string:
+Vercel AI SDK works with multiple providers. Observa automatically detects the provider from the model:
 
-- **OpenAI**: `openai/gpt-4`, `openai/gpt-3.5-turbo`
-- **Anthropic**: `anthropic/claude-3-opus-20240229`
-- **Google**: `google/gemini-pro`
-- And more...
+- **OpenAI**: `openai('gpt-4')`, `openai('gpt-3.5-turbo')`
+- **Anthropic**: `anthropic('claude-3-opus-20240229')`, `anthropic('claude-sonnet-4.5')`
+- **Google**: `google('gemini-pro')`, `google('gemini-1.5-pro')`
+- **Cohere**: `cohere('command')`
+- **And more...**
+
+Observa automatically tracks all supported providers.
 
 ## View Your Traces
 
@@ -172,7 +498,32 @@ After running these examples:
 1. Go to [Dashboard](https://observa-app.vercel.app/dashboard)
 2. Navigate to **Traces**
 3. Filter by provider to see Vercel AI SDK calls
-4. Click on a trace for detailed information
+4. Click on a trace for detailed information including:
+   - Request/response data
+   - Token usage
+   - Latency metrics
+   - Tool calls (if any)
+   - Errors (if any)
+
+## Troubleshooting
+
+### Nothing is being tracked
+
+- **Check**: Make sure you're using `observa.observeVercelAI()` and not importing `observeVercelAI` directly
+- **Check**: Verify your `OBSERVA_API_KEY` is set correctly
+- **Check**: Ensure the Observa instance is initialized before wrapping functions
+
+### Errors in route handlers
+
+- **Check**: Make sure you're using `toUIMessageStreamResponse()` for Next.js route handlers
+- **Check**: Verify `UIMessage` and `convertToModelMessages()` are imported from 'ai'
+- **Check**: Ensure provider packages are installed
+
+### Tool calls not showing
+
+- **Check**: Tool calls are automatically tracked - no additional setup needed
+- **Check**: Verify tools are defined correctly with `parameters` and `execute` functions
+- **Check**: Look in the Traces view for `tool_call` events
 
 ## Next Steps
 
