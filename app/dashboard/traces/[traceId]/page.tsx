@@ -121,7 +121,7 @@ export default function TraceDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-lg">Loading trace...</div>
       </div>
     );
@@ -129,9 +129,11 @@ export default function TraceDetailPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-4">
-        <h2 className="text-2xl font-bold">Error</h2>
-        <p className="text-muted-foreground">{error}</p>
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 px-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-center">Error</h2>
+        <p className="text-muted-foreground text-center text-sm sm:text-base max-w-md">
+          {error}
+        </p>
         <Link href="/dashboard/traces">
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -144,9 +146,11 @@ export default function TraceDetailPage() {
 
   if (!traceData) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-4">
-        <h2 className="text-2xl font-bold">Trace Not Found</h2>
-        <p className="text-muted-foreground">
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 px-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-center">
+          Trace Not Found
+        </h2>
+        <p className="text-muted-foreground text-center text-sm sm:text-base max-w-md">
           The trace you're looking for doesn't exist or you don't have access to
           it.
         </p>
@@ -161,44 +165,63 @@ export default function TraceDetailPage() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col -mx-4">
+    <div className="w-full flex flex-col -mx-4 sm:-mx-6 lg:-mx-8 -my-4 h-[calc(100vh-3rem)] sm:h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="border-b px-2 py-4 bg-background">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/traces">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Traces
+      <div className="border-b px-3 sm:px-4 py-3 sm:py-4 bg-background sticky top-0 z-10 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
+            <Link href="/dashboard/traces" className="self-start sm:self-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full sm:w-auto justify-start sm:justify-center"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4 shrink-0" />
+                <span className="sm:inline">Back to Traces</span>
               </Button>
             </Link>
-            <div>
-              <h1 className="text-xl font-semibold">Trace Details</h1>
-              <div className="text-sm text-muted-foreground mt-1">
-                Trace ID:{" "}
-                <code className="bg-muted px-2 py-1 rounded text-xs">
-                  {traceId ? `${traceId.substring(0, 12)}...` : "N/A"}
-                </code>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-xl font-semibold truncate">
+                Trace Details
+              </h1>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="shrink-0">Trace ID:</span>
+                  <code className="bg-muted px-2 py-1 rounded text-xs font-mono truncate max-w-full sm:max-w-none">
+                    {traceId || "N/A"}
+                  </code>
+                </div>
                 {traceData?.errorSummary && traceData.errorSummary.hasErrors && (
-                  <span className="ml-3 inline-flex items-center gap-1">
-                    <span className="text-destructive font-medium">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                    <span className="text-destructive font-medium text-xs sm:text-sm">
                       {traceData.errorSummary.totalErrors} Error
                       {traceData.errorSummary.totalErrors !== 1 ? "s" : ""}
                     </span>
                     {Object.keys(traceData.errorSummary.errorTypes).length > 0 && (
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground text-xs sm:text-sm">
                         (
-                        {Object.entries(traceData.errorSummary.errorTypes)
-                          .slice(0, 2)
-                          .map(([type, count]) => `${count} ${type}`)
-                          .join(", ")}
-                        {Object.keys(traceData.errorSummary.errorTypes).length > 2
-                          ? "..."
-                          : ""}
+                        <span className="hidden sm:inline">
+                          {Object.entries(traceData.errorSummary.errorTypes)
+                            .slice(0, 2)
+                            .map(([type, count]) => `${count} ${type}`)
+                            .join(", ")}
+                          {Object.keys(traceData.errorSummary.errorTypes).length >
+                          2
+                            ? "..."
+                            : ""}
+                        </span>
+                        <span className="sm:hidden">
+                          {Object.keys(traceData.errorSummary.errorTypes).length}{" "}
+                          type
+                          {Object.keys(traceData.errorSummary.errorTypes)
+                            .length !== 1
+                            ? "s"
+                            : ""}
+                        </span>
                         )
                       </span>
                     )}
-                  </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -207,13 +230,15 @@ export default function TraceDetailPage() {
       </div>
 
       {/* TraceViewer */}
-      <div className="flex-1 overflow-hidden px-2">
+      <div className="flex-1 overflow-hidden px-3 sm:px-4 min-h-0">
         <TraceViewerErrorBoundary>
           {traceData && traceData.traceRecord && traceData.spans ? (
             <TraceViewer data={[traceData]} />
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-red-500">Invalid trace data format</div>
+            <div className="flex items-center justify-center h-full min-h-[400px]">
+              <div className="text-red-500 text-sm sm:text-base">
+                Invalid trace data format
+              </div>
             </div>
           )}
         </TraceViewerErrorBoundary>
