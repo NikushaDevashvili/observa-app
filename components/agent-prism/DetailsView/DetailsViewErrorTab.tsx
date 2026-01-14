@@ -19,6 +19,12 @@ interface ErrorInfo {
   stackTrace?: string;
   context?: Record<string, any>;
   timestamp?: string;
+  errorCode?: string;
+  classification?: {
+    category?: string;
+    severity?: string;
+    impact?: string;
+  };
 }
 
 interface DetailsViewErrorTabProps {
@@ -82,6 +88,56 @@ export const DetailsViewErrorTab = ({
           />
         </div>
       </div>
+
+      {/* Error Category and Code */}
+      {errorInfo.classification && (
+        <div className="border-agentprism-border rounded-md border p-4">
+          <div className="space-y-2">
+            {errorInfo.classification.category && (
+              <div className="flex items-center justify-between">
+                <span className="text-agentprism-muted-foreground text-sm font-medium">
+                  Error Category:
+                </span>
+                <Badge
+                  size="5"
+                  label={formatErrorType(errorInfo.classification.category)}
+                  className="bg-agentprism-muted text-agentprism-muted-foreground"
+                />
+              </div>
+            )}
+            {errorInfo.errorCode && (
+              <div className="flex items-center justify-between">
+                <span className="text-agentprism-muted-foreground text-sm font-medium">
+                  Error Code:
+                </span>
+                <code className="text-agentprism-foreground text-sm font-mono bg-agentprism-muted px-2 py-1 rounded">
+                  {errorInfo.errorCode}
+                </code>
+              </div>
+            )}
+            {errorInfo.classification.severity && (
+              <div className="flex items-center justify-between">
+                <span className="text-agentprism-muted-foreground text-sm font-medium">
+                  Severity:
+                </span>
+                <Badge
+                  size="5"
+                  label={errorInfo.classification.severity.toUpperCase()}
+                  className={
+                    errorInfo.classification.severity === "critical"
+                      ? "bg-red-500 text-white"
+                      : errorInfo.classification.severity === "high"
+                      ? "bg-orange-500 text-white"
+                      : errorInfo.classification.severity === "medium"
+                      ? "bg-yellow-500 text-black"
+                      : "bg-gray-500 text-white"
+                  }
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       <div className="border-agentprism-border rounded-md border p-4">

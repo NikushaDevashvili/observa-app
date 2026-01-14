@@ -191,38 +191,43 @@ export default function TraceDetailPage() {
                     {traceId || "N/A"}
                   </code>
                 </div>
-                {traceData?.errorSummary && traceData.errorSummary.hasErrors && (
-                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                    <span className="text-destructive font-medium text-xs sm:text-sm">
-                      {traceData.errorSummary.totalErrors} Error
-                      {traceData.errorSummary.totalErrors !== 1 ? "s" : ""}
-                    </span>
-                    {Object.keys(traceData.errorSummary.errorTypes).length > 0 && (
-                      <span className="text-muted-foreground text-xs sm:text-sm">
-                        (
-                        <span className="hidden sm:inline">
-                          {Object.entries(traceData.errorSummary.errorTypes)
-                            .slice(0, 2)
-                            .map(([type, count]) => `${count} ${type}`)
-                            .join(", ")}
-                          {Object.keys(traceData.errorSummary.errorTypes).length >
-                          2
-                            ? "..."
-                            : ""}
-                        </span>
-                        <span className="sm:hidden">
-                          {Object.keys(traceData.errorSummary.errorTypes).length}{" "}
-                          type
-                          {Object.keys(traceData.errorSummary.errorTypes)
-                            .length !== 1
-                            ? "s"
-                            : ""}
-                        </span>
-                        )
+                {traceData?.errorSummary &&
+                  traceData.errorSummary.hasErrors && (
+                    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                      <span className="text-destructive font-medium text-xs sm:text-sm">
+                        {traceData.errorSummary.totalErrors} Error
+                        {traceData.errorSummary.totalErrors !== 1 ? "s" : ""}
                       </span>
-                    )}
-                  </div>
-                )}
+                      {Object.keys(traceData.errorSummary.errorTypes).length >
+                        0 && (
+                        <span className="text-muted-foreground text-xs sm:text-sm">
+                          (
+                          <span className="hidden sm:inline">
+                            {Object.entries(traceData.errorSummary.errorTypes)
+                              .slice(0, 2)
+                              .map(([type, count]) => `${count} ${type}`)
+                              .join(", ")}
+                            {Object.keys(traceData.errorSummary.errorTypes)
+                              .length > 2
+                              ? "..."
+                              : ""}
+                          </span>
+                          <span className="sm:hidden">
+                            {
+                              Object.keys(traceData.errorSummary.errorTypes)
+                                .length
+                            }{" "}
+                            type
+                            {Object.keys(traceData.errorSummary.errorTypes)
+                              .length !== 1
+                              ? "s"
+                              : ""}
+                          </span>
+                          )
+                        </span>
+                      )}
+                    </div>
+                  )}
               </div>
             </div>
           </div>
