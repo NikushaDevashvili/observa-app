@@ -109,7 +109,7 @@ function SidebarProvider({
     <SidebarContext.Provider value={contextValue}>
       <TooltipProvider delayDuration={0}>
         <div
-          className={cn("flex min-h-screen w-full", className)}
+          className={cn("flex min-h-screen w-full max-w-full min-w-0 overflow-x-hidden", className)}
           style={style}
           {...props}
         >
@@ -203,7 +203,7 @@ function SidebarTrigger({
 }
 
 function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
-  return <main className={cn("flex-1 transition-all", className)} {...props} />;
+  return <main className={cn("flex-1 transition-all min-w-0 max-w-full overflow-x-hidden", className)} {...props} />;
 }
 
 function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {

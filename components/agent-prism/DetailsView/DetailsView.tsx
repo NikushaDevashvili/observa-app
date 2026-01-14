@@ -153,7 +153,7 @@ export const DetailsView = ({
   return (
     <div
       className={cn(
-        "border-agentprism-border bg-agentprism-background flex h-full min-h-0 flex-col rounded-md border p-4",
+        "border-agentprism-border bg-agentprism-background flex h-full min-h-0 flex-col rounded-md border p-4 min-w-0 max-w-full overflow-hidden",
         className,
       )}
     >

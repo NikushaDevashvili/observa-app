@@ -56,9 +56,9 @@ export default function DashboardLayout({
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="min-w-0 overflow-x-hidden">
           <Navbar />
-          <div className="p-4">{children}</div>
+          <div className="p-4 min-w-0 max-w-full overflow-x-hidden">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </ThemeProvider>

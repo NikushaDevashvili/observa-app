@@ -165,7 +165,7 @@ export default function TraceDetailPage() {
   }
 
   return (
-    <div className="w-full flex flex-col -mx-4 sm:-mx-6 lg:-mx-8 -my-4 h-[calc(100vh-3rem)] sm:h-[calc(100vh-4rem)]">
+    <div className="w-full flex flex-col -mx-4 sm:-mx-6 lg:-mx-8 -my-4 h-[calc(100vh-3rem)] sm:h-[calc(100vh-4rem)] min-w-0 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="border-b px-3 sm:px-4 py-3 sm:py-4 bg-background sticky top-0 z-10 flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">

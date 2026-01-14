@@ -174,8 +174,8 @@ export const DetailsViewErrorTab = ({
             />
           }
         >
-          <div className="bg-agentprism-muted rounded-md p-3 overflow-x-auto">
-            <pre className="text-agentprism-foreground text-xs font-mono whitespace-pre-wrap break-words">
+          <div className="bg-agentprism-muted rounded-md p-3 overflow-hidden">
+            <pre className="text-agentprism-foreground text-xs font-mono whitespace-pre-wrap break-words max-w-full overflow-x-auto">
               {errorInfo.stackTrace}
             </pre>
           </div>
@@ -188,8 +188,8 @@ export const DetailsViewErrorTab = ({
           title="Error Context"
           defaultOpen={false}
         >
-          <div className="bg-agentprism-muted rounded-md p-3 overflow-x-auto">
-            <pre className="text-agentprism-foreground text-xs font-mono whitespace-pre-wrap break-words">
+          <div className="bg-agentprism-muted rounded-md p-3 overflow-hidden">
+            <pre className="text-agentprism-foreground text-xs font-mono whitespace-pre-wrap break-words max-w-full overflow-x-auto">
               {JSON.stringify(errorInfo.context, null, 2)}
             </pre>
           </div>
