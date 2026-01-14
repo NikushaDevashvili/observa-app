@@ -235,10 +235,12 @@ export default function TraceDetailPage() {
       </div>
 
       {/* TraceViewer */}
-      <div className="flex-1 overflow-hidden px-3 sm:px-4 min-h-0">
+      <div className="flex-1 overflow-hidden px-3 sm:px-4 min-h-0 w-full max-w-full">
         <TraceViewerErrorBoundary>
           {traceData && traceData.traceRecord && traceData.spans ? (
-            <TraceViewer data={[traceData]} />
+            <div className="h-full w-full max-w-full overflow-hidden">
+              <TraceViewer data={[traceData]} />
+            </div>
           ) : (
             <div className="flex items-center justify-center h-full min-h-[400px]">
               <div className="text-red-500 text-sm sm:text-base">

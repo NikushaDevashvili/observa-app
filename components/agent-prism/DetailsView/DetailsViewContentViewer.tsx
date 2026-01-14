@@ -40,8 +40,8 @@ export const DetailsViewContentViewer = ({
       {mode === "json" && parsedContent ? (
         <DetailsViewJsonOutput content={parsedContent} id={id} />
       ) : (
-        <div className="bg-agentprism-background rounded-lg p-4">
-          <pre className="text-agentprism-foreground overflow-x-auto whitespace-pre-wrap text-left font-mono text-sm">
+        <div className="bg-agentprism-background rounded-lg p-4 overflow-hidden">
+          <pre className="text-agentprism-foreground overflow-x-auto whitespace-pre-wrap break-words text-left font-mono text-sm max-w-full">
             {content}
           </pre>
         </div>
