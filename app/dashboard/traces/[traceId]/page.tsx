@@ -8,14 +8,20 @@ import { ArrowLeft } from "lucide-react";
 import { TraceViewer } from "@/components/agent-prism/TraceViewer/TraceViewer";
 import type { TraceViewerData } from "@/components/agent-prism/TraceViewer/TraceViewer";
 import { TraceViewerErrorBoundary } from "@/components/TraceViewerErrorBoundary";
+import { TraceInsightsPanel } from "@/components/traces/TraceInsightsPanel";
+import type { TraceConversationContext, TraceTree } from "@/types/trace";
 
 export default function TraceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const traceId = params?.traceId as string | undefined;
   const [traceData, setTraceData] = useState<TraceViewerData | null>(null);
+  const [traceTree, setTraceTree] = useState<TraceTree | null>(null);
+  const [conversation, setConversation] =
+    useState<TraceConversationContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [traceTreeError, setTraceTreeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!traceId) {
@@ -28,6 +34,10 @@ export default function TraceDetailPage() {
       try {
         setLoading(true);
         setError(null);
+        setTraceTreeError(null);
+        setTraceData(null);
+        setTraceTree(null);
+        setConversation(null);
 
         const token = localStorage.getItem("sessionToken");
         if (!token) {
@@ -35,29 +45,33 @@ export default function TraceDetailPage() {
           return;
         }
 
-        // Fetch agent-prism formatted data
-        const response = await fetch(
-          `/api/traces/${traceId}?format=agent-prism`,
-          {
+        const [agentResponse, treeResponse] = await Promise.all([
+          fetch(`/api/traces/${traceId}?format=agent-prism`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
-        );
+          }),
+          fetch(`/api/traces/${traceId}?format=tree`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        ]);
 
-        if (!response.ok) {
-          if (response.status === 404) {
+        if (!agentResponse.ok) {
+          if (agentResponse.status === 404) {
             setError("Trace not found");
           } else {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = await agentResponse.json().catch(() => ({}));
             setError(
-              errorData.error || `Failed to fetch trace: ${response.statusText}`
+              errorData.error ||
+                `Failed to fetch trace: ${agentResponse.statusText}`
             );
           }
           return;
         }
 
-        const data = await response.json();
+        const data = await agentResponse.json();
 
         if (!data.success || !data.trace) {
           console.error("Invalid trace data:", data);
@@ -106,6 +120,24 @@ export default function TraceDetailPage() {
 
         // The trace data is already in agent-prism format from the backend
         setTraceData(trace);
+
+        if (treeResponse.ok) {
+          const treeData = await treeResponse.json().catch(() => null);
+          if (treeData && treeData.success && treeData.trace) {
+            setTraceTree(treeData.trace as TraceTree);
+            setConversation(
+              (treeData.conversation as TraceConversationContext | null) || null
+            );
+          } else {
+            setTraceTreeError("Invalid trace details format");
+          }
+        } else {
+          const treeErrorData = await treeResponse.json().catch(() => ({}));
+          setTraceTreeError(
+            treeErrorData.error ||
+              `Failed to fetch trace details: ${treeResponse.statusText}`
+          );
+        }
       } catch (err) {
         console.error("Failed to fetch trace:", err);
         setError(err instanceof Error ? err.message : "Failed to load trace");
@@ -236,19 +268,34 @@ export default function TraceDetailPage() {
 
       {/* TraceViewer */}
       <div className="flex-1 overflow-hidden px-3 sm:px-4 min-h-0 w-full max-w-full">
-        <TraceViewerErrorBoundary>
-          {traceData && traceData.traceRecord && traceData.spans ? (
-            <div className="h-full w-full max-w-full overflow-hidden">
-              <TraceViewer data={[traceData]} />
+        <div className="h-full w-full max-w-full overflow-hidden flex flex-col gap-4 min-h-0">
+          {traceTree ? (
+            <div className="w-full max-w-full shrink-0 max-h-[45vh] overflow-y-auto rounded-lg border bg-background p-3 sm:p-4">
+              <TraceInsightsPanel
+                trace={traceTree}
+                conversation={conversation}
+              />
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-full min-h-[400px]">
-              <div className="text-red-500 text-sm sm:text-base">
-                Invalid trace data format
+          ) : traceTreeError ? (
+            <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+              Trace insights unavailable: {traceTreeError}
+            </div>
+          ) : null}
+
+          <TraceViewerErrorBoundary>
+            {traceData && traceData.traceRecord && traceData.spans ? (
+              <div className="flex-1 min-h-0 w-full max-w-full overflow-hidden">
+                <TraceViewer data={[traceData]} />
               </div>
-            </div>
-          )}
-        </TraceViewerErrorBoundary>
+            ) : (
+              <div className="flex items-center justify-center h-full min-h-[400px]">
+                <div className="text-red-500 text-sm sm:text-base">
+                  Invalid trace data format
+                </div>
+              </div>
+            )}
+          </TraceViewerErrorBoundary>
+        </div>
       </div>
     </div>
   );

@@ -146,3 +146,119 @@ export function getSpanTypeDisplayName(
   return filter?.label || type.toUpperCase().replace(/_/g, " ");
 }
 
+export interface TraceSummary {
+  trace_id: string;
+  tenant_id: string;
+  project_id: string;
+  environment?: string | null;
+  conversation_id?: string | null;
+  session_id?: string | null;
+  user_id?: string | null;
+  message_index?: number | null;
+  start_time: string;
+  end_time: string;
+  total_latency_ms?: number | null;
+  total_tokens?: number | null;
+  total_cost?: number | null;
+  model?: string | null;
+  query?: string | null;
+  response?: string | null;
+  finish_reason?: string | null;
+  status?: number | null;
+  status_text?: string | null;
+  response_length?: number | null;
+  time_to_first_token_ms?: number | null;
+  streaming_duration_ms?: number | null;
+  analyzed_at?: string | null;
+}
+
+export interface TraceSignal {
+  signal_type?: string;
+  severity?: "high" | "medium" | "low" | string;
+  confidence?: number | null;
+  score?: number | null;
+  reasoning?: string | null;
+}
+
+export interface TraceAnalysis {
+  isHallucination?: boolean | null;
+  hallucinationConfidence?: number | null;
+  hallucinationReasoning?: string | null;
+  qualityScore?: number | null;
+  coherenceScore?: number | null;
+  relevanceScore?: number | null;
+  helpfulnessScore?: number | null;
+  hasContextDrop?: boolean | null;
+  hasModelDrift?: boolean | null;
+  hasPromptInjection?: boolean | null;
+  hasContextOverflow?: boolean | null;
+  hasFaithfulnessIssue?: boolean | null;
+  hasCostAnomaly?: boolean | null;
+  hasLatencyAnomaly?: boolean | null;
+  hasQualityDegradation?: boolean | null;
+  contextRelevanceScore?: number | null;
+  answerFaithfulnessScore?: number | null;
+  driftScore?: number | null;
+  anomalyScore?: number | null;
+  analysisModel?: string | null;
+  analysisVersion?: string | null;
+  processingTimeMs?: number | null;
+}
+
+export interface TraceCostBreakdown {
+  totalCostUsd?: number | null;
+  byType?: Record<string, number>;
+  topSpans?: Array<{ spanId: string; name: string; costUsd: number }>;
+}
+
+export interface TracePerformanceAnalysis {
+  bottleneckSpanId?: string | null;
+  bottleneckDurationMs?: number | null;
+  bottleneckPercentage?: number | null;
+  suggestions?: string[];
+}
+
+export interface TraceTokenEfficiency {
+  tokensPerCharacter?: number | null;
+  inputEfficiency?: number | null;
+  outputEfficiency?: number | null;
+  benchmarkComparison?: "above_average" | "average" | "below_average" | string;
+}
+
+export interface TraceQualityExplanation {
+  overallScore?: number | null;
+  breakdown?: Record<
+    string,
+    { score?: number | null; explanation?: string | null }
+  >;
+  improvements?: string[];
+}
+
+export interface TraceConversationContext {
+  id: string;
+  messageIndex?: number | null;
+  totalMessages?: number | null;
+  previousTraceId?: string | null;
+  nextTraceId?: string | null;
+  conversationMetrics?: {
+    totalTokens?: number | null;
+    avgLatencyMs?: number | null;
+    totalCostUsd?: number | null;
+    issueCount?: number | null;
+  };
+}
+
+export interface TraceTree {
+  summary: TraceSummary;
+  spans: Array<Record<string, any>>;
+  allSpans?: Array<Record<string, any>>;
+  spansById?: Record<string, Record<string, any>>;
+  signals?: TraceSignal[];
+  analysis?: TraceAnalysis | Record<string, any>;
+  costBreakdown?: TraceCostBreakdown;
+  performanceAnalysis?: TracePerformanceAnalysis;
+  tokenEfficiency?: TraceTokenEfficiency;
+  qualityExplanation?: TraceQualityExplanation;
+  _meta?: Record<string, any>;
+}
+

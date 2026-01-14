@@ -178,7 +178,7 @@ export const TraceViewer = ({
   };
 
   return (
-    <div className="h-[calc(100vh-50px)] w-full max-w-full min-w-0 overflow-hidden">
+    <div className="h-full w-full max-w-full min-w-0 overflow-hidden">
       <div className="hidden h-full lg:block w-full max-w-full min-w-0">
         <TraceViewerDesktopLayout {...props} />
       </div>

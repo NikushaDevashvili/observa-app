@@ -22,6 +22,24 @@ interface SpanCardBagdesProps {
 export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
   const errorInfo = (data as any).errorInfo;
   const errorCount = (data as any).errorCount;
+  const attributes = (data as any).attributes as Array<{ key: string }> | undefined;
+
+  const extraLabels: string[] = [];
+  if (Array.isArray(attributes)) {
+    const hasVectorDb = attributes.some((attr) =>
+      attr.key.startsWith("vector_db.")
+    );
+    const hasCache = attributes.some((attr) => attr.key.startsWith("cache."));
+    const hasAgent = attributes.some((attr) => attr.key.startsWith("agent."));
+
+    if (hasVectorDb) extraLabels.push("Vector DB");
+    if (hasCache) extraLabels.push("Cache");
+    if (hasAgent) extraLabels.push("Agent");
+  }
+
+  const shouldShowExtraBadges =
+    extraLabels.length > 0 &&
+    (data.type === "unknown" || data.type === "span" || data.type === "event");
 
   return (
     <div className="flex flex-wrap items-center justify-start gap-1">
@@ -44,6 +62,16 @@ export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
           className="bg-red-600 text-white"
         />
       )}
+
+      {shouldShowExtraBadges &&
+        extraLabels.map((label) => (
+          <Badge
+            key={label}
+            size="4"
+            label={label}
+            className="bg-agentprism-muted text-agentprism-muted-foreground"
+          />
+        ))}
     </div>
   );
 };
