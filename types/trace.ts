@@ -116,6 +116,7 @@ export const DEFAULT_SPAN_TYPE_FILTERS: SpanTypeFilter[] = [
   { value: "llm_call", label: "LLM Calls" },
   { value: "tool_execution", label: "Tool Calls" },
   { value: "retrieval", label: "Retrieval" },
+  { value: "event", label: "Feedback" },
   { value: "embedding", label: "Embeddings" },
   { value: "vector_db_operation", label: "Vector DB" },
   { value: "cache_operation", label: "Cache" },

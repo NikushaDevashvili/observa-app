@@ -79,6 +79,42 @@ export default function TraceDetailPage() {
           return;
         }
 
+        // #region agent log
+        try {
+          const spans = Array.isArray(data.trace?.spans) ? data.trace.spans : [];
+          const spanTypes: Record<string, number> = {};
+          let feedbackSpans = 0;
+          for (const span of spans) {
+            const type = span.event_type || span.type || "unknown";
+            spanTypes[type] = (spanTypes[type] || 0) + 1;
+            if (type === "feedback") feedbackSpans += 1;
+          }
+          fetch(
+            "http://127.0.0.1:7243/ingest/58308b77-6db1-45c3-a89e-548ba2d1edd2",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "trace/[traceId]/page.tsx",
+                message: "agent-prism spans summary",
+                data: {
+                  traceId,
+                  spanCount: spans.length,
+                  spanTypes,
+                  feedbackSpans,
+                },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                runId: "run1",
+                hypothesisId: "P",
+              }),
+            }
+          ).catch(() => {});
+        } catch {
+          // ignore debug logging errors
+        }
+        // #endregion
+
         // Validate the trace data structure
         const trace = data.trace;
         if (!trace.traceRecord || !trace.spans) {
@@ -128,6 +164,45 @@ export default function TraceDetailPage() {
             setConversation(
               (treeData.conversation as TraceConversationContext | null) || null
             );
+            // #region agent log
+            try {
+              const spans = Array.isArray(treeData.trace?.allSpans)
+                ? treeData.trace.allSpans
+                : Array.isArray(treeData.trace?.spans)
+                ? treeData.trace.spans
+                : [];
+              const spanTypes: Record<string, number> = {};
+              let feedbackSpans = 0;
+              for (const span of spans) {
+                const type = span.event_type || span.type || "unknown";
+                spanTypes[type] = (spanTypes[type] || 0) + 1;
+                if (type === "feedback") feedbackSpans += 1;
+              }
+              fetch(
+                "http://127.0.0.1:7243/ingest/58308b77-6db1-45c3-a89e-548ba2d1edd2",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    location: "trace/[traceId]/page.tsx",
+                    message: "tree spans summary",
+                    data: {
+                      traceId,
+                      spanCount: spans.length,
+                      spanTypes,
+                      feedbackSpans,
+                    },
+                    timestamp: Date.now(),
+                    sessionId: "debug-session",
+                    runId: "run1",
+                    hypothesisId: "Q",
+                  }),
+                }
+              ).catch(() => {});
+            } catch {
+              // ignore debug logging errors
+            }
+            // #endregion
           } else {
             setTraceTreeError("Invalid trace details format");
           }
