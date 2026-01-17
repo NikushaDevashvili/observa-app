@@ -214,79 +214,70 @@ export default function DashboardPage() {
       if (endTime) params.append("endTime", endTime);
       if (projectId) params.append("projectId", projectId);
 
-      // Fetch dashboard overview
-      const metricsResponse = await fetch(
-        `/api/dashboard/overview?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const requests = [
+        fetch(`/api/dashboard/overview?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+        fetch(`/api/dashboard/overview/time-series?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+        fetch(`/api/dashboard/overview/comparison?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+        fetch("/api/dashboard/alerts?hours=24", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+        fetch("/api/traces?limit=10", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+      ];
 
-      if (metricsResponse.ok) {
+      const results = await Promise.allSettled(requests);
+
+      const metricsResponse =
+        results[0].status === "fulfilled" ? results[0].value : null;
+      if (metricsResponse?.ok) {
         const metricsData: DashboardResponse = await metricsResponse.json();
         if (metricsData.success && metricsData.metrics) {
           setMetrics(metricsData.metrics);
         }
       }
 
-      // Fetch time-series data
-      const timeSeriesResponse = await fetch(
-        `/api/dashboard/overview/time-series?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (timeSeriesResponse.ok) {
+      const timeSeriesResponse =
+        results[1].status === "fulfilled" ? results[1].value : null;
+      if (timeSeriesResponse?.ok) {
         const timeSeriesData = await timeSeriesResponse.json();
         if (timeSeriesData.success && timeSeriesData.series) {
           setTimeSeries(timeSeriesData.series);
         }
       }
 
-      // Fetch comparison data
-      const comparisonResponse = await fetch(
-        `/api/dashboard/overview/comparison?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (comparisonResponse.ok) {
+      const comparisonResponse =
+        results[2].status === "fulfilled" ? results[2].value : null;
+      if (comparisonResponse?.ok) {
         const comparisonData = await comparisonResponse.json();
         if (comparisonData.success && comparisonData.comparison) {
           setComparison(comparisonData.comparison);
         }
       }
 
-      // Fetch alerts
-      const alertsResponse = await fetch("/api/dashboard/alerts?hours=24", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (alertsResponse.ok) {
+      const alertsResponse =
+        results[3].status === "fulfilled" ? results[3].value : null;
+      if (alertsResponse?.ok) {
         const alertsData = await alertsResponse.json();
         if (alertsData.success && alertsData.alerts) {
           setAlerts(alertsData.alerts);
         }
       }
 
-      // Fetch recent traces
-      const tracesResponse = await fetch("/api/traces?limit=10", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (tracesResponse.ok) {
+      const tracesResponse =
+        results[4].status === "fulfilled" ? results[4].value : null;
+      if (tracesResponse?.ok) {
         const tracesData = await tracesResponse.json();
         if (tracesData.success && tracesData.traces) {
           setTraces(tracesData.traces);
