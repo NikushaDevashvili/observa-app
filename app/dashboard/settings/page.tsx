@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AccountInfo {
   user: {
@@ -684,15 +685,11 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "400px",
-        }}
-      >
-        <div>Loading settings...</div>
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-72" />
+        <Skeleton className="h-[180px] w-full" />
+        <Skeleton className="h-[220px] w-full" />
       </div>
     );
   }
@@ -851,14 +848,10 @@ export default function SettingsPage() {
             keys, you'll need to provide tenantId and projectId in SDK config.
           </p>
           {loadingApiKeys ? (
-            <div
-              style={{
-                padding: "1rem",
-                textAlign: "center",
-                color: "#6b7280",
-              }}
-            >
-              Loading API keys...
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
             </div>
           ) : apiKeys.length > 0 ? (
             <div style={{ display: "grid", gap: "1rem" }}>

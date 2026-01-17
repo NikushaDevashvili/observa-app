@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Conversation {
   id: string;
@@ -103,21 +104,6 @@ export default function ConversationsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "400px",
-        }}
-      >
-        <div>Loading conversations...</div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div
@@ -203,7 +189,30 @@ export default function ConversationsPage() {
         </div>
       </div>
 
-      {conversations.length === 0 && !loading ? (
+      {loading ? (
+        <div
+          style={{
+            backgroundColor: "#fff",
+            padding: "2rem",
+            borderRadius: "0.5rem",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-56" />
+            <Skeleton className="h-4 w-72" />
+            <Skeleton className="h-4 w-60" />
+            <div className="space-y-2 pt-4">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          </div>
+        </div>
+      ) : conversations.length === 0 ? (
         <div
           style={{
             backgroundColor: "#fff",

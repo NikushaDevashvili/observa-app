@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StatisticsCard from "@/components/StatisticsCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertTriangle,
   AlertCircle,
@@ -265,49 +266,56 @@ export default function IssuesPage() {
     new Set(issues.map((issue) => issue.issue_type))
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div>Loading issues...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Issues</h1>
         <p className="text-muted-foreground">
-          Track and monitor issues across your AI application
+          {loading ? (
+            <Skeleton className="h-4 w-64 inline-block" />
+          ) : (
+            "Track and monitor issues across your AI application"
+          )}
         </p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatisticsCard
-          title="Total Issues"
-          value={stats.total}
-          icon={<AlertTriangle className="h-5 w-5 text-destructive" />}
-        />
-        <StatisticsCard
-          title="High Severity"
-          value={stats.high}
-          tooltip="Issues with high severity"
-          icon={<AlertCircle className="h-5 w-5 text-destructive" />}
-        />
-        <StatisticsCard
-          title="Medium Severity"
-          value={stats.medium}
-          tooltip="Issues with medium severity"
-          icon={<AlertCircle className="h-5 w-5 text-orange-500" />}
-        />
-        <StatisticsCard
-          title="Low Severity"
-          value={stats.low}
-          tooltip="Issues with low severity"
-          icon={<TrendingDown className="h-5 w-5 text-yellow-500" />}
-        />
+        {loading ? (
+          <>
+            <Skeleton className="h-[92px]" />
+            <Skeleton className="h-[92px]" />
+            <Skeleton className="h-[92px]" />
+            <Skeleton className="h-[92px]" />
+          </>
+        ) : (
+          <>
+            <StatisticsCard
+              title="Total Issues"
+              value={stats.total}
+              icon={<AlertTriangle className="h-5 w-5 text-destructive" />}
+            />
+            <StatisticsCard
+              title="High Severity"
+              value={stats.high}
+              tooltip="Issues with high severity"
+              icon={<AlertCircle className="h-5 w-5 text-destructive" />}
+            />
+            <StatisticsCard
+              title="Medium Severity"
+              value={stats.medium}
+              tooltip="Issues with medium severity"
+              icon={<AlertCircle className="h-5 w-5 text-orange-500" />}
+            />
+            <StatisticsCard
+              title="Low Severity"
+              value={stats.low}
+              tooltip="Issues with low severity"
+              icon={<TrendingDown className="h-5 w-5 text-yellow-500" />}
+            />
+          </>
+        )}
       </div>
 
       {/* Filters */}
@@ -317,67 +325,89 @@ export default function IssuesPage() {
           <CardDescription>Filter issues by severity and type</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Severity</label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={severityFilter === "all" ? "default" : "outline"}
-                  onClick={() => setSeverityFilter("all")}
-                  size="sm"
-                >
-                  All
-                </Button>
-                <Button
-                  variant={
-                    severityFilter === "high" ? "destructive" : "outline"
-                  }
-                  onClick={() => setSeverityFilter("high")}
-                  size="sm"
-                >
-                  High
-                </Button>
-                <Button
-                  variant={severityFilter === "medium" ? "default" : "outline"}
-                  onClick={() => setSeverityFilter("medium")}
-                  size="sm"
-                >
-                  Medium
-                </Button>
-                <Button
-                  variant={severityFilter === "low" ? "secondary" : "outline"}
-                  onClick={() => setSeverityFilter("low")}
-                  size="sm"
-                >
-                  Low
-                </Button>
+          {loading ? (
+            <div className="flex flex-col gap-4">
+              <div>
+                <Skeleton className="h-4 w-24 mb-2" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-8 w-14" />
+                </div>
+              </div>
+              <div>
+                <Skeleton className="h-4 w-24 mb-2" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-8 w-28" />
+                  <Skeleton className="h-8 w-24" />
+                </div>
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Issue Type
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={signalTypeFilter === "all" ? "default" : "outline"}
-                  onClick={() => setSignalTypeFilter("all")}
-                  size="sm"
-                >
-                  All Types
-                </Button>
-                {signalTypes.map((type) => (
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Severity</label>
+                <div className="flex flex-wrap gap-2">
                   <Button
-                    key={type}
-                    variant={signalTypeFilter === type ? "default" : "outline"}
-                    onClick={() => setSignalTypeFilter(type)}
+                    variant={severityFilter === "all" ? "default" : "outline"}
+                    onClick={() => setSeverityFilter("all")}
                     size="sm"
                   >
-                    {getIssueTypeLabel(type)}
+                    All
                   </Button>
-                ))}
+                  <Button
+                    variant={
+                      severityFilter === "high" ? "destructive" : "outline"
+                    }
+                    onClick={() => setSeverityFilter("high")}
+                    size="sm"
+                  >
+                    High
+                  </Button>
+                  <Button
+                    variant={severityFilter === "medium" ? "default" : "outline"}
+                    onClick={() => setSeverityFilter("medium")}
+                    size="sm"
+                  >
+                    Medium
+                  </Button>
+                  <Button
+                    variant={severityFilter === "low" ? "secondary" : "outline"}
+                    onClick={() => setSeverityFilter("low")}
+                    size="sm"
+                  >
+                    Low
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Issue Type
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={signalTypeFilter === "all" ? "default" : "outline"}
+                    onClick={() => setSignalTypeFilter("all")}
+                    size="sm"
+                  >
+                    All Types
+                  </Button>
+                  {signalTypes.map((type) => (
+                    <Button
+                      key={type}
+                      variant={signalTypeFilter === type ? "default" : "outline"}
+                      onClick={() => setSignalTypeFilter(type)}
+                      size="sm"
+                    >
+                      {getIssueTypeLabel(type)}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -393,7 +423,18 @@ export default function IssuesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {issues.length === 0 ? (
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : issues.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               <AlertCircle className="mx-auto h-12 w-12 mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">No issues found</p>

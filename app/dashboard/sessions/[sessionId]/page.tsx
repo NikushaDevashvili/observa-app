@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Trace {
   trace_id: string;
@@ -146,15 +147,24 @@ export default function SessionDetailPage() {
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "400px",
-        }}
-      >
-        <div>Loading session...</div>
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-36" />
+        <Skeleton className="h-6 w-64" />
+        <Skeleton className="h-4 w-48" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 pt-2">
+          <Skeleton className="h-[92px]" />
+          <Skeleton className="h-[92px]" />
+          <Skeleton className="h-[92px]" />
+          <Skeleton className="h-[92px]" />
+        </div>
+        <div className="space-y-2 pt-4">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
       </div>
     );
   }

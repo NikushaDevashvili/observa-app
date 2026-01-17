@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { TraceViewer } from "@/components/agent-prism/TraceViewer/TraceViewer";
 import type { TraceViewerData } from "@/components/agent-prism/TraceViewer/TraceViewer";
@@ -228,8 +229,15 @@ export default function TraceDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-lg">Loading trace...</div>
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-6 w-72" />
+        <Skeleton className="h-4 w-56" />
+        <div className="grid gap-4 md:grid-cols-2 pt-2">
+          <Skeleton className="h-[220px]" />
+          <Skeleton className="h-[220px]" />
+        </div>
+        <Skeleton className="h-[420px] w-full" />
       </div>
     );
   }
