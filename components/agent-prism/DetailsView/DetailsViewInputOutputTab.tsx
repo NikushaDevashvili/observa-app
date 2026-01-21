@@ -26,6 +26,56 @@ export const DetailsViewInputOutputTab = ({
   const llmData = (data as any).llm_call || (data as any).details?.llm_call;
   const llmEvent = (data as any).events?.find((e: any) => e.event_type === "llm_call");
   const llmCall = llmData || llmEvent?.attributes?.llm_call;
+  const attributes = (data as any).attributes;
+
+  const normalizeAttributeValue = (value: any): any => {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== "object") return value;
+    if ("stringValue" in value) return value.stringValue;
+    if ("boolValue" in value) return value.boolValue;
+    if ("intValue" in value) return value.intValue;
+    if ("doubleValue" in value) return value.doubleValue;
+    if ("arrayValue" in value && Array.isArray(value.arrayValue?.values)) {
+      return value.arrayValue.values.map((entry: any) =>
+        normalizeAttributeValue(entry)
+      );
+    }
+    if ("kvlistValue" in value && Array.isArray(value.kvlistValue?.values)) {
+      const mapped: Record<string, any> = {};
+      value.kvlistValue.values.forEach((entry: any) => {
+        if (entry?.key) {
+          mapped[entry.key] = normalizeAttributeValue(entry.value);
+        }
+      });
+      return mapped;
+    }
+    if ("value" in value) return normalizeAttributeValue(value.value);
+    return value;
+  };
+
+  const getAttributeValue = (key: string): any => {
+    if (!attributes) return null;
+    if (Array.isArray(attributes)) {
+      const match = attributes.find((attr: any) => attr.key === key);
+      return normalizeAttributeValue(match?.value);
+    }
+    if (typeof attributes === "object" && key in attributes) {
+      return normalizeAttributeValue((attributes as Record<string, any>)[key]);
+    }
+    return null;
+  };
+
+  const systemInstructions =
+    (llmCall as any)?.system_instructions ??
+    getAttributeValue("gen_ai.system_instructions");
+  const availableTools =
+    (data as any).available_tools ??
+    getAttributeValue("observa.available_tools") ??
+    getAttributeValue("llm_call.tool_definitions") ??
+    getAttributeValue("gen_ai.request.tools");
+  const executedTools =
+    (data as any).executed_tools ??
+    getAttributeValue("observa.executed_tools");
 
   // Extract input/output from multiple sources
   let inputText: string | null = null;
@@ -102,6 +152,13 @@ export const DetailsViewInputOutputTab = ({
           </div>
         </div>
       )}
+
+      <ContextSection
+        title="System Instructions"
+        value={systemInstructions}
+      />
+      <ContextSection title="Available Tools" value={availableTools} />
+      <ContextSection title="Executed Tools" value={executedTools} />
 
       {/* Input Section - Always show, even if empty */}
       <IOSection
@@ -180,6 +237,81 @@ const IOSection = ({
           mode={tab}
           label={section}
           id={section}
+        />
+      )}
+    </CollapsibleSection>
+  );
+};
+
+interface ContextSectionProps {
+  title: string;
+  value: any;
+}
+
+const isEmptyContent = (value: any): boolean => {
+  if (value === null || value === undefined) return true;
+  if (typeof value === "string") return value.trim() === "";
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === "object") return Object.keys(value).length === 0;
+  return false;
+};
+
+const ContextSection = ({
+  title,
+  value,
+}: ContextSectionProps): ReactElement => {
+  const isJsonContent =
+    value !== null &&
+    value !== undefined &&
+    (Array.isArray(value) || typeof value === "object");
+  const content =
+    typeof value === "string" ? value : value ? JSON.stringify(value, null, 2) : "";
+  const parsedContent = isJsonContent ? value : null;
+  const isEmpty = isEmptyContent(value);
+  const sectionId = title.toLowerCase().replace(/\s+/g, "-");
+  const [tab, setTab] = useState<DetailsViewContentViewMode>(
+    parsedContent ? "json" : "plain",
+  );
+
+  useEffect(() => {
+    if (tab === "json" && !parsedContent) {
+      setTab("plain");
+    }
+  }, [tab, parsedContent]);
+
+  const tabItems: TabItem<DetailsViewContentViewMode>[] = [
+    { value: "json", label: "JSON", disabled: !parsedContent },
+    { value: "plain", label: "Plain" },
+  ];
+
+  return (
+    <CollapsibleSection
+      title={title}
+      defaultOpen={false}
+      rightContent={
+        <TabSelector<DetailsViewContentViewMode>
+          items={tabItems}
+          defaultValue={parsedContent ? "json" : "plain"}
+          value={tab}
+          onValueChange={setTab}
+          theme="pill"
+          onClick={(event) => event.stopPropagation()}
+        />
+      }
+    >
+      {isEmpty ? (
+        <div className="border-agentprism-border rounded-md border p-4 bg-agentprism-muted/20">
+          <p className="text-agentprism-muted-foreground text-sm italic">
+            No {title.toLowerCase()} available for this span
+          </p>
+        </div>
+      ) : (
+        <DetailsViewContentViewer
+          content={content}
+          parsedContent={parsedContent}
+          mode={tab}
+          label={title}
+          id={sectionId}
         />
       )}
     </CollapsibleSection>

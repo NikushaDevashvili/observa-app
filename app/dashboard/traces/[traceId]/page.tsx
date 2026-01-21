@@ -23,6 +23,8 @@ export default function TraceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [traceTreeError, setTraceTreeError] = useState<string | null>(null);
+  const [includeMessages, setIncludeMessages] = useState(false);
+  const [includeMessagesReason, setIncludeMessagesReason] = useState("");
 
   useEffect(() => {
     if (!traceId) {
@@ -46,13 +48,19 @@ export default function TraceDetailPage() {
           return;
         }
 
+        const contextParams = includeMessages
+          ? `&includeMessages=true&reason=${encodeURIComponent(
+              includeMessagesReason
+            )}`
+          : "";
+
         const [agentResponse, treeResponse] = await Promise.all([
-          fetch(`/api/traces/${traceId}?format=agent-prism`, {
+          fetch(`/api/traces/${traceId}?format=agent-prism${contextParams}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }),
-          fetch(`/api/traces/${traceId}?format=tree`, {
+          fetch(`/api/traces/${traceId}?format=tree${contextParams}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -225,7 +233,7 @@ export default function TraceDetailPage() {
     if (traceId) {
       fetchTrace();
     }
-  }, [traceId, router]);
+  }, [traceId, router, includeMessages, includeMessagesReason]);
 
   if (loading) {
     return (
@@ -305,6 +313,29 @@ export default function TraceDetailPage() {
                   <code className="bg-muted px-2 py-1 rounded text-xs font-mono truncate max-w-full sm:max-w-none">
                     {traceId || "N/A"}
                   </code>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <label className="flex items-center gap-2 text-xs sm:text-sm">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={includeMessages}
+                      onChange={(event) =>
+                        setIncludeMessages(event.target.checked)
+                      }
+                    />
+                    <span className="text-muted-foreground">Show context</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="h-8 w-full sm:w-64 rounded-md border border-input bg-background px-2 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground disabled:opacity-60"
+                    placeholder="Why are you viewing sensitive context?"
+                    value={includeMessagesReason}
+                    onChange={(event) =>
+                      setIncludeMessagesReason(event.target.value)
+                    }
+                    disabled={!includeMessages}
+                  />
                 </div>
                 {traceData?.errorSummary &&
                   traceData.errorSummary.hasErrors && (
