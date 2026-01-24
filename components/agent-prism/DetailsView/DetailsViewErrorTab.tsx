@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
 
+import { deriveErrorInfoFromSpan } from "@/lib/spanError";
 import { Badge } from "../Badge";
 import { Button } from "../Button";
 import { CollapsibleSection } from "../CollapsibleSection";
@@ -43,7 +44,9 @@ const formatErrorType = (type: string): string => {
 export const DetailsViewErrorTab = ({
   data,
 }: DetailsViewErrorTabProps): ReactElement => {
-  const errorInfo = (data as any).errorInfo as ErrorInfo | undefined;
+  const backendError = (data as any).errorInfo as ErrorInfo | undefined;
+  const derivedError = deriveErrorInfoFromSpan(data);
+  const errorInfo = (backendError ?? derivedError) as ErrorInfo | undefined;
   const [copied, setCopied] = useState(false);
 
   if (!errorInfo) {

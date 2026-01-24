@@ -5,6 +5,7 @@ import cn from "classnames";
 import { SquareTerminal, Tags, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 
+import { isErrorSpan } from "@/lib/spanError";
 import type { AvatarProps } from "../Avatar";
 import type { TabItem } from "../Tabs";
 
@@ -106,11 +107,7 @@ export const DetailsView = ({
   customHeader,
   onTabChange,
 }: DetailsViewProps): ReactElement => {
-  const hasError = !!(data as any).errorInfo;
-  // Debug: log errorInfo to verify it's present
-  if (hasError) {
-    console.log("[DetailsView] Error detected:", (data as any).errorInfo);
-  }
+  const hasError = !!(data as any).errorInfo || isErrorSpan(data);
   const tabItems = getTabItems(hasError);
   
   // Auto-select error tab if error exists and no default tab was provided
@@ -119,7 +116,7 @@ export const DetailsView = ({
 
   // Update tab when data changes (e.g., when selecting a different span)
   useEffect(() => {
-    const newHasError = !!(data as any).errorInfo;
+    const newHasError = !!(data as any).errorInfo || isErrorSpan(data);
     if (newHasError && tab !== "error" && defaultTab === "input-output") {
       setTab("error");
     } else if (!newHasError && tab === "error") {

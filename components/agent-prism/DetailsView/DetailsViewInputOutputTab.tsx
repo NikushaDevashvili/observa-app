@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 
 import { useState, useEffect } from "react";
 
+import { deriveErrorInfoFromSpan, isErrorSpan } from "@/lib/spanError";
 import type { TabItem } from "../Tabs";
 
 import { CollapsibleSection } from "../CollapsibleSection";
@@ -115,6 +116,9 @@ export const DetailsViewInputOutputTab = ({
   const hasInput = inputText !== null && inputText !== undefined && inputText !== "";
   const hasOutput = outputText !== null && outputText !== undefined && outputText !== "";
 
+  const errorSpan = isErrorSpan(data);
+  const derivedError = errorSpan ? deriveErrorInfoFromSpan(data) : null;
+
   // Parse JSON if possible
   let parsedInput: string | null = null;
   let parsedOutput: string | null = null;
@@ -166,15 +170,19 @@ export const DetailsViewInputOutputTab = ({
         content={inputText || ""}
         parsedContent={parsedInput}
         isEmpty={!hasInput}
+        isErrorSpan={errorSpan}
+        derivedErrorMessage={derivedError?.fullMessage}
       />
 
       {/* Output Section - Show if available */}
       {(hasOutput || outputText === null) && (
         <IOSection
           section="Output"
-          content={outputText || ""}
+          content={outputText || derivedError?.fullMessage || ""}
           parsedContent={parsedOutput}
-          isEmpty={!hasOutput}
+          isEmpty={!hasOutput && !derivedError?.fullMessage}
+          isErrorSpan={errorSpan}
+          derivedErrorMessage={derivedError?.fullMessage}
         />
       )}
     </div>
@@ -186,6 +194,8 @@ interface IOSectionProps {
   content: string;
   parsedContent: string | null;
   isEmpty?: boolean;
+  isErrorSpan?: boolean;
+  derivedErrorMessage?: string | null;
 }
 
 const IOSection = ({
@@ -193,6 +203,8 @@ const IOSection = ({
   content,
   parsedContent,
   isEmpty = false,
+  isErrorSpan = false,
+  derivedErrorMessage,
 }: IOSectionProps): ReactElement => {
   const [tab, setTab] = useState<DetailsViewContentViewMode>(
     parsedContent ? "json" : "plain",
@@ -208,6 +220,10 @@ const IOSection = ({
     { value: "json", label: "JSON", disabled: !parsedContent },
     { value: "plain", label: "Plain" },
   ];
+
+  const emptyMessage = isErrorSpan
+    ? "This is an error span. Switch to the Error tab for the message and stack trace."
+    : `No ${section.toLowerCase()} data available for this span`;
 
   return (
     <CollapsibleSection
@@ -227,7 +243,7 @@ const IOSection = ({
       {isEmpty ? (
         <div className="border-agentprism-border rounded-md border p-4 bg-agentprism-muted/20">
           <p className="text-agentprism-muted-foreground text-sm italic">
-            No {section.toLowerCase()} data available for this span
+            {emptyMessage}
           </p>
         </div>
       ) : (
