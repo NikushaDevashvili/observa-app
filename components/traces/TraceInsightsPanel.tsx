@@ -12,7 +12,6 @@ import type {
   TracePerformanceAnalysis,
   TraceQualityExplanation,
   TraceSignal,
-  TraceSummary,
   TraceTokenEfficiency,
   TraceTree,
 } from "@/types/trace";
@@ -327,34 +326,6 @@ const renderConversation = (
   );
 };
 
-const renderSummary = (summary: TraceSummary) => {
-  return renderKeyValueGrid([
-    { label: "Trace ID", value: summary.trace_id },
-    { label: "Tenant ID", value: summary.tenant_id },
-    { label: "Project ID", value: summary.project_id },
-    { label: "Environment", value: summary.environment },
-    { label: "Conversation ID", value: summary.conversation_id },
-    { label: "Session ID", value: summary.session_id },
-    { label: "User ID", value: summary.user_id },
-    { label: "Message Index", value: summary.message_index },
-    { label: "Start Time", value: formatDateTime(summary.start_time) },
-    { label: "End Time", value: formatDateTime(summary.end_time) },
-    { label: "Total Latency (ms)", value: summary.total_latency_ms },
-    { label: "Total Tokens", value: summary.total_tokens },
-    { label: "Total Cost", value: summary.total_cost },
-    { label: "Model", value: summary.model },
-    { label: "Query", value: summary.query },
-    { label: "Response", value: summary.response },
-    { label: "Finish Reason", value: summary.finish_reason },
-    { label: "Status", value: summary.status },
-    { label: "Status Text", value: summary.status_text },
-    { label: "Response Length", value: summary.response_length },
-    { label: "Time to First Token (ms)", value: summary.time_to_first_token_ms },
-    { label: "Streaming Duration (ms)", value: summary.streaming_duration_ms },
-    { label: "Analyzed At", value: formatDateTime(summary.analyzed_at) },
-  ]);
-};
-
 export const TraceInsightsPanel = ({
   trace,
   conversation,
@@ -363,19 +334,6 @@ export const TraceInsightsPanel = ({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Trace Summary</CardTitle>
-          <CopyButton label="Summary" content={JSON.stringify(trace.summary, null, 2)} />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {renderSummary(trace.summary)}
-          <CollapsibleSection title="Summary JSON" defaultOpen={false}>
-            <DetailsViewJsonOutput content={JSON.stringify(trace.summary, null, 2)} id="trace-summary" />
-          </CollapsibleSection>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Signals</CardTitle>
