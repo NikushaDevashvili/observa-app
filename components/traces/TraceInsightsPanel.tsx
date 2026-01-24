@@ -5,10 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyButton } from "@/components/agent-prism/CopyButton";
 import { CollapsibleSection } from "@/components/agent-prism/CollapsibleSection";
 import { DetailsViewJsonOutput } from "@/components/agent-prism/DetailsView/DetailsViewJsonOutput";
-import type {
-  TraceConversationContext,
-  TraceTree,
-} from "@/types/trace";
+import type { TraceConversationContext, TraceTree } from "@/types/trace";
 
 interface TraceInsightsPanelProps {
   trace: TraceTree;
@@ -16,7 +13,8 @@ interface TraceInsightsPanelProps {
 }
 
 const formatNumber = (value?: number | null, digits = 2): string => {
-  if (value === null || value === undefined || !Number.isFinite(value)) return "n/a";
+  if (value === null || value === undefined || !Number.isFinite(value))
+    return "n/a";
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: digits,
   }).format(value);
@@ -31,11 +29,15 @@ const formatValue = (value: unknown): string => {
   return String(value);
 };
 
-const renderKeyValueGrid = (items: Array<{ label: string; value: unknown }>) => (
+const renderKeyValueGrid = (
+  items: Array<{ label: string; value: unknown }>,
+) => (
   <dl className="grid gap-3 sm:grid-cols-2">
     {items.map((item) => (
       <div key={item.label} className="space-y-1">
-        <dt className="text-xs font-medium text-muted-foreground">{item.label}</dt>
+        <dt className="text-xs font-medium text-muted-foreground">
+          {item.label}
+        </dt>
         <dd className="text-sm break-words">{formatValue(item.value)}</dd>
       </div>
     ))}
@@ -43,10 +45,12 @@ const renderKeyValueGrid = (items: Array<{ label: string; value: unknown }>) => 
 );
 
 const renderConversation = (
-  conversation?: TraceConversationContext | null
+  conversation?: TraceConversationContext | null,
 ): ReactElement => {
   if (!conversation) {
-    return <p className="text-sm text-muted-foreground">No conversation data.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">No conversation data.</p>
+    );
   }
 
   return (
@@ -118,21 +122,29 @@ export const TraceInsightsPanel = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Analysis</CardTitle>
-          <CopyButton label="Analysis" content={JSON.stringify(trace.analysis || {}, null, 2)} />
+          <CopyButton
+            label="Analysis"
+            content={JSON.stringify(trace.analysis || {}, null, 2)}
+          />
         </CardHeader>
         <CardContent className="space-y-4">
-          {trace.analysis
-            ? renderKeyValueGrid(
-                Object.entries(trace.analysis).map(([label, value]) => ({
-                  label,
-                  value,
-                }))
-              )
-            : (
-              <p className="text-sm text-muted-foreground">No analysis data available.</p>
-            )}
+          {trace.analysis ? (
+            renderKeyValueGrid(
+              Object.entries(trace.analysis).map(([label, value]) => ({
+                label,
+                value,
+              })),
+            )
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No analysis data available.
+            </p>
+          )}
           <CollapsibleSection title="Analysis JSON" defaultOpen={false}>
-            <DetailsViewJsonOutput content={JSON.stringify(trace.analysis || {}, null, 2)} id="trace-analysis" />
+            <DetailsViewJsonOutput
+              content={JSON.stringify(trace.analysis || {}, null, 2)}
+              id="trace-analysis"
+            />
           </CollapsibleSection>
         </CardContent>
       </Card>
@@ -159,21 +171,29 @@ export const TraceInsightsPanel = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Trace Metadata</CardTitle>
-          <CopyButton label="Trace Metadata" content={JSON.stringify(trace._meta || {}, null, 2)} />
+          <CopyButton
+            label="Trace Metadata"
+            content={JSON.stringify(trace._meta || {}, null, 2)}
+          />
         </CardHeader>
         <CardContent className="space-y-4">
-          {trace._meta
-            ? renderKeyValueGrid(
-                Object.entries(trace._meta).map(([label, value]) => ({
-                  label,
-                  value,
-                }))
-              )
-            : (
-              <p className="text-sm text-muted-foreground">No metadata available.</p>
-            )}
+          {trace._meta ? (
+            renderKeyValueGrid(
+              Object.entries(trace._meta).map(([label, value]) => ({
+                label,
+                value,
+              })),
+            )
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No metadata available.
+            </p>
+          )}
           <CollapsibleSection title="Metadata JSON" defaultOpen={false}>
-            <DetailsViewJsonOutput content={JSON.stringify(trace._meta || {}, null, 2)} id="trace-meta" />
+            <DetailsViewJsonOutput
+              content={JSON.stringify(trace._meta || {}, null, 2)}
+              id="trace-meta"
+            />
           </CollapsibleSection>
         </CardContent>
       </Card>

@@ -9,20 +9,14 @@ import { ArrowLeft } from "lucide-react";
 import { TraceViewer } from "@/components/agent-prism/TraceViewer/TraceViewer";
 import type { TraceViewerData } from "@/components/agent-prism/TraceViewer/TraceViewer";
 import { TraceViewerErrorBoundary } from "@/components/TraceViewerErrorBoundary";
-import { TraceInsightsPanel } from "@/components/traces/TraceInsightsPanel";
-import type { TraceConversationContext, TraceTree } from "@/types/trace";
 
 export default function TraceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const traceId = params?.traceId as string | undefined;
   const [traceData, setTraceData] = useState<TraceViewerData | null>(null);
-  const [traceTree, setTraceTree] = useState<TraceTree | null>(null);
-  const [conversation, setConversation] =
-    useState<TraceConversationContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [traceTreeError, setTraceTreeError] = useState<string | null>(null);
   const [includeMessages, setIncludeMessages] = useState(false);
   const [includeMessagesReason, setIncludeMessagesReason] = useState("");
 
@@ -37,10 +31,7 @@ export default function TraceDetailPage() {
       try {
         setLoading(true);
         setError(null);
-        setTraceTreeError(null);
         setTraceData(null);
-        setTraceTree(null);
-        setConversation(null);
 
         const token = localStorage.getItem("sessionToken");
         if (!token) {
@@ -54,18 +45,14 @@ export default function TraceDetailPage() {
             )}`
           : "";
 
-        const [agentResponse, treeResponse] = await Promise.all([
-          fetch(`/api/traces/${traceId}?format=agent-prism${contextParams}`, {
+        const agentResponse = await fetch(
+          `/api/traces/${traceId}?format=agent-prism${contextParams}`,
+          {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }),
-          fetch(`/api/traces/${traceId}?format=tree${contextParams}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-        ]);
+          }
+        );
 
         if (!agentResponse.ok) {
           if (agentResponse.status === 404) {
@@ -165,63 +152,6 @@ export default function TraceDetailPage() {
 
         // The trace data is already in agent-prism format from the backend
         setTraceData(trace);
-
-        if (treeResponse.ok) {
-          const treeData = await treeResponse.json().catch(() => null);
-          if (treeData && treeData.success && treeData.trace) {
-            setTraceTree(treeData.trace as TraceTree);
-            setConversation(
-              (treeData.conversation as TraceConversationContext | null) || null
-            );
-            // #region agent log
-            try {
-              const spans = Array.isArray(treeData.trace?.allSpans)
-                ? treeData.trace.allSpans
-                : Array.isArray(treeData.trace?.spans)
-                ? treeData.trace.spans
-                : [];
-              const spanTypes: Record<string, number> = {};
-              let feedbackSpans = 0;
-              for (const span of spans) {
-                const type = span.event_type || span.type || "unknown";
-                spanTypes[type] = (spanTypes[type] || 0) + 1;
-                if (type === "feedback") feedbackSpans += 1;
-              }
-              fetch(
-                "http://127.0.0.1:7243/ingest/58308b77-6db1-45c3-a89e-548ba2d1edd2",
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    location: "trace/[traceId]/page.tsx",
-                    message: "tree spans summary",
-                    data: {
-                      traceId,
-                      spanCount: spans.length,
-                      spanTypes,
-                      feedbackSpans,
-                    },
-                    timestamp: Date.now(),
-                    sessionId: "debug-session",
-                    runId: "run1",
-                    hypothesisId: "Q",
-                  }),
-                }
-              ).catch(() => {});
-            } catch {
-              // ignore debug logging errors
-            }
-            // #endregion
-          } else {
-            setTraceTreeError("Invalid trace details format");
-          }
-        } else {
-          const treeErrorData = await treeResponse.json().catch(() => ({}));
-          setTraceTreeError(
-            treeErrorData.error ||
-              `Failed to fetch trace details: ${treeResponse.statusText}`
-          );
-        }
       } catch (err) {
         console.error("Failed to fetch trace:", err);
         setError(err instanceof Error ? err.message : "Failed to load trace");
@@ -383,19 +313,6 @@ export default function TraceDetailPage() {
       {/* TraceViewer */}
       <div className="flex-1 overflow-hidden px-3 sm:px-4 min-h-0 w-full max-w-full">
         <div className="h-full w-full max-w-full overflow-hidden flex flex-col gap-4 min-h-0">
-          {traceTree ? (
-            <div className="w-full max-w-full shrink-0 max-h-[45vh] overflow-y-auto rounded-lg border bg-background p-3 sm:p-4">
-              <TraceInsightsPanel
-                trace={traceTree}
-                conversation={conversation}
-              />
-            </div>
-          ) : traceTreeError ? (
-            <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-              Trace insights unavailable: {traceTreeError}
-            </div>
-          ) : null}
-
           <TraceViewerErrorBoundary>
             {traceData && traceData.traceRecord && traceData.spans ? (
               <div className="flex-1 min-h-0 w-full max-w-full overflow-hidden">
