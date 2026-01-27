@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -177,30 +177,12 @@ export default function DashboardPage() {
   const [projectId, setProjectId] = useState<string>();
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
 
-  useEffect(() => {
-    // Set default time range (last 7 days)
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 7);
-    setStartTime(start.toISOString());
-    setEndTime(end.toISOString());
-    
-    fetchDashboardData();
-    fetchProjects();
-  }, []);
-
-  useEffect(() => {
-    if (startTime && endTime) {
-      fetchDashboardData();
-    }
-  }, [startTime, endTime, projectId]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     // TODO: Fetch projects from API
     setProjects([]);
-  };
+  }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!startTime || !endTime) return;
 
     try {
@@ -239,58 +221,81 @@ export default function DashboardPage() {
 
       const results = await Promise.allSettled(requests);
 
-      const metricsResponse =
-        results[0].status === "fulfilled" ? results[0].value : null;
-      if (metricsResponse?.ok) {
-        const metricsData: DashboardResponse = await metricsResponse.json();
-        if (metricsData.success && metricsData.metrics) {
-          setMetrics(metricsData.metrics);
-        }
-      }
+      // Parse all JSON responses in parallel to eliminate sequential parsing
+      const [
+        metricsResponse,
+        timeSeriesResponse,
+        comparisonResponse,
+        alertsResponse,
+        tracesResponse,
+      ] = results;
 
-      const timeSeriesResponse =
-        results[1].status === "fulfilled" ? results[1].value : null;
-      if (timeSeriesResponse?.ok) {
-        const timeSeriesData = await timeSeriesResponse.json();
-        if (timeSeriesData.success && timeSeriesData.series) {
-          setTimeSeries(timeSeriesData.series);
-        }
-      }
+      const parsePromises = [
+        metricsResponse.status === "fulfilled" && metricsResponse.value.ok
+          ? metricsResponse.value.json().then((data: DashboardResponse) => {
+              if (data.success && data.metrics) {
+                setMetrics(data.metrics);
+              }
+            })
+          : Promise.resolve(),
+        timeSeriesResponse.status === "fulfilled" && timeSeriesResponse.value.ok
+          ? timeSeriesResponse.value.json().then((data: any) => {
+              if (data.success && data.series) {
+                setTimeSeries(data.series);
+              }
+            })
+          : Promise.resolve(),
+        comparisonResponse.status === "fulfilled" && comparisonResponse.value.ok
+          ? comparisonResponse.value.json().then((data: any) => {
+              if (data.success && data.comparison) {
+                setComparison(data.comparison);
+              }
+            })
+          : Promise.resolve(),
+        alertsResponse.status === "fulfilled" && alertsResponse.value.ok
+          ? alertsResponse.value.json().then((data: any) => {
+              if (data.success && data.alerts) {
+                setAlerts(data.alerts);
+              }
+            })
+          : Promise.resolve(),
+        tracesResponse.status === "fulfilled" && tracesResponse.value.ok
+          ? tracesResponse.value.json().then((data: any) => {
+              if (data.success && data.traces) {
+                setTraces(data.traces);
+              }
+            })
+          : Promise.resolve(),
+      ];
 
-      const comparisonResponse =
-        results[2].status === "fulfilled" ? results[2].value : null;
-      if (comparisonResponse?.ok) {
-        const comparisonData = await comparisonResponse.json();
-        if (comparisonData.success && comparisonData.comparison) {
-          setComparison(comparisonData.comparison);
-        }
-      }
-
-      const alertsResponse =
-        results[3].status === "fulfilled" ? results[3].value : null;
-      if (alertsResponse?.ok) {
-        const alertsData = await alertsResponse.json();
-        if (alertsData.success && alertsData.alerts) {
-          setAlerts(alertsData.alerts);
-        }
-      }
-
-      const tracesResponse =
-        results[4].status === "fulfilled" ? results[4].value : null;
-      if (tracesResponse?.ok) {
-        const tracesData = await tracesResponse.json();
-        if (tracesData.success && tracesData.traces) {
-          setTraces(tracesData.traces);
-        }
-      }
+      await Promise.all(parsePromises);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [startTime, endTime, projectId]);
 
-  const handleTimeRangeChange = (
+  useEffect(() => {
+    // Set default time range (last 7 days)
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+    setStartTime(start.toISOString());
+    setEndTime(end.toISOString());
+    
+    fetchDashboardData();
+    fetchProjects();
+  }, [fetchDashboardData, fetchProjects]);
+
+  useEffect(() => {
+    if (startTime && endTime) {
+      fetchDashboardData();
+    }
+  }, [startTime, endTime, projectId, fetchDashboardData]);
+
+  // Memoize handler to avoid recreating on every render
+  const handleTimeRangeChange = useCallback((
     range: TimeRange,
     start?: string,
     end?: string
@@ -300,7 +305,7 @@ export default function DashboardPage() {
       setStartTime(start);
       setEndTime(end);
     }
-  };
+  }, []);
 
   const IssueBadge = ({
     hasIssue,

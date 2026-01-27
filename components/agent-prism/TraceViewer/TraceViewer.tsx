@@ -43,9 +43,10 @@ export const TraceViewer = ({
   const [searchValue, setSearchValue] = useState("");
   const [traceListExpanded, setTraceListExpanded] = useState(true);
 
+  // Use lazy initialization to avoid expensive object creation on every render
   const [selectedTrace, setSelectedTrace] = useState<
     TraceRecordWithDisplayData | undefined
-  >(
+  >(() =>
     data[0]
       ? {
           ...data[0].traceRecord,
@@ -56,7 +57,7 @@ export const TraceViewer = ({
       : undefined,
   );
   const [selectedTraceSpans, setSelectedTraceSpans] = useState<TraceSpan[]>(
-    data[0]?.spans || [],
+    () => data[0]?.spans || [],
   );
 
   const traceRecords: TraceRecordWithDisplayData[] = useMemo(() => {
@@ -79,11 +80,17 @@ export const TraceViewer = ({
     return flattenSpans(selectedTraceSpans).map((span) => span.id);
   }, [selectedTraceSpans]);
 
+  // Track the selected trace ID to reset expanded state when trace changes
+  const prevTraceIdRef = React.useRef<string | undefined>(selectedTrace?.id);
   const [expandedSpansIds, setExpandedSpansIds] = useState<string[]>(allIds);
 
-  useEffect(() => {
-    setExpandedSpansIds(allIds);
-  }, [allIds]);
+  // Reset expanded state when trace changes (not on every allIds change)
+  React.useEffect(() => {
+    if (prevTraceIdRef.current !== selectedTrace?.id) {
+      prevTraceIdRef.current = selectedTrace?.id;
+      setExpandedSpansIds(allIds);
+    }
+  }, [selectedTrace?.id, allIds]);
 
   useEffect(() => {
     if (!hasInitialized.current) {

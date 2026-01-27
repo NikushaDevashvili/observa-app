@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DataTable, { DataTableProps } from "@/components/tables/DataTable";
 import { traceColumns, Trace } from "@/components/tables/columns/trace-columns";
@@ -31,23 +31,7 @@ export default function TracesPage() {
   });
   const [stats, setStats] = useState<any>(null);
 
-  useEffect(() => {
-    fetchTraces();
-
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        fetchTraces();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [filter, pagination.offset, environment, model, appliedSearch]);
-
-  useEffect(() => {
-    fetchModels();
-  }, [environment]);
-
-  const fetchTraces = async () => {
+  const fetchTraces = useCallback(async () => {
     try {
       const token = localStorage.getItem("sessionToken");
       if (!token) return;
@@ -118,9 +102,9 @@ export default function TracesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, pagination.offset, pagination.limit, environment, model, appliedSearch]);
 
-  const fetchModels = async () => {
+  const fetchModels = useCallback(async () => {
     try {
       const token = localStorage.getItem("sessionToken");
       if (!token) return;
@@ -144,7 +128,23 @@ export default function TracesPage() {
     } catch (e) {
       console.error("Failed to fetch models:", e);
     }
-  };
+  }, [environment]);
+
+  useEffect(() => {
+    fetchTraces();
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchTraces();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchTraces]);
+
+  useEffect(() => {
+    fetchModels();
+  }, [fetchModels]);
 
   const handleRowClick = (row: Trace) => {
     router.push(`/dashboard/traces/${row.trace_id}`);

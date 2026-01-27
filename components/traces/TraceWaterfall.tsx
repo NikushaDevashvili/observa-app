@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -84,17 +84,20 @@ export default function TraceWaterfall({
   selectedSpanId,
   onSelectSpan,
 }: TraceWaterfallProps) {
-  const [expandedSpans, setExpandedSpans] = useState<Set<string>>(new Set());
+  const [expandedSpans, setExpandedSpans] = useState<Set<string>>(() => new Set());
 
-  const toggleExpand = (spanId: string) => {
-    const newExpanded = new Set(expandedSpans);
-    if (newExpanded.has(spanId)) {
-      newExpanded.delete(spanId);
-    } else {
-      newExpanded.add(spanId);
-    }
-    setExpandedSpans(newExpanded);
-  };
+  // Use functional setState to avoid dependency on expandedSpans
+  const toggleExpand = useCallback((spanId: string) => {
+    setExpandedSpans((prev) => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(spanId)) {
+        newExpanded.delete(spanId);
+      } else {
+        newExpanded.add(spanId);
+      }
+      return newExpanded;
+    });
+  }, []);
 
   // Build tree structure
   // CRITICAL FIX: Use spans that already have children structure from backend

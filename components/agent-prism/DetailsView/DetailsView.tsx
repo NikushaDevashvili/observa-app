@@ -3,7 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import cn from "classnames";
 import { SquareTerminal, Tags, ArrowRightLeft, AlertTriangle } from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import { isErrorSpan } from "@/lib/spanError";
 import type { AvatarProps } from "../Avatar";
@@ -110,19 +110,23 @@ export const DetailsView = ({
   const hasError = !!(data as any).errorInfo || isErrorSpan(data);
   const tabItems = getTabItems(hasError);
   
+  // Derive tab state during render instead of using useEffect
   // Auto-select error tab if error exists and no default tab was provided
-  const initialTab = hasError && defaultTab === "input-output" ? "error" : defaultTab;
-  const [tab, setTab] = useState<DetailsViewTab>(initialTab);
+  const derivedTab = hasError && defaultTab === "input-output" ? "error" : defaultTab;
+  const [tab, setTab] = useState<DetailsViewTab>(derivedTab);
 
-  // Update tab when data changes (e.g., when selecting a different span)
-  useEffect(() => {
-    const newHasError = !!(data as any).errorInfo || isErrorSpan(data);
-    if (newHasError && tab !== "error" && defaultTab === "input-output") {
-      setTab("error");
-    } else if (!newHasError && tab === "error") {
-      setTab("input-output");
+  // Update tab when derived value changes (only if it actually changed)
+  const prevHasErrorRef = React.useRef(hasError);
+  React.useEffect(() => {
+    if (prevHasErrorRef.current !== hasError) {
+      prevHasErrorRef.current = hasError;
+      if (hasError && tab !== "error" && defaultTab === "input-output") {
+        setTab("error");
+      } else if (!hasError && tab === "error") {
+        setTab("input-output");
+      }
     }
-  }, [data, defaultTab]);
+  }, [hasError, tab, defaultTab]);
 
   const handleTabChange = (tabValue: DetailsViewTab) => {
     setTab(tabValue);

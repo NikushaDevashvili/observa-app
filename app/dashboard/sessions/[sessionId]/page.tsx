@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,18 +51,7 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (sessionId) {
-      fetchSession();
-      fetchTraces();
-      fetchAnalytics();
-    } else {
-      setError("Session ID is required");
-      setLoading(false);
-    }
-  }, [sessionId]);
-
-  const fetchSession = async () => {
+  const fetchSession = useCallback(async () => {
     try {
       const token = localStorage.getItem("sessionToken");
       if (!token) {
@@ -91,9 +80,9 @@ export default function SessionDetailPage() {
       console.error("Failed to fetch session:", error);
       setError(error instanceof Error ? error.message : "Failed to load session");
     }
-  };
+  }, [sessionId, router]);
 
-  const fetchTraces = async () => {
+  const fetchTraces = useCallback(async () => {
     try {
       const token = localStorage.getItem("sessionToken");
       if (!token) return;
@@ -116,9 +105,9 @@ export default function SessionDetailPage() {
     } catch (error) {
       console.error("Failed to fetch traces:", error);
     }
-  };
+  }, [sessionId]);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const token = localStorage.getItem("sessionToken");
       if (!token) return;
@@ -143,7 +132,21 @@ export default function SessionDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (sessionId) {
+      // Execute all fetches in parallel to eliminate waterfall
+      Promise.allSettled([
+        fetchSession(),
+        fetchTraces(),
+        fetchAnalytics(),
+      ]);
+    } else {
+      setError("Session ID is required");
+      setLoading(false);
+    }
+  }, [sessionId, fetchSession, fetchTraces, fetchAnalytics]);
 
   if (loading) {
     return (

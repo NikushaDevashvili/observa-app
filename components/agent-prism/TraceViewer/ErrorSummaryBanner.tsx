@@ -1,10 +1,18 @@
 import type { ReactElement } from "react";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 
 import { Badge } from "../Badge";
 import { Button } from "../Button";
+
+// Format error type outside component to avoid recreating function on every render
+const formatErrorType = (type: string): string => {
+  return type
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 export interface ErrorSummary {
   totalErrors: number;
@@ -28,16 +36,13 @@ export const ErrorSummaryBanner = ({
     return <></>;
   }
 
-  const errorTypesList = Object.entries(errorSummary.errorTypes)
-    .map(([type, count]) => ({ type, count }))
-    .sort((a, b) => b.count - a.count);
-
-  const formatErrorType = (type: string): string => {
-    return type
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
+  const errorTypesList = useMemo(
+    () =>
+      Object.entries(errorSummary.errorTypes)
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count),
+    [errorSummary.errorTypes]
+  );
 
   return (
     <div className="border-agentprism-error/20 bg-agentprism-error-muted/50 border-l-4 rounded-md p-3 mb-2">
