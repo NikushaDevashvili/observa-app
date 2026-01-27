@@ -77,6 +77,9 @@ export const DetailsViewInputOutputTab = ({
   const executedTools =
     (data as any).executed_tools ??
     getAttributeValue("observa.executed_tools");
+  const attemptedToolCalls =
+    (data as any).attempted_tool_calls ??
+    getAttributeValue("observa.attempted_tool_calls");
 
   // Extract input/output from multiple sources
   let inputText: string | null = null;
@@ -163,6 +166,10 @@ export const DetailsViewInputOutputTab = ({
       />
       <ContextSection title="Available Tools" value={availableTools} />
       <ContextSection title="Executed Tools" value={executedTools} />
+      <ContextSection
+        title="Attempted Tool Calls"
+        value={attemptedToolCalls}
+      />
 
       {/* Input Section - Always show, even if empty */}
       <IOSection

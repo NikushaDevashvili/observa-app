@@ -1,6 +1,12 @@
 /**
  * Helpers to derive error information from span data when the backend
  * doesn't provide errorInfo (e.g. OTEL exception.* attributes only).
+ *
+ * We never infer errors from latency. We only use explicit signals:
+ * - span.errorInfo (backend)
+ * - span.status === "error" (OTEL / backend)
+ * - span.type or span.event_type === "error"
+ * - exception.* / error.* attributes
  */
 
 export interface DerivedErrorInfo {
@@ -71,11 +77,15 @@ function getAttrString(span: Record<string, unknown>, key: string): string | nul
  * Supports OTEL exception.*, error.*, and common backend-specific keys.
  */
 export function deriveErrorInfoFromSpan(span: unknown): DerivedErrorInfo | null {
+  if (span == null || typeof span !== "object") return null;
   const s = span as Record<string, unknown>;
-  const type = (s.type ?? s.event_type) as string | undefined;
-  const isErrorSpan =
+  const status = s.status as string | undefined;
+  const type = (s.type ?? s.event_type ?? getAttrString(s, "event_type") ?? getAttrString(s, "type")) as string | undefined;
+  const explicitErrorStatus = status === "error";
+  const explicitErrorType =
     type === "error" ||
-    (typeof type === "string" && type.toLowerCase().includes("error"));
+    (typeof type === "string" && type.toLowerCase() === "error");
+  const isErrorSpan = explicitErrorStatus || explicitErrorType;
 
   const message =
     getAttrString(s, "exception.message") ??
@@ -110,7 +120,7 @@ export function deriveErrorInfoFromSpan(span: unknown): DerivedErrorInfo | null 
     typeof message === "string" && message.trim()
       ? message
       : isErrorSpan
-        ? "Error recorded (no message in span)"
+        ? "Error recorded (no message in span). Check the Attributes tab for details."
         : "Error details not available";
 
   const context: Record<string, unknown> = {};
@@ -142,10 +152,14 @@ export function deriveErrorInfoFromSpan(span: unknown): DerivedErrorInfo | null 
 
 /**
  * Whether the span should be treated as an error for UI (Error tab, etc.).
+ * Uses only explicit signals: errorInfo, status, type/event_type, exception attrs.
+ * Never infers from latency or other metrics.
  */
 export function isErrorSpan(span: unknown): boolean {
+  if (span == null || typeof span !== "object") return false;
   const s = span as Record<string, unknown>;
   if ((s as any).errorInfo) return true;
+  if (s.status === "error") return true;
   const derived = deriveErrorInfoFromSpan(span);
   return derived != null;
 }
