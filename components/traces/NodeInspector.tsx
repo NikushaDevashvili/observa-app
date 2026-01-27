@@ -46,6 +46,17 @@ interface Span {
   tool_call?: any;
   retrieval?: any;
   output?: any;
+  trace_start?: {
+    name?: string | null;
+    metadata?: Record<string, any> | null;
+    chain_type?: string | null;
+    num_prompts?: number | null;
+    created_at?: string | null;
+  };
+  trace_end?: {
+    total_latency_ms?: number | null;
+    total_tokens?: number | null;
+  };
   feedback?: any;
   feedback_metadata?: {
     type?: string;
@@ -94,18 +105,24 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
   const toolData = span.tool_call || span.details?.tool_call;
   const retrievalData = span.retrieval || span.details?.retrieval;
   const outputData = span.output || span.details?.output;
+  const traceStartData = span.trace_start || span.details?.trace_start;
+  const traceEndData = span.trace_end || span.details?.trace_end;
   const feedbackData = span.feedback || span.details?.feedback;
   
   // Also check events for backward compatibility
   const llmEvent = span.events?.find((e) => e.event_type === "llm_call");
   const toolEvents = span.events?.filter((e) => e.event_type === "tool_call") || [];
   const retrievalEvent = span.events?.find((e) => e.event_type === "retrieval");
+  const traceStartEvent = span.events?.find((e) => e.event_type === "trace_start");
+  const traceEndEvent = span.events?.find((e) => e.event_type === "trace_end");
   const feedbackEvent = span.events?.find((e) => e.event_type === "feedback");
   
   // Use span data if available, otherwise use event data
   const llmCall = llmData || llmEvent?.attributes?.llm_call;
   const toolCalls = toolData ? [toolData] : toolEvents.map((e) => e.attributes?.tool_call).filter(Boolean);
   const retrieval = retrievalData || retrievalEvent?.attributes?.retrieval;
+  const traceStart = traceStartData || traceStartEvent?.attributes?.trace_start;
+  const traceEnd = traceEndData || traceEndEvent?.attributes?.trace_end;
   const feedback = feedbackData || feedbackEvent?.attributes?.feedback || (span.feedback_metadata ? {
     type: span.feedback_metadata.type,
     outcome: span.feedback_metadata.outcome,
@@ -408,6 +425,82 @@ export default function NodeInspector({ span }: NodeInspectorProps) {
                     <div className="text-sm mt-3">
                       <span className="text-muted-foreground">Output Length: </span>
                       <span className="font-medium">{outputData.output_length} characters</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Trace Start */}
+            {traceStart && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <CardTitle className="text-base">Trace Start</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {traceStart.name && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Name: </span>
+                      <span className="font-medium">{traceStart.name}</span>
+                    </div>
+                  )}
+                  {traceStart.chain_type && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Chain Type: </span>
+                      <span className="font-medium">{traceStart.chain_type}</span>
+                    </div>
+                  )}
+                  {traceStart.num_prompts !== null && traceStart.num_prompts !== undefined && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Number of Prompts: </span>
+                      <span className="font-medium">{traceStart.num_prompts}</span>
+                    </div>
+                  )}
+                  {traceStart.created_at && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Created At: </span>
+                      <span className="font-medium">
+                        {new Date(traceStart.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {traceStart.metadata && Object.keys(traceStart.metadata).length > 0 && (
+                    <div>
+                      <div className="text-sm font-medium mb-2">Metadata</div>
+                      <div className="bg-muted p-3 rounded-md">
+                        <pre className="text-xs overflow-auto">
+                          {JSON.stringify(traceStart.metadata, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Trace End */}
+            {traceEnd && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <CardTitle className="text-base">Trace End</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {traceEnd.total_latency_ms !== null && traceEnd.total_latency_ms !== undefined && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Total Latency: </span>
+                      <span className="font-medium">{traceEnd.total_latency_ms}ms</span>
+                    </div>
+                  )}
+                  {traceEnd.total_tokens !== null && traceEnd.total_tokens !== undefined && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Total Tokens: </span>
+                      <span className="font-medium">{traceEnd.total_tokens.toLocaleString()}</span>
                     </div>
                   )}
                 </CardContent>

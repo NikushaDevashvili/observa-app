@@ -34,6 +34,8 @@ const getAttributeKeyColor = (key: string): string => {
     return "bg-purple-500/10 text-purple-400 border-purple-500/20";
   } else if (keyLower.startsWith("output.") || keyLower.startsWith("output_")) {
     return "bg-green-500/10 text-green-400 border-green-500/20";
+  } else if (keyLower.startsWith("trace_start.") || keyLower.startsWith("trace_end.")) {
+    return "bg-indigo-500/10 text-indigo-400 border-indigo-500/20";
   } else if (keyLower.includes("error") || keyLower.includes("status")) {
     return "bg-red-500/10 text-red-400 border-red-500/20";
   } else if (
