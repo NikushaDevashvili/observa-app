@@ -66,9 +66,30 @@ export const DetailsViewInputOutputTab = ({
     return null;
   };
 
-  const systemInstructions =
+  // Extract system instructions from multiple sources
+  let systemInstructions =
     (llmCall as any)?.system_instructions ??
+    (data as any).system_instructions ??
     getAttributeValue("gen_ai.system_instructions");
+
+  // If not found, try extracting from input_messages
+  if (!systemInstructions && llmCall?.input_messages) {
+    const systemMessages = (llmCall.input_messages as any[]).filter(
+      (msg: any) => msg.role === "system" || msg.role === "System",
+    );
+    if (systemMessages.length > 0) {
+      systemInstructions = systemMessages.map((msg: any) => {
+        if (typeof msg.content === "string") return msg.content;
+        if (Array.isArray(msg.content)) {
+          return msg.content
+            .map((c: any) => (typeof c === "string" ? c : c?.text || ""))
+            .filter(Boolean)
+            .join("\n");
+        }
+        return msg.text || msg.content || "";
+      });
+    }
+  }
   const availableTools =
     (data as any).available_tools ??
     getAttributeValue("observa.available_tools") ??
