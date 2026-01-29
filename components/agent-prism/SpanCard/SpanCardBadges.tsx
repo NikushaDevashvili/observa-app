@@ -16,18 +16,30 @@ interface SpanCardBagdesProps {
       timestamp?: string;
     };
     errorCount?: number;
+    /** TRACE_TREE_VIEW_SPEC: per-span signals from API (e.g. tool_error, medium_latency) */
+    signals?: Array<{
+      signal_type?: string;
+      signal_name?: string;
+      message?: string;
+      severity?: string;
+    }>;
   };
 }
 
 export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
   const errorInfo = (data as any).errorInfo;
   const errorCount = (data as any).errorCount;
-  const attributes = (data as any).attributes as Array<{ key: string }> | undefined;
+  const signals = (data as any).signals as
+    | Array<{ signal_type?: string; signal_name?: string }>
+    | undefined;
+  const attributes = (data as any).attributes as
+    | Array<{ key: string }>
+    | undefined;
 
   const extraLabels: string[] = [];
   if (Array.isArray(attributes)) {
     const hasVectorDb = attributes.some((attr) =>
-      attr.key.startsWith("vector_db.")
+      attr.key.startsWith("vector_db."),
     );
     const hasCache = attributes.some((attr) => attr.key.startsWith("cache."));
     const hasAgent = attributes.some((attr) => attr.key.startsWith("agent."));
@@ -62,6 +74,23 @@ export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
           className="bg-red-600 text-white"
         />
       )}
+
+      {signals?.length
+        ? signals
+            .slice(0, 2)
+            .map((sig, i) => (
+              <Badge
+                key={i}
+                size="4"
+                label={sig.signal_name || sig.signal_type || "signal"}
+                className={
+                  (sig.signal_type || sig.signal_name) === "tool_error"
+                    ? "bg-red-600 text-white"
+                    : "bg-amber-500/90 text-white"
+                }
+              />
+            ))
+        : null}
 
       {shouldShowExtraBadges &&
         extraLabels.map((label) => (
