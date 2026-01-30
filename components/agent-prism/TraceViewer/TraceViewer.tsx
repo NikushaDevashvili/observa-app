@@ -200,6 +200,10 @@ export interface TraceRecordWithDisplayData extends TraceRecord {
   spanCardViewOptions?: SpanCardViewOptions;
   badges?: BadgeProps[];
   errorSummary?: ErrorSummary;
+  // Langfuse-style context header
+  session_id?: string | null;
+  user_id?: string | null;
+  environment?: string | null;
 }
 
 export interface TraceViewerLayoutProps {

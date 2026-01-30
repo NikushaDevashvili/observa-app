@@ -44,7 +44,19 @@ export const TraceViewerMobileLayout = ({
         >
           Tree View
         </Button>
-        <DetailsView data={selectedSpan} />
+        <DetailsView
+          data={selectedSpan}
+          traceContext={
+            selectedTrace
+              ? {
+                  traceId: selectedTrace.id,
+                  session_id: (selectedTrace as any).session_id ?? null,
+                  user_id: (selectedTrace as any).user_id ?? null,
+                  environment: (selectedTrace as any).environment ?? null,
+                }
+              : undefined
+          }
+        />
       </div>
     );
   }

@@ -29,7 +29,10 @@ export const TraceViewerDesktopLayout = ({
     traceRecords.find((t) => t.id === selectedTraceId) || selectedTrace;
 
   return (
-    <PanelGroup direction="horizontal" className="h-full w-full max-w-full min-w-0 overflow-hidden">
+    <PanelGroup
+      direction="horizontal"
+      className="h-full w-full max-w-full min-w-0 overflow-hidden"
+    >
       <Panel
         id="trace-list"
         defaultSize={traceListExpanded ? 20 : 2}
@@ -50,11 +53,11 @@ export const TraceViewerDesktopLayout = ({
       <PanelResizeHandle />
 
       {selectedTrace ? (
-      <Panel
-        id="tree-view"
-        minSize={30}
-        className="flex h-full flex-col gap-y-2 overflow-hidden min-w-0"
-      >
+        <Panel
+          id="tree-view"
+          minSize={30}
+          className="flex h-full flex-col gap-y-2 overflow-hidden min-w-0"
+        >
           <TraceViewerTreeViewContainer
             searchValue={searchValue}
             setSearchValue={setSearchValue}
@@ -90,7 +93,20 @@ export const TraceViewerDesktopLayout = ({
         className="h-full overflow-hidden min-w-0"
       >
         {selectedSpan ? (
-          <DetailsView data={selectedSpan} />
+          <DetailsView
+            data={selectedSpan}
+            traceContext={
+              actualSelectedTrace
+                ? {
+                    traceId: actualSelectedTrace.id,
+                    session_id: (actualSelectedTrace as any).session_id ?? null,
+                    user_id: (actualSelectedTrace as any).user_id ?? null,
+                    environment:
+                      (actualSelectedTrace as any).environment ?? null,
+                  }
+                : undefined
+            }
+          />
         ) : (
           <TraceViewerPlaceholder title="Select a span to see the details" />
         )}

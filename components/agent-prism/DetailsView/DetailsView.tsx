@@ -2,7 +2,12 @@ import type { TraceSpan } from "@evilmartians/agent-prism-types";
 import type { ReactElement, ReactNode } from "react";
 
 import cn from "classnames";
-import { SquareTerminal, Tags, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import {
+  SquareTerminal,
+  Tags,
+  ArrowRightLeft,
+  AlertTriangle,
+} from "lucide-react";
 import React, { useState, useEffect } from "react";
 
 import { isErrorSpan } from "@/lib/spanError";
@@ -63,11 +68,21 @@ export interface DetailsViewProps {
    * Callback fired when the active tab changes
    */
   onTabChange?: (tabValue: DetailsViewTab) => void;
+
+  /**
+   * Langfuse-style trace-level context (Session ID, User ID, Env)
+   */
+  traceContext?: {
+    traceId?: string;
+    session_id?: string | null;
+    user_id?: string | null;
+    environment?: string | null;
+  };
 }
 
 const getTabItems = (hasError: boolean): TabItem<DetailsViewTab>[] => {
   const tabs: TabItem<DetailsViewTab>[] = [];
-  
+
   if (hasError) {
     tabs.push({
       value: "error",
@@ -75,7 +90,7 @@ const getTabItems = (hasError: boolean): TabItem<DetailsViewTab>[] => {
       icon: <AlertTriangle className="size-4" />,
     });
   }
-  
+
   tabs.push(
     {
       value: "input-output",
@@ -91,9 +106,9 @@ const getTabItems = (hasError: boolean): TabItem<DetailsViewTab>[] => {
       value: "raw",
       label: "RAW",
       icon: <SquareTerminal className="size-4" />,
-    }
+    },
   );
-  
+
   return tabs;
 };
 
@@ -106,13 +121,15 @@ export const DetailsView = ({
   headerActions,
   customHeader,
   onTabChange,
+  traceContext,
 }: DetailsViewProps): ReactElement => {
   const hasError = !!(data as any).errorInfo || isErrorSpan(data);
   const tabItems = getTabItems(hasError);
-  
+
   // Derive tab state during render instead of using useEffect
   // Auto-select error tab if error exists and no default tab was provided
-  const derivedTab = hasError && defaultTab === "input-output" ? "error" : defaultTab;
+  const derivedTab =
+    hasError && defaultTab === "input-output" ? "error" : defaultTab;
   const [tab, setTab] = useState<DetailsViewTab>(derivedTab);
 
   // Update tab when derived value changes (only if it actually changed)
@@ -159,14 +176,65 @@ export const DetailsView = ({
       )}
     >
       <div className="mb-4 shrink-0">{headerContent}</div>
-      
+
+      {/* Langfuse-style context header (Session ID, User ID, Env, Trace ID) */}
+      {traceContext &&
+        (traceContext.session_id ||
+          traceContext.user_id ||
+          traceContext.environment ||
+          traceContext.traceId) && (
+          <div className="mb-4 shrink-0 rounded-md border border-agentprism-border bg-agentprism-muted/20 p-3 text-xs">
+            <div className="text-agentprism-muted-foreground mb-2 font-medium">
+              Context
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {traceContext.traceId && (
+                <div className="min-w-0">
+                  <span className="text-agentprism-muted-foreground">
+                    Trace ID:
+                  </span>{" "}
+                  <code className="truncate font-mono">
+                    {traceContext.traceId}
+                  </code>
+                </div>
+              )}
+              {traceContext.session_id && (
+                <div className="min-w-0">
+                  <span className="text-agentprism-muted-foreground">
+                    Session:
+                  </span>{" "}
+                  <code className="truncate font-mono">
+                    {traceContext.session_id}
+                  </code>
+                </div>
+              )}
+              {traceContext.user_id && (
+                <div className="min-w-0">
+                  <span className="text-agentprism-muted-foreground">
+                    User:
+                  </span>{" "}
+                  <code className="truncate font-mono">
+                    {traceContext.user_id}
+                  </code>
+                </div>
+              )}
+              {traceContext.environment && (
+                <div className="min-w-0">
+                  <span className="text-agentprism-muted-foreground">Env:</span>{" "}
+                  {traceContext.environment}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       {/* Embedding Span Visualization (if applicable) */}
       {data.type === "embedding" && (
         <div className="mb-4 shrink-0">
           <EmbeddingSpanView span={data} />
         </div>
       )}
-      
+
       <div className="shrink-0">
         <TabSelector
           items={tabItems}
