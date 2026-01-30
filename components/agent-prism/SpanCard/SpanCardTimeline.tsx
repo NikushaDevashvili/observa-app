@@ -27,6 +27,8 @@ const timelineBgColors: Record<TraceSpanCategory, string> = {
   unknown: "bg-agentprism-timeline-unknown",
 };
 
+const MIN_BAR_WIDTH_PERCENT = 2; // Minimum visible width for 0-duration point events (trace_start, trace_end, output)
+
 export const SpanCardTimeline = ({
   spanCard,
   minStart,
@@ -38,6 +40,11 @@ export const SpanCardTimeline = ({
     minStart,
     maxEnd,
   });
+  // Ensure 0-duration spans (point events) show a thin visible bar so timeline is readable
+  const effectiveWidth =
+    widthPercent <= 0 || !Number.isFinite(widthPercent)
+      ? MIN_BAR_WIDTH_PERCENT
+      : widthPercent;
 
   return (
     <span
@@ -51,7 +58,7 @@ export const SpanCardTimeline = ({
           className={`absolute h-full rounded-sm ${timelineBgColors[spanCard.type]}`}
           style={{
             left: `${startPercent}%`,
-            width: `${widthPercent}%`,
+            width: `${effectiveWidth}%`,
           }}
         />
       </span>
