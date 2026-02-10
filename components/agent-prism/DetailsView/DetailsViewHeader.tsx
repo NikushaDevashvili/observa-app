@@ -84,7 +84,26 @@ export const DetailsViewHeader = ({
         <TokensBadge tokensCount={data.tokensCount} />
       )}
 
-      {typeof data.cost === "number" && <PriceBadge cost={data.cost} />}
+      {(typeof data.cost === "number" ||
+        (data as any).llm_call?.cost != null) && (
+        <span className="text-agentprism-muted-foreground flex items-center gap-1.5 text-xs">
+          <PriceBadge
+            cost={
+              typeof data.cost === "number"
+                ? data.cost
+                : (data as any).llm_call?.cost
+            }
+          />
+          {((data as any).llm_call?.input_cost != null ||
+            (data as any).llm_call?.output_cost != null) && (
+            <span className="text-agentprism-muted-foreground/80">
+              (in: ${Number((data as any).llm_call?.input_cost ?? 0).toFixed(4)}{" "}
+              / out: $
+              {Number((data as any).llm_call?.output_cost ?? 0).toFixed(4)})
+            </span>
+          )}
+        </span>
+      )}
 
       <span className="text-agentprism-muted-foreground text-xs">
         LATENCY: {formatDuration(durationMs)}

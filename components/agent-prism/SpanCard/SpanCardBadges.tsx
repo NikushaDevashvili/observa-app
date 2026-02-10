@@ -1,4 +1,5 @@
 import type { TraceSpan } from "@evilmartians/agent-prism-types";
+import { ThumbsUp, ThumbsDown, Star } from "lucide-react";
 
 import { PriceBadge } from "../PriceBadge";
 import { SpanBadge } from "../SpanBadge";
@@ -29,6 +30,14 @@ interface SpanCardBagdesProps {
 export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
   const errorInfo = (data as any).errorInfo;
   const errorCount = (data as any).errorCount;
+  const feedbackType =
+    (data as any).feedback?.type ??
+    (data as any).details?.feedback?.type ??
+    null;
+  const feedbackRating =
+    (data as any).feedback?.rating ??
+    (data as any).details?.feedback?.rating ??
+    null;
   const signals = (data as any).signals as
     | Array<{ signal_type?: string; signal_name?: string }>
     | undefined;
@@ -53,8 +62,37 @@ export const SpanCardBadges = ({ data }: SpanCardBagdesProps) => {
     extraLabels.length > 0 &&
     (data.type === "unknown" || data.type === "span" || data.type === "event");
 
+  const isFeedbackSpan =
+    (data as any).type === "feedback" || feedbackType != null;
+
   return (
     <div className="flex flex-wrap items-center justify-start gap-1">
+      {isFeedbackSpan && (
+        <span
+          className="text-agentprism-muted-foreground flex items-center"
+          title={feedbackType ?? "Feedback"}
+        >
+          {feedbackType === "like" && (
+            <ThumbsUp className="size-3.5 text-green-600" />
+          )}
+          {feedbackType === "dislike" && (
+            <ThumbsDown className="size-3.5 text-red-600" />
+          )}
+          {(feedbackType === "rating" ||
+            (feedbackType != null && feedbackRating != null)) && (
+            <span className="flex items-center gap-0.5">
+              <Star className="size-3.5 text-amber-500" />
+              {typeof feedbackRating === "number" && (
+                <span className="text-xs">{feedbackRating}</span>
+              )}
+            </span>
+          )}
+          {feedbackType &&
+            !["like", "dislike", "rating"].includes(feedbackType) && (
+              <Star className="size-3.5" />
+            )}
+        </span>
+      )}
       <SpanBadge category={data.type} title={data.title} />
 
       {typeof data.tokensCount === "number" && (
